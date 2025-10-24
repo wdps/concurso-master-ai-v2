@@ -9,7 +9,6 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# ROTAS EXISTENTES (mantenha as que já tem)
 @app.route('/')
 def home():
     return send_from_directory('.', 'index.html')
@@ -21,54 +20,58 @@ def health():
 @app.route('/api/materias')
 def materias():
     conn = get_db_connection()
-    materias = conn.execute('SELECT DISTINCT disciplina FROM questões').fetchall()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT disciplina FROM questões ORDER BY disciplina")
+    materias = [row['disciplina'] for row in cursor.fetchall()]
     conn.close()
-    materias_lista = [row['disciplina'] for row in materias]
-    return jsonify({"materias": materias_lista})
+    return jsonify({"materias": materias})
 
 @app.route('/api/dashboard-data')
 def dashboard():
     conn = get_db_connection()
+    cursor = conn.cursor()
     
     # Total de questões
-    total = conn.execute('SELECT COUNT(*) as count FROM questões').fetchone()['count']
+    cursor.execute("SELECT COUNT(*) as total FROM questões")
+    total = cursor.fetchone()['total']
     
-    # Por matéria
-    materias_count = conn.execute('''
-        SELECT disciplina, COUNT(*) as count 
+    # Questões por matéria
+    cursor.execute('''
+        SELECT disciplina, COUNT(*) as quantidade 
         FROM questões 
-        GROUP BY disciplina
-    ''').fetchall()
+        GROUP BY disciplina 
+        ORDER BY quantidade DESC
+    ''')
+    materias_data = cursor.fetchall()
+    
+    questoes_por_materia = {row['disciplina']: row['quantidade'] for row in materias_data}
     
     conn.close()
-    
-    questoes_por_materia = {row['disciplina']: row['count'] for row in materias_count}
     
     return jsonify({
         "total_questoes": total,
         "questoes_por_materia": questoes_por_materia
     })
 
-# 🎯 NOVA ROTA - QUESTÕES REAIS DO BANCO
 @app.route('/api/questoes/<materia>')
 def get_questoes(materia):
     conn = get_db_connection()
+    cursor = conn.cursor()
     
-    # Buscar questões da matéria específica
     limit = request.args.get('limit', 10, type=int)
     
-    questões = conn.execute('''
+    cursor.execute('''
         SELECT id, disciplina, enunciado, alt_a, alt_b, alt_c, alt_d, gabarito
         FROM questões 
         WHERE disciplina = ? 
         LIMIT ?
-    ''', (materia, limit)).fetchall()
+    ''', (materia, limit))
     
-    conn.close()
+    questoes_data = cursor.fetchall()
     
-    questões_lista = []
-    for row in questões:
-        questões_lista.append({
+    questoes = []
+    for row in questoes_data:
+        questoes.append({
             'id': row['id'],
             'materia': row['disciplina'],
             'enunciado': row['enunciado'],
@@ -79,10 +82,12 @@ def get_questoes(materia):
             'resposta_correta': row['gabarito']
         })
     
+    conn.close()
+    
     return jsonify({
         "disciplina": materia,
-        "quantidade": len(questões_lista),
-        "questoes": questões_lista
+        "quantidade": len(questoes),
+        "questoes": questoes
     })
 
 @app.route('/<path:path>')
