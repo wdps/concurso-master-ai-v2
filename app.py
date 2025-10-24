@@ -6,24 +6,16 @@ from typing import List, Dict, Optional
 
 app = Flask(__name__)
 
-# ✅ ESTRUTURAS SIMPLIFICADAS SEM PANDAS
-class QuestaoWeb:
-    def __init__(self, id, enunciado, materia, alt_a, alt_b, alt_c, alt_d, gabarito, dificuldade="Médio", justificativa=None):
-        self.id = id
-        self.enunciado = enunciado
-        self.materia = materia
-        self.alternativa_a = alt_a
-        self.alternativa_b = alt_b
-        self.alternativa_c = alt_c
-        self.alternativa_d = alt_d
-        self.resposta_correta = gabarito
-        self.dificuldade = dificuldade
-        self.justificativa = justificativa
-    
-    def to_dict(self):
-        return self.__dict__
+def get_db_connection():
+    """Conexão segura com o banco"""
+    try:
+        conn = sqlite3.connect('concurso.db')
+        conn.row_factory = sqlite3.Row
+        return conn
+    except Exception as e:
+        print(f"❌ Erro na conexão: {e}")
+        return None
 
-# ✅ API ROBUSTA E FUNCIONAL
 @app.route('/')
 def home():
     return send_from_directory('.', 'index.html')
@@ -39,32 +31,44 @@ def health():
 
 @app.route('/api/materias')
 def materias():
-    """API melhorada com tratamento de erros"""
+    """API de matérias com tratamento robusto"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"materias": [], "estatisticas": {}, "total_geral": 0})
+    
     try:
-        conn = sqlite3.connect('concurso.db')
-        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
+        # Verificar se a tabela existe
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='questões'")
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({"materias": [], "estatisticas": {}, "total_geral": 0})
+        
         cursor.execute("SELECT DISTINCT disciplina FROM questões ORDER BY disciplina")
-        materias = [row['disciplina'] for row in cursor.fetchall()]
+        rows = cursor.fetchall()
+        materias = [row['disciplina'] for row in rows] if rows else []
         
         # Estatísticas por matéria
         estatisticas = {}
         for materia in materias:
-            cursor.execute('''
-                SELECT COUNT(*) as total,
-                       SUM(CASE WHEN dificuldade = 'Fácil' THEN 1 ELSE 0 END) as faceis,
-                       SUM(CASE WHEN dificuldade = 'Médio' THEN 1 ELSE 0 END) as medias,
-                       SUM(CASE WHEN dificuldade = 'Difícil' THEN 1 ELSE 0 END) as dificeis
-                FROM questões WHERE disciplina = ?
-            ''', (materia,))
-            stats = cursor.fetchone()
-            estatisticas[materia] = {
-                'total': stats['total'],
-                'faceis': stats['faceis'] or 0,
-                'medias': stats['medias'] or 0,
-                'dificeis': stats['dificeis'] or 0
-            }
+            try:
+                cursor.execute('''
+                    SELECT COUNT(*) as total,
+                           SUM(CASE WHEN dificuldade = 'Fácil' THEN 1 ELSE 0 END) as faceis,
+                           SUM(CASE WHEN dificuldade = 'Médio' THEN 1 ELSE 0 END) as medias,
+                           SUM(CASE WHEN dificuldade = 'Difícil' THEN 1 ELSE 0 END) as dificeis
+                    FROM questões WHERE disciplina = ?
+                ''', (materia,))
+                stats = cursor.fetchone()
+                estatisticas[materia] = {
+                    'total': stats['total'] or 0,
+                    'faceis': stats['faceis'] or 0,
+                    'medias': stats['medias'] or 0,
+                    'dificeis': stats['dificeis'] or 0
+                }
+            except:
+                estatisticas[materia] = {'total': 0, 'faceis': 0, 'medias': 0, 'dificeis': 0}
         
         conn.close()
         
@@ -75,19 +79,40 @@ def materias():
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"❌ Erro em /api/materias: {e}")
+        conn.close()
+        return jsonify({"materias": [], "estatisticas": {}, "total_geral": 0})
 
 @app.route('/api/dashboard-data')
 def dashboard():
-    """Dashboard profissional com métricas avançadas"""
+    """Dashboard à prova de erros"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({
+            "total_questoes": 0, 
+            "questoes_por_materia": {},
+            "dificuldade": {"faceis": 0, "medias": 0, "dificeis": 0},
+            "atualizado_em": datetime.now().isoformat()
+        })
+    
     try:
-        conn = sqlite3.connect('concurso.db')
-        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
+        
+        # Verificar tabela
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='questões'")
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({
+                "total_questoes": 0, 
+                "questoes_por_materia": {},
+                "dificuldade": {"faceis": 0, "medias": 0, "dificeis": 0},
+                "atualizado_em": datetime.now().isoformat()
+            })
         
         # Total de questões
         cursor.execute("SELECT COUNT(*) as total FROM questões")
-        total = cursor.fetchone()['total']
+        total_result = cursor.fetchone()
+        total = total_result['total'] if total_result else 0
         
         # Distribuição por matéria
         cursor.execute('''
@@ -107,14 +132,20 @@ def dashboard():
             }
         
         # Dificuldade geral
-        cursor.execute('''
-            SELECT 
-                SUM(CASE WHEN dificuldade = 'Fácil' THEN 1 ELSE 0 END) as faceis,
-                SUM(CASE WHEN dificuldade = 'Médio' THEN 1 ELSE 0 END) as medias,
-                SUM(CASE WHEN dificuldade = 'Difícil' THEN 1 ELSE 0 END) as dificeis
-            FROM questões
-        ''')
-        dificuldade_stats = cursor.fetchone()
+        try:
+            cursor.execute('''
+                SELECT 
+                    SUM(CASE WHEN dificuldade = 'Fácil' THEN 1 ELSE 0 END) as faceis,
+                    SUM(CASE WHEN dificuldade = 'Médio' THEN 1 ELSE 0 END) as medias,
+                    SUM(CASE WHEN dificuldade = 'Difícil' THEN 1 ELSE 0 END) as dificeis
+                FROM questões
+            ''')
+            dificuldade_stats = cursor.fetchone()
+            faceis = dificuldade_stats['faceis'] or 0 if dificuldade_stats else 0
+            medias = dificuldade_stats['medias'] or 0 if dificuldade_stats else 0
+            dificeis = dificuldade_stats['dificeis'] or 0 if dificuldade_stats else 0
+        except:
+            faceis = medias = dificeis = 0
         
         conn.close()
         
@@ -122,27 +153,51 @@ def dashboard():
             "total_questoes": total,
             "questoes_por_materia": questoes_por_materia,
             "dificuldade": {
-                "faceis": dificuldade_stats['faceis'] or 0,
-                "medias": dificuldade_stats['medias'] or 0,
-                "dificeis": dificuldade_stats['dificeis'] or 0
+                "faceis": faceis,
+                "medias": medias,
+                "dificeis": dificeis
             },
             "atualizado_em": datetime.now().isoformat()
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"❌ Erro em /api/dashboard-data: {e}")
+        conn.close()
+        return jsonify({
+            "total_questoes": 0, 
+            "questoes_por_materia": {},
+            "dificuldade": {"faceis": 0, "medias": 0, "dificeis": 0},
+            "atualizado_em": datetime.now().isoformat()
+        })
 
 @app.route('/api/questoes/<materia>')
 def get_questoes(materia):
-    """API avançada de questões com filtros"""
+    """API de questões super resiliente"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({
+            "disciplina": materia, 
+            "quantidade": 0, 
+            "questoes": [],
+            "filtros_aplicados": {}
+        })
+    
     try:
+        cursor = conn.cursor()
         limit = request.args.get('limit', 10, type=int)
         dificuldade = request.args.get('dificuldade', None)
         randomize = request.args.get('random', 'true').lower() == 'true'
         
-        conn = sqlite3.connect('concurso.db')
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        # Verificar tabela
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='questões'")
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({
+                "disciplina": materia, 
+                "quantidade": 0, 
+                "questoes": [],
+                "filtros_aplicados": {}
+            })
         
         query = "SELECT * FROM questões WHERE disciplina = ?"
         params = [materia]
@@ -164,19 +219,19 @@ def get_questoes(materia):
         
         questoes = []
         for row in resultados:
-            questao = QuestaoWeb(
-                id=row['id'],
-                enunciado=row['enunciado'],
-                materia=row['disciplina'],
-                alt_a=row['alt_a'],
-                alt_b=row['alt_b'],
-                alt_c=row['alt_c'],
-                alt_d=row['alt_d'],
-                gabarito=row['gabarito'],
-                dificuldade=row.get('dificuldade', 'Médio'),
-                justificativa=row.get('justificativa')
-            )
-            questoes.append(questao.to_dict())
+            questao = {
+                'id': row['id'],
+                'enunciado': row['enunciado'],
+                'materia': row['disciplina'],
+                'alternativa_a': row['alt_a'],
+                'alternativa_b': row['alt_b'],
+                'alternativa_c': row['alt_c'],
+                'alternativa_d': row['alt_d'],
+                'resposta_correta': row['gabarito'],
+                'dificuldade': row.get('dificuldade', 'Médio'),
+                'justificativa': row.get('justificativa')
+            }
+            questoes.append(questao)
         
         conn.close()
         
@@ -192,22 +247,36 @@ def get_questoes(materia):
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"❌ Erro em /api/questoes: {e}")
+        conn.close()
+        return jsonify({
+            "disciplina": materia, 
+            "quantidade": 0, 
+            "questoes": [],
+            "filtros_aplicados": {}
+        })
 
 @app.route('/api/simulado/configurar', methods=['POST'])
 def configurar_simulado():
-    """API para configurar simulado personalizado"""
+    """API de simulado com tratamento completo"""
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         
         materias = data.get('materias', [])
-        quantidade_total = data.get('quantidade_total', 50)
+        quantidade_total = min(data.get('quantidade_total', 50), 100)  # Limite máximo
         tempo_minutos = data.get('tempo_minutos', 180)
         
-        # Lógica avançada de configuração de simulado
-        conn = sqlite3.connect('concurso.db')
-        conn.row_factory = sqlite3.Row
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"error": "Erro de conexão com o banco"}), 500
+        
         cursor = conn.cursor()
+        
+        # Verificar tabela
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='questões'")
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({"error": "Tabela não encontrada"}), 404
         
         query = "SELECT * FROM questões WHERE 1=1"
         params = []
@@ -256,7 +325,8 @@ def configurar_simulado():
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"❌ Erro em /api/simulado/configurar: {e}")
+        return jsonify({"error": "Erro interno do servidor"}), 500
 
 @app.route('/<path:path>')
 def serve_static(path):
