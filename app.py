@@ -7,6 +7,23 @@ app = Flask(__name__)
 def get_db_connection():
     conn = sqlite3.connect('concurso.db')
     conn.row_factory = sqlite3.Row
+    
+    # ✅ VERIFICAR E CRIAR TABELA SE NÃO EXISTIR
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS questões (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            disciplina TEXT NOT NULL,
+            enunciado TEXT NOT NULL,
+            alt_a TEXT NOT NULL,
+            alt_b TEXT NOT NULL,
+            alt_c TEXT NOT NULL,
+            alt_d TEXT NOT NULL,
+            gabarito TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    
     return conn
 
 @app.route('/')
@@ -21,8 +38,18 @@ def health():
 def materias():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT disciplina FROM questões ORDER BY disciplina")
-    materias = [row['disciplina'] for row in cursor.fetchall()]
+    
+    # Verificar se há questões
+    cursor.execute("SELECT COUNT(*) as total FROM questões")
+    total_questoes = cursor.fetchone()['total']
+    
+    if total_questoes == 0:
+        # Se não há questões, retornar lista vazia
+        materias = []
+    else:
+        cursor.execute("SELECT DISTINCT disciplina FROM questões ORDER BY disciplina")
+        materias = [row['disciplina'] for row in cursor.fetchall()]
+    
     conn.close()
     return jsonify({"materias": materias})
 
@@ -35,16 +62,19 @@ def dashboard():
     cursor.execute("SELECT COUNT(*) as total FROM questões")
     total = cursor.fetchone()['total']
     
-    # Questões por matéria
-    cursor.execute('''
-        SELECT disciplina, COUNT(*) as quantidade 
-        FROM questões 
-        GROUP BY disciplina 
-        ORDER BY quantidade DESC
-    ''')
-    materias_data = cursor.fetchall()
-    
-    questoes_por_materia = {row['disciplina']: row['quantidade'] for row in materias_data}
+    if total == 0:
+        # Se não há questões, retornar dados vazios
+        questoes_por_materia = {}
+    else:
+        # Questões por matéria
+        cursor.execute('''
+            SELECT disciplina, COUNT(*) as quantidade 
+            FROM questões 
+            GROUP BY disciplina 
+            ORDER BY quantidade DESC
+        ''')
+        materias_data = cursor.fetchall()
+        questoes_por_materia = {row['disciplina']: row['quantidade'] for row in materias_data}
     
     conn.close()
     
