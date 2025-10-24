@@ -1,38 +1,29 @@
-from flask import Flask, jsonify, send_from_directory, request, render_template
+from flask import Flask, jsonify, send_from_directory, request
 import os
 import sqlite3
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 from typing import List, Dict, Optional
-from dataclasses import dataclass
-from enum import Enum
 
 app = Flask(__name__)
 
-# ✅ ESTRUTURAS DE DADOS PROFISSIONAIS
-class Materia(Enum):
-    DIREITO_ADMINISTRATIVO = "Direito Administrativo"
-    DIREITO_CONSTITUCIONAL = "Direito Constitucional"
-    PORTUGUES = "Língua Portuguesa"
-    RACIOCINIO_LOGICO = "Raciocínio Lógico"
-    INFORMATICA = "Informática"
-    MATEMATICA = "Matemática"
-    ATUALIDADES = "Atualidades"
-
-@dataclass
+# ✅ ESTRUTURAS SIMPLIFICADAS SEM PANDAS
 class QuestaoWeb:
-    id: int
-    enunciado: str
-    materia: str
-    alternativa_a: str
-    alternativa_b: str
-    alternativa_c: str
-    alternativa_d: str
-    resposta_correta: str
-    dificuldade: str = "Médio"
-    justificativa: Optional[str] = None
+    def __init__(self, id, enunciado, materia, alt_a, alt_b, alt_c, alt_d, gabarito, dificuldade="Médio", justificativa=None):
+        self.id = id
+        self.enunciado = enunciado
+        self.materia = materia
+        self.alternativa_a = alt_a
+        self.alternativa_b = alt_b
+        self.alternativa_c = alt_c
+        self.alternativa_d = alt_d
+        self.resposta_correta = gabarito
+        self.dificuldade = dificuldade
+        self.justificativa = justificativa
+    
+    def to_dict(self):
+        return self.__dict__
 
-# ✅ API MODERNA E ROBUSTA
+# ✅ API ROBUSTA E FUNCIONAL
 @app.route('/')
 def home():
     return send_from_directory('.', 'index.html')
@@ -70,9 +61,9 @@ def materias():
             stats = cursor.fetchone()
             estatisticas[materia] = {
                 'total': stats['total'],
-                'faceis': stats['faceis'],
-                'medias': stats['medias'],
-                'dificeis': stats['dificeis']
+                'faceis': stats['faceis'] or 0,
+                'medias': stats['medias'] or 0,
+                'dificeis': stats['dificeis'] or 0
             }
         
         conn.close()
@@ -100,19 +91,19 @@ def dashboard():
         
         # Distribuição por matéria
         cursor.execute('''
-            SELECT disciplina, COUNT(*) as quantidade,
-                   ROUND((COUNT(*) * 100.0 / ?), 2) as percentual
+            SELECT disciplina, COUNT(*) as quantidade
             FROM questões 
             GROUP BY disciplina 
             ORDER BY quantidade DESC
-        ''', (total,))
+        ''')
         
         distribuicao = cursor.fetchall()
         questoes_por_materia = {}
         for row in distribuicao:
+            percentual = round((row['quantidade'] * 100.0 / total), 2) if total > 0 else 0
             questoes_por_materia[row['disciplina']] = {
                 'quantidade': row['quantidade'],
-                'percentual': row['percentual']
+                'percentual': percentual
             }
         
         # Dificuldade geral
@@ -131,9 +122,9 @@ def dashboard():
             "total_questoes": total,
             "questoes_por_materia": questoes_por_materia,
             "dificuldade": {
-                "faceis": dificuldade_stats['faceis'],
-                "medias": dificuldade_stats['medias'],
-                "dificeis": dificuldade_stats['dificeis']
+                "faceis": dificuldade_stats['faceis'] or 0,
+                "medias": dificuldade_stats['medias'] or 0,
+                "dificeis": dificuldade_stats['dificeis'] or 0
             },
             "atualizado_em": datetime.now().isoformat()
         })
@@ -162,6 +153,8 @@ def get_questoes(materia):
         
         if randomize:
             query += " ORDER BY RANDOM()"
+        else:
+            query += " ORDER BY id"
         
         query += " LIMIT ?"
         params.append(limit)
@@ -175,22 +168,22 @@ def get_questoes(materia):
                 id=row['id'],
                 enunciado=row['enunciado'],
                 materia=row['disciplina'],
-                alternativa_a=row['alt_a'],
-                alternativa_b=row['alt_b'],
-                alternativa_c=row['alt_c'],
-                alternativa_d=row['alt_d'],
-                resposta_correta=row['gabarito'],
+                alt_a=row['alt_a'],
+                alt_b=row['alt_b'],
+                alt_c=row['alt_c'],
+                alt_d=row['alt_d'],
+                gabarito=row['gabarito'],
                 dificuldade=row.get('dificuldade', 'Médio'),
                 justificativa=row.get('justificativa')
             )
-            questoes.append(questao)
+            questoes.append(questao.to_dict())
         
         conn.close()
         
         return jsonify({
             "disciplina": materia,
             "quantidade": len(questoes),
-            "questoes": [q.__dict__ for q in questoes],
+            "questoes": questoes,
             "filtros_aplicados": {
                 "dificuldade": dificuldade,
                 "randomize": randomize,
@@ -256,7 +249,7 @@ def configurar_simulado():
             "materias_incluidas": materias,
             "questoes": questoes_simulado,
             "instrucoes": {
-                "tempo_por_questao": f"{tempo_minutos/len(questoes_simulado):.1f} min",
+                "tempo_por_questao": f"{tempo_minutos/len(questoes_simulado):.1f} min" if questoes_simulado else "N/A",
                 "dificuldade_media": "Calculada automaticamente",
                 "recomendacao": "Mantenha o ritmo constante"
             }
