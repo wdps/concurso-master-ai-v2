@@ -2,67 +2,252 @@
 
 {% block title %}Simulados - ConcursoMaster AI{% endblock %}
 
+{% block extra_css %}
+<style>
+.config-section {
+    margin-bottom: 2.5rem;
+}
+
+.section-title {
+    color: #2d3748;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quantidade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.quantidade-option {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.quantidade-option:hover {
+    border-color: #4361ee;
+    transform: translateY(-2px);
+}
+
+.quantidade-option.active {
+    border-color: #4361ee;
+    background: #4361ee;
+    color: white;
+    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.3);
+}
+
+.quantidade-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.quantidade-label {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.materias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+}
+
+.materia-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.materia-card:hover {
+    border-color: #4361ee;
+    transform: translateY(-2px);
+}
+
+.materia-card.selected {
+    border-color: #4361ee;
+    background: rgba(67, 97, 238, 0.05);
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+}
+
+.materia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.materia-name {
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.materia-count {
+    background: #4361ee;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.config-item {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.config-item:hover {
+    border-color: #4361ee;
+    transform: translateY(-2px);
+}
+
+.config-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.config-icon {
+    width: 40px;
+    height: 40px;
+    background: #4361ee;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.config-title {
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.config-description {
+    color: #718096;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.form-check-input:checked {
+    background-color: #4361ee;
+    border-color: #4361ee;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.stats-bar {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border: 2px solid #e2e8f0;
+}
+
+.stats-text {
+    font-weight: 600;
+    color: #4361ee;
+    margin: 0;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10">
-            <div class="premium-card p-5">
-                <div class="text-center mb-5">
-                    <h1 class="display-5 fw-bold text-dark mb-3">
-                        <i class="fas fa-cogs me-2"></i>Configurar Simulado
-                    </h1>
-                    <p class="lead text-muted">Personalize seu simulado conforme suas necessidades de estudo</p>
-                </div>
+            <!-- Cabeçalho -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-white mb-3">
+                    <i class="fas fa-rocket me-2"></i>Configurar Simulado
+                </h1>
+                <p class="lead text-white-50">Personalize seu simulado para maximizar seu aprendizado</p>
+            </div>
 
+            <div class="premium-card p-5">
                 <form id="configSimuladoForm">
-                    <!-- Quantidade de Questões -->
-                    <div class="mb-5">
-                        <label class="form-label fw-bold fs-5 mb-4">
-                            <i class="fas fa-list-ol me-2 text-primary"></i>Quantidade de Questões
-                        </label>
-                        <div class="row g-3 mb-4">
-                            <div class="col-6 col-md-3">
-                                <div class="quantidade-btn active" data-quantidade="10">
-                                    <div class="fw-bold fs-5">10</div>
-                                    <small class="text-muted">Rápido</small>
-                                </div>
+                    <!-- Seção 1: Quantidade -->
+                    <div class="config-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-list-ol text-primary"></i>
+                            Quantidade de Questões
+                        </h3>
+                        
+                        <div class="quantidade-grid">
+                            <div class="quantidade-option active" data-quantidade="10">
+                                <div class="quantidade-number">10</div>
+                                <div class="quantidade-label">Rápido</div>
+                                <small>~10 min</small>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <div class="quantidade-btn" data-quantidade="20">
-                                    <div class="fw-bold fs-5">20</div>
-                                    <small class="text-muted">Padrão</small>
-                                </div>
+                            <div class="quantidade-option" data-quantidade="20">
+                                <div class="quantidade-number">20</div>
+                                <div class="quantidade-label">Padrão</div>
+                                <small>~20 min</small>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <div class="quantidade-btn" data-quantidade="30">
-                                    <div class="fw-bold fs-5">30</div>
-                                    <small class="text-muted">Completo</small>
-                                </div>
+                            <div class="quantidade-option" data-quantidade="30">
+                                <div class="quantidade-number">30</div>
+                                <div class="quantidade-label">Completo</div>
+                                <small>~30 min</small>
                             </div>
-                            <div class="col-6 col-md-3">
-                                <div class="quantidade-btn" data-quantidade="50">
-                                    <div class="fw-bold fs-5">50</div>
-                                    <small class="text-muted">Intensivo</small>
-                                </div>
+                            <div class="quantidade-option" data-quantidade="50">
+                                <div class="quantidade-number">50</div>
+                                <div class="quantidade-label">Intensivo</div>
+                                <small>~50 min</small>
                             </div>
                         </div>
+                        
                         <div class="row">
                             <div class="col-md-6">
+                                <label class="form-label fw-semibold">Ou digite um número personalizado:</label>
                                 <input type="number" class="form-control form-control-lg" 
-                                       id="quantidadeCustom" min="5" max="100" value="10" 
-                                       placeholder="Ou digite um número personalizado">
+                                       id="quantidadeCustom" min="5" max="100" value="10">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Matérias -->
-                    <div class="mb-5">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <label class="form-label fw-bold fs-5 mb-0">
-                                <i class="fas fa-book me-2 text-primary"></i>Matérias do Simulado
-                            </label>
-                            <div>
-                                <button type="button" class="btn btn-outline-success btn-sm me-2" id="btnSelecionarTodas">
+                    <!-- Seção 2: Matérias -->
+                    <div class="config-section">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 class="section-title mb-0">
+                                <i class="fas fa-book text-primary"></i>
+                                Matérias do Simulado
+                            </h3>
+                            <div class="quick-actions">
+                                <button type="button" class="btn btn-outline-success btn-sm" id="btnSelecionarTodas">
                                     <i class="fas fa-check-double me-1"></i> Todas
                                 </button>
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="btnSelecionarPrincipais">
@@ -71,90 +256,134 @@
                             </div>
                         </div>
                         
-                        <div class="materias-container border rounded-3 p-4" style="max-height: 400px; overflow-y: auto;">
-                            <div class="row g-3">
-                                {% for materia in materias %}
-                                <div class="col-md-6 col-lg-4">
-                                    <input type="checkbox" class="materia-checkbox d-none" 
-                                           value="{{ materia.nome }}" id="materia{{ loop.index }}" checked>
-                                    <label for="materia{{ loop.index }}" class="materia-label d-block p-3 rounded-2 cursor-pointer">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="fw-semibold">{{ materia.nome }}</span>
-                                            <span class="badge bg-primary rounded-pill">{{ materia.total }}</span>
-                                        </div>
-                                    </label>
+                        <div class="materias-grid">
+                            {% for materia in materias %}
+                            <div class="materia-card" data-materia="{{ materia.nome }}">
+                                <div class="materia-header">
+                                    <span class="materia-name">{{ materia.nome }}</span>
+                                    <span class="materia-count">{{ materia.total }}</span>
                                 </div>
-                                {% endfor %}
+                                <input type="checkbox" class="materia-checkbox d-none" 
+                                       value="{{ materia.nome }}" id="materia{{ loop.index }}" checked>
                             </div>
+                            {% endfor %}
                         </div>
-                        <div class="mt-3 text-muted" id="contadorMaterias">
-                            {{ materias|length }} matérias selecionadas
+                        
+                        <div class="stats-bar">
+                            <p class="stats-text" id="contadorMaterias">
+                                {{ materias|length }} matérias selecionadas • 
+                                <span id="totalQuestoesEstimate">~10 questões</span>
+                            </p>
                         </div>
                     </div>
 
-                    <!-- Configurações Avançadas -->
-                    <div class="mb-5">
-                        <label class="form-label fw-bold fs-5 mb-3">
-                            <i class="fas fa-sliders-h me-2 text-primary"></i>Configurações Avançadas
-                        </label>
-                        <div class="row g-4">
-                            <div class="col-md-6">
+                    <!-- Seção 3: Configurações -->
+                    <div class="config-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-sliders-h text-primary"></i>
+                            Configurações Avançadas
+                        </h3>
+                        
+                        <div class="config-grid">
+                            <div class="config-item">
+                                <div class="config-header">
+                                    <div class="config-icon">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <h4 class="config-title">Tempo Cronometrado</h4>
+                                </div>
+                                <p class="config-description">
+                                    Simula condições reais de prova com tempo limitado
+                                </p>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="tempoCronometrado" checked>
                                     <label class="form-check-label fw-semibold" for="tempoCronometrado">
-                                        Tempo Cronometrado
+                                        Ativar cronômetro
                                     </label>
-                                    <small class="form-text text-muted d-block">
-                                        Simula condições reais de prova
-                                    </small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            
+                            <div class="config-item">
+                                <div class="config-header">
+                                    <div class="config-icon">
+                                        <i class="fas fa-lightbulb"></i>
+                                    </div>
+                                    <h4 class="config-title">Dicas Inteligentes</h4>
+                                </div>
+                                <p class="config-description">
+                                    Receba dicas contextuais durante as questões
+                                </p>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="dicasAutomaticas" checked>
                                     <label class="form-check-label fw-semibold" for="dicasAutomaticas">
-                                        Dicas Automáticas
+                                        Ativar dicas
                                     </label>
-                                    <small class="form-text text-muted d-block">
-                                        Receba dicas durante as questões
-                                    </small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            
+                            <div class="config-item">
+                                <div class="config-header">
+                                    <div class="config-icon">
+                                        <i class="fas fa-calculator"></i>
+                                    </div>
+                                    <h4 class="config-title">Fórmulas Matemáticas</h4>
+                                </div>
+                                <p class="config-description">
+                                    Acesso rápido a fórmulas em questões de exatas
+                                </p>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="formulasMatematicas" checked>
                                     <label class="form-check-label fw-semibold" for="formulasMatematicas">
-                                        Fórmulas Matemáticas
+                                        Mostrar fórmulas
                                     </label>
-                                    <small class="form-text text-muted d-block">
-                                        Acesso rápido a fórmulas
-                                    </small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            
+                            <div class="config-item">
+                                <div class="config-header">
+                                    <div class="config-icon">
+                                        <i class="fas fa-graduation-cap"></i>
+                                    </div>
+                                    <h4 class="config-title">Feedback Detalhado</h4>
+                                </div>
+                                <p class="config-description">
+                                    Explicações completas após cada resposta
+                                </p>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="feedbackDetalhado" checked>
                                     <label class="form-check-label fw-semibold" for="feedbackDetalhado">
-                                        Feedback Detalhado
+                                        Feedback completo
                                     </label>
-                                    <small class="form-text text-muted d-block">
-                                        Explicações completas
-                                    </small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Botões de Ação -->
-                    <div class="d-grid gap-3 d-md-flex justify-content-md-end">
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-end pt-4 border-top">
                         <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg me-md-3">
-                            <i class="fas fa-arrow-left me-2"></i> Voltar ao Início
+                            <i class="fas fa-arrow-left me-2"></i> Voltar
                         </a>
                         <button type="submit" class="btn btn-premium btn-lg px-5" id="btnIniciarSimulado">
                             <i class="fas fa-play-circle me-2"></i> Iniciar Simulado
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary mb-4" style="width: 4rem; height: 4rem;" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <h4 class="fw-bold text-dark mb-3">Preparando seu simulado...</h4>
+                <p class="text-muted mb-0">Isso pode levar alguns segundos</p>
             </div>
         </div>
     </div>
@@ -168,15 +397,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let quantidadeSelecionada = 10;
     const materiasCheckboxes = document.querySelectorAll('.materia-checkbox');
+    const materiaCards = document.querySelectorAll('.materia-card');
     
     // Sistema de seleção de quantidade
-    const quantidadeBtns = document.querySelectorAll('.quantidade-btn');
-    quantidadeBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
+    const quantidadeOptions = document.querySelectorAll('.quantidade-option');
+    quantidadeOptions.forEach(option => {
+        option.addEventListener('click', function() {
             console.log('📊 Quantidade selecionada:', this.dataset.quantidade);
             
             // Remover active de todos
-            quantidadeBtns.forEach(b => b.classList.remove('active'));
+            quantidadeOptions.forEach(opt => opt.classList.remove('active'));
             
             // Adicionar active ao clicado
             this.classList.add('active');
@@ -186,6 +416,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Atualizar input custom
             document.getElementById('quantidadeCustom').value = quantidadeSelecionada;
+            
+            // Atualizar estimativa
+            atualizarEstimativaQuestoes();
         });
     });
     
@@ -194,59 +427,85 @@ document.addEventListener('DOMContentLoaded', function() {
         const valor = parseInt(this.value);
         if (valor >= 5 && valor <= 100) {
             quantidadeSelecionada = valor;
-            quantidadeBtns.forEach(b => b.classList.remove('active'));
+            quantidadeOptions.forEach(opt => opt.classList.remove('active'));
+            atualizarEstimativaQuestoes();
         }
+    });
+    
+    // Sistema de seleção de matérias
+    materiaCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const materiaNome = this.dataset.materia;
+            const checkbox = this.querySelector('.materia-checkbox');
+            
+            // Alternar seleção
+            checkbox.checked = !checkbox.checked;
+            
+            // Atualizar visual
+            if (checkbox.checked) {
+                this.classList.add('selected');
+            } else {
+                this.classList.remove('selected');
+            }
+            
+            atualizarContadorMaterias();
+            atualizarEstimativaQuestoes();
+            
+            console.log('📚 Matéria alterada:', materiaNome, checkbox.checked);
+        });
     });
     
     // Botões de seleção rápida
     document.getElementById('btnSelecionarTodas').addEventListener('click', function() {
+        console.log('✅ Selecionando todas matérias');
         materiasCheckboxes.forEach(cb => {
             cb.checked = true;
-            atualizarEstadoMateria(cb);
+            const card = document.querySelector([data-materia=\"\"]);
+            if (card) card.classList.add('selected');
         });
         atualizarContadorMaterias();
+        atualizarEstimativaQuestoes();
     });
     
     document.getElementById('btnSelecionarPrincipais').addEventListener('click', function() {
+        console.log('⭐ Selecionando matérias principais');
         const principais = ['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 'Direito Constitucional', 'Direito Administrativo'];
+        
         materiasCheckboxes.forEach(cb => {
-            cb.checked = principais.includes(cb.value);
-            atualizarEstadoMateria(cb);
+            const selecionar = principais.includes(cb.value);
+            cb.checked = selecionar;
+            const card = document.querySelector([data-materia=\"\"]);
+            if (card) {
+                if (selecionar) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            }
         });
         atualizarContadorMaterias();
+        atualizarEstimativaQuestoes();
     });
-    
-    // Atualizar estado visual das matérias
-    function atualizarEstadoMateria(checkbox) {
-        const label = document.querySelector(label[for=\"\"]);
-        if (checkbox.checked) {
-            label.classList.add('selected');
-        } else {
-            label.classList.remove('selected');
-        }
-    }
     
     // Atualizar contador de matérias
     function atualizarContadorMaterias() {
         const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
-        document.getElementById('contadorMaterias').textContent = selecionadas + ' matérias selecionadas';
+        document.getElementById('contadorMaterias').innerHTML = 
+            <strong></strong> matérias selecionadas •  +
+            <span id=\"totalQuestoesEstimate\">~ questões</span>;
     }
     
-    // Eventos nas checkboxes
-    materiasCheckboxes.forEach(cb => {
-        cb.addEventListener('change', function() {
-            atualizarEstadoMateria(this);
-            atualizarContadorMaterias();
-        });
-        
-        // Inicializar estado
-        atualizarEstadoMateria(cb);
-    });
+    // Atualizar estimativa de questões
+    function atualizarEstimativaQuestoes() {
+        const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
+        const estimate = selecionadas > 0 ? quantidadeSelecionada : 0;
+        document.getElementById('totalQuestoesEstimate').textContent = ~ questões;
+    }
     
     // Submissão do formulário
     document.getElementById('configSimuladoForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        console.log('📝 Enviando formulário...');
+        console.log('📝 Enviando formulário de simulado...');
         
         // Coletar dados
         const materiasSelecionadas = Array.from(materiasCheckboxes)
@@ -260,7 +519,11 @@ document.addEventListener('DOMContentLoaded', function() {
             feedbackDetalhado: document.getElementById('feedbackDetalhado').checked
         };
         
-        console.log('📦 Dados:', { quantidade: quantidadeSelecionada, materias: materiasSelecionadas, configs });
+        console.log('📦 Dados coletados:', {
+            quantidade: quantidadeSelecionada,
+            materias: materiasSelecionadas,
+            configs: configs
+        });
         
         // Validações
         if (materiasSelecionadas.length === 0) {
@@ -273,11 +536,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Loading state
+        // Mostrar loading
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+        
+        // Loading state no botão
         const btnIniciar = document.getElementById('btnIniciarSimulado');
         const btnTextoOriginal = btnIniciar.innerHTML;
         btnIniciar.disabled = true;
-        btnIniciar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Preparando...';
+        btnIniciar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Configurando...';
         
         try {
             console.log('📡 Enviando requisição para API...');
@@ -295,29 +562,44 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             const data = await response.json();
-            console.log('📊 Resposta:', data);
+            console.log('📊 Resposta da API:', data);
             
             if (data.success) {
-                showNotification('✅ Simulado configurado! Redirecionando...', 'success');
+                console.log('✅ Simulado iniciado com sucesso!');
+                showNotification('🎉 Simulado configurado! Redirecionando...', 'success');
+                
                 setTimeout(() => {
                     window.location.href = data.redirect_url;
                 }, 1000);
+                
             } else {
-                throw new Error(data.error || 'Erro ao iniciar simulado');
+                throw new Error(data.error || 'Erro desconhecido ao iniciar simulado');
             }
             
         } catch (error) {
             console.error('❌ Erro:', error);
-            showNotification('❌ Erro: ' + error.message, 'danger');
+            loadingModal.hide();
             
             // Restaurar botão
             btnIniciar.disabled = false;
             btnIniciar.innerHTML = btnTextoOriginal;
+            
+            showNotification('❌ Erro: ' + error.message, 'danger');
         }
     });
     
     // Inicializar
     atualizarContadorMaterias();
+    atualizarEstimativaQuestoes();
+    
+    // Inicializar seleção visual das matérias
+    materiaCards.forEach(card => {
+        const checkbox = card.querySelector('.materia-checkbox');
+        if (checkbox.checked) {
+            card.classList.add('selected');
+        }
+    });
+    
     console.log('✅ Sistema de simulado inicializado!');
 });
 </script>

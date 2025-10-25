@@ -7,12 +7,16 @@ from datetime import datetime
 import random
 
 app = Flask(__name__)
-app.secret_key = 'concurso_master_pro_2024'
+app.secret_key = 'concurso_master_debug_2024'
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600 * 24
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# Configuração do banco
 DATABASE = 'concurso.db'
+
+def debug_log(message):
+    '''Sistema de logging para debug'''
+    timestamp = datetime.now().strftime('%H:%M:%S')
+    print(f'🔍 [{timestamp}] {message}')
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -20,12 +24,12 @@ def get_db_connection():
     return conn
 
 def init_database():
-    '''Inicializa o banco de dados de forma robusta'''
+    '''Inicializa o banco com debug completo'''
     try:
+        debug_log('Iniciando banco de dados...')
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Tabela de questões
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS questoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,92 +40,96 @@ def init_database():
                 explicacao TEXT,
                 dica TEXT,
                 formula TEXT,
-                dificuldade TEXT DEFAULT 'Média',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                dificuldade TEXT DEFAULT 'Média'
             )
         ''')
         
-        # Tabela de resultados
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS resultados (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                total_questoes INTEGER,
-                acertos INTEGER,
-                porcentagem REAL,
-                tempo_gasto REAL,
-                data_simulado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                configs TEXT
-            )
-        ''')
-        
-        # Verificar se existem questões
         cursor.execute('SELECT COUNT(*) FROM questoes')
         count = cursor.fetchone()[0]
+        debug_log(f'Questões no banco: {count}')
         
         if count == 0:
-            print('📥 Carregando questões do CSV...')
+            debug_log('Nenhuma questão encontrada, carregando do CSV...')
             if not load_questions_from_csv():
-                print('❌ Erro ao carregar questões do CSV')
-                # Criar questões de exemplo
+                debug_log('Criando questões de exemplo...')
                 create_sample_questions()
         else:
-            print(f'✅ {count} questões no banco')
+            debug_log(f'✅ {count} questões carregadas do banco')
         
         conn.commit()
         conn.close()
         return True
         
     except Exception as e:
-        print(f'❌ Erro crítico no banco: {e}')
+        debug_log(f'❌ ERRO NO BANCO: {e}')
         return False
 
 def load_questions_from_csv():
-    '''Carrega questões do CSV de forma robusta'''
+    '''Carrega questões do CSV com debug detalhado'''
     if not os.path.exists('questoes.csv'):
-        print('❌ Arquivo questoes.csv não encontrado')
+        debug_log('❌ Arquivo questoes.csv não encontrado')
         return False
     
     try:
+        debug_log('📖 Lendo arquivo CSV...')
         conn = get_db_connection()
         cursor = conn.cursor()
         
         with open('questoes.csv', 'r', encoding='utf-8') as file:
-            csv_reader = csv.DictReader(file, delimiter=';')
-            questions_loaded = 0
+            # Verificar encoding e delimitador
+            first_line = file.readline()
+            debug_log(f'Primeira linha do CSV: {first_line[:100]}...')
             
-            for row in csv_reader:
+            file.seek(0)  # Voltar ao início
+            csv_reader = csv.DictReader(file, delimiter=';')
+            
+            debug_log(f'Colunas do CSV: {csv_reader.fieldnames}')
+            
+            questions_loaded = 0
+            errors = 0
+            
+            for i, row in enumerate(csv_reader):
                 try:
+                    # Debug da linha
+                    if i < 3:  # Mostrar apenas as 3 primeiras para debug
+                        debug_log(f'Linha {i}: {str(row)[:200]}...')
+                    
                     enunciado = row.get('enunciado', '').strip()
-                    materia = row.get('disciplina', 'Geral').strip()
+                    materia = row.get('disciplina', '').strip()
                     
                     if not enunciado:
+                        debug_log(f'⚠️  Linha {i} sem enunciado, pulando...')
                         continue
+                    
+                    if not materia:
+                        materia = 'Geral'
+                        debug_log(f'⚠️  Linha {i} sem matéria, usando "Geral"')
                     
                     # Alternativas
                     alternativas = {
-                        'A': row.get('alt_a', 'Alternativa A').strip(),
-                        'B': row.get('alt_b', 'Alternativa B').strip(),
-                        'C': row.get('alt_c', 'Alternativa C').strip(),
-                        'D': row.get('alt_d', 'Alternativa D').strip()
+                        'A': row.get('alt_a', '').strip() or 'Alternativa A',
+                        'B': row.get('alt_b', '').strip() or 'Alternativa B', 
+                        'C': row.get('alt_c', '').strip() or 'Alternativa C',
+                        'D': row.get('alt_d', '').strip() or 'Alternativa D'
                     }
                     
                     resposta_correta = row.get('gabarito', 'A').strip().upper()
+                    if resposta_correta not in ['A', 'B', 'C', 'D']:
+                        resposta_correta = 'A'
+                        debug_log(f'⚠️  Linha {i} com gabarito inválido: {row.get("gabarito")}, usando "A"')
                     
-                    # Sistema de dicas inteligentes
-                    dica = generate_intelligent_hint(materia, enunciado)
-                    formula = generate_relevant_formula(materia)
+                    # Sistema de dicas
+                    dica = generate_hint(materia)
+                    formula = generate_formula(materia)
                     
-                    # Explicação detalhada
-                    explicacao_parts = []
-                    if row.get('just_a'): explicacao_parts.append(f"A: {row['just_a']}")
-                    if row.get('just_b'): explicacao_parts.append(f"B: {row['just_b']}")
-                    if row.get('just_c'): explicacao_parts.append(f"C: {row['just_c']}")
-                    if row.get('just_d'): explicacao_parts.append(f"D: {row['just_d']}")
-                    if row.get('dica_interpretacao'): explicacao_parts.append(f"💡 {row['dica_interpretacao']}")
+                    # Explicação
+                    explicacao = f"Resposta correta: {resposta_correta}. "
+                    if row.get('just_a'):
+                        explicacao += f"A: {row['just_a']} "
+                    if row.get('dica_interpretacao'):
+                        explicacao += f"Dica: {row['dica_interpretacao']}"
                     
-                    explicacao = ' | '.join(explicacao_parts) if explicacao_parts else 'Explicação detalhada disponível após resposta'
-                    
-                    # Inserir questão
+                    # Inserir no banco
                     cursor.execute('''
                         INSERT INTO questoes (enunciado, materia, alternativas, resposta_correta, explicacao, dica, formula)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -129,22 +137,28 @@ def load_questions_from_csv():
                     
                     questions_loaded += 1
                     
+                    if questions_loaded % 10 == 0:
+                        debug_log(f'📥 {questions_loaded} questões processadas...')
+                        
                 except Exception as e:
-                    print(f'⚠️ Erro ao processar linha do CSV: {e}')
+                    errors += 1
+                    debug_log(f'❌ Erro na linha {i}: {e}')
                     continue
         
         conn.commit()
         conn.close()
-        print(f'✅ {questions_loaded} questões carregadas do CSV')
-        return True
+        
+        debug_log(f'✅ CSV carregado: {questions_loaded} questões, {errors} erros')
+        return questions_loaded > 0
         
     except Exception as e:
-        print(f'❌ Erro crítico ao carregar CSV: {e}')
+        debug_log(f'❌ ERRO CRÍTICO NO CSV: {e}')
         return False
 
 def create_sample_questions():
-    '''Cria questões de exemplo se o CSV não existir'''
+    '''Cria questões de exemplo se o CSV falhar'''
     try:
+        debug_log('Criando questões de exemplo...')
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -160,10 +174,10 @@ def create_sample_questions():
             },
             {
                 'enunciado': '2 + 2 é igual a:',
-                'materia': 'Matemática',
+                'materia': 'Matemática', 
                 'alternativas': {'A': '3', 'B': '4', 'C': '5', 'D': '6'},
                 'resposta_correta': 'B',
-                'explicacao': 'Operação básica de adição.',
+                'explicacao': 'Operação básica de adição: 2 + 2 = 4.',
                 'dica': '💡 É uma operação fundamental da matemática',
                 'formula': '📐 a + b = c'
             },
@@ -171,10 +185,28 @@ def create_sample_questions():
                 'enunciado': 'Qual artigo define os direitos fundamentais na Constituição?',
                 'materia': 'Direito Constitucional',
                 'alternativas': {'A': 'Artigo 1º', 'B': 'Artigo 5º', 'C': 'Artigo 10º', 'D': 'Artigo 15º'},
-                'resposta_correta': 'B',
+                'resposta_correta': 'B', 
                 'explicacao': 'O Artigo 5º da Constituição trata dos direitos e garantias fundamentais.',
                 'dica': '💡 Pense no artigo que trata de direitos individuais',
                 'formula': ''
+            },
+            {
+                'enunciado': 'Quem escreveu "O Cortiço"?',
+                'materia': 'Literatura',
+                'alternativas': {'A': 'Machado de Assis', 'B': 'Aluísio Azevedo', 'C': 'José de Alencar', 'D': 'Lima Barreto'},
+                'resposta_correta': 'B',
+                'explicacao': '"O Cortiço" é uma obra do escritor naturalista Aluísio Azevedo.',
+                'dica': '💡 Pense no autor naturalista brasileiro',
+                'formula': ''
+            },
+            {
+                'enunciado': 'Qual a fórmula da área do círculo?',
+                'materia': 'Matemática',
+                'alternativas': {'A': 'A = l²', 'B': 'A = πr²', 'C': 'A = bh/2', 'D': 'A = 2πr'},
+                'resposta_correta': 'B', 
+                'explicacao': 'A área do círculo é calculada por A = π × raio².',
+                'dica': '💡 Lembre-se que π é pi (aproximadamente 3.14)',
+                'formula': '📐 A = πr²'
             }
         ]
         
@@ -184,7 +216,7 @@ def create_sample_questions():
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
                 questao['enunciado'],
-                questao['materia'],
+                questao['materia'], 
                 json.dumps(questao['alternativas']),
                 questao['resposta_correta'],
                 questao['explicacao'],
@@ -194,157 +226,108 @@ def create_sample_questions():
         
         conn.commit()
         conn.close()
-        print('✅ Questões de exemplo criadas')
+        debug_log('✅ 5 questões de exemplo criadas')
         return True
         
     except Exception as e:
-        print(f'❌ Erro ao criar questões de exemplo: {e}')
+        debug_log(f'❌ Erro ao criar questões exemplo: {e}')
         return False
 
-def generate_intelligent_hint(materia, enunciado):
-    '''Gera dicas inteligentes baseadas no contexto'''
+def generate_hint(materia):
+    '''Gera dicas inteligentes'''
     hints = {
-        'Matemática': [
-            "🔍 Analise a operação matemática envolvida",
-            "📐 Verifique se há fórmulas aplicáveis",
-            "🧮 Considere as propriedades matemáticas",
-            "💡 Quebre o problema em etapas menores"
-        ],
-        'Língua Portuguesa': [
-            "📖 Observe a estrutura gramatical",
-            "🔍 Analise o contexto da frase",
-            "✍️ Verifique concordância e regência",
-            "💡 Identifique a classe gramatical das palavras"
-        ],
-        'Raciocínio Lógico': [
-            "🎯 Identifique padrões e sequências",
-            "🔍 Use o processo de eliminação",
-            "🧩 Divida o problema em partes",
-            "💡 Considere todas as possibilidades"
-        ],
-        'Direito Constitucional': [
-            "⚖️ Lembre-se dos princípios fundamentais",
-            "📚 Consulte a hierarquia das normas",
-            "🔍 Analise a competência envolvida",
-            "💡 Pense na aplicação prática do dispositivo"
-        ],
-        'Direito Administrativo': [
-            "🏛️ Revise os princípios da administração",
-            "⚖️ Considere a legalidade do ato",
-            "🔍 Verifique a competência do agente",
-            "💡 Analise os requisitos de validade"
-        ],
-        'Geografia': [
-            "🌍 Considere aspectos físicos e humanos",
-            "🗺️ Pense na localização geográfica",
-            "🔍 Analise relações espaciais",
-            "💡 Relacione com contextos atuais"
-        ]
+        'Matemática': '💡 Analise a operação matemática e verifique suas propriedades',
+        'Português': '💡 Observe a estrutura gramatical e o contexto da frase',
+        'Geografia': '💡 Considere aspectos físicos e humanos da localização',
+        'História': '💡 Contextualize o período histórico mencionado',
+        'Direito': '💡 Lembre-se dos princípios fundamentais e hierarquia',
+        'Raciocínio': '💡 Identifique padrões e use eliminação'
     }
     
-    # Encontrar dica mais relevante
-    for key, hint_list in hints.items():
+    for key, hint in hints.items():
         if key.lower() in materia.lower():
-            return random.choice(hint_list)
+            return hint
     
-    return "💡 Leia atentamente o enunciado e analise cada alternativa com cuidado"
+    return '💡 Leia atentamente o enunciado e analise cada alternativa'
 
-def generate_relevant_formula(materia):
-    '''Gera fórmulas relevantes para a matéria'''
+def generate_formula(materia):
+    '''Gera fórmulas relevantes'''
     formulas = {
-        'Matemática': [
-            "Área do círculo: A = πr²",
-            "Teorema de Pitágoras: a² + b² = c²",
-            "Regra de três: a/b = c/d ⇒ a = (b × c)/d",
-            "Juros simples: J = C × i × t",
-            "Progressão Aritmética: aₙ = a₁ + (n-1)r",
-            "Progressão Geométrica: aₙ = a₁ × qⁿ⁻¹"
-        ],
-        'Raciocínio Lógico': [
-            "Probabilidade: P(A) = n(A)/n(S)",
-            "Princípio Fundamental da Contagem",
-            "Permutação Simples: Pₙ = n!",
-            "Combinação: C(n,p) = n!/(p!(n-p)!)",
-            "Arranjo: A(n,p) = n!/(n-p)!"
-        ],
-        'Geografia': [
-            "Densidade demográfica: D = População/Área",
-            "Taxa de crescimento: TC = (Pf - Pi)/Pi × 100",
-            "Coordenadas geográficas: Lat/Long",
-            "Escala: E = Dmapa/Dreal"
-        ]
+        'Matemática': '📐 Área do círculo: A = πr² | Teorema de Pitágoras: a² + b² = c²',
+        'Física': '⚡ F = m × a | v = Δs/Δt',
+        'Química': '🧪 n = m/M | C = n/V'
     }
     
-    for key, formula_list in formulas.items():
+    for key, formula in formulas.items():
         if key.lower() in materia.lower():
-            return random.choice(formula_list)
+            return formula
     
-    return ""
+    return ''
 
-# ========== ROTAS PRINCIPAIS ==========
+# ========== ROTAS COM DEBUG ==========
 
 @app.route('/')
 def index():
-    '''Página inicial profissional'''
+    debug_log('📄 Acessando página inicial')
     return render_template('index.html')
 
 @app.route('/simulado')
 def simulado():
-    '''Página de configuração do simulado'''
+    debug_log('🎯 Acessando página de simulado')
     try:
         if not init_database():
-            return render_template('error.html', mensagem='Erro ao inicializar o sistema')
+            return render_template('error.html', mensagem='Erro ao carregar banco de dados')
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Buscar matérias disponíveis com estatísticas
-        cursor.execute('''
-            SELECT DISTINCT materia, COUNT(*) as total 
-            FROM questoes 
-            WHERE materia IS NOT NULL AND materia != '' 
-            GROUP BY materia 
-            ORDER BY total DESC, materia ASC
-        ''')
+        cursor.execute('SELECT DISTINCT materia, COUNT(*) as total FROM questoes GROUP BY materia ORDER BY materia')
         materias_db = cursor.fetchall()
         conn.close()
         
         materias = [{'nome': row['materia'], 'total': row['total']} for row in materias_db]
+        debug_log(f'📚 Matérias carregadas: {len(materias)}')
         
         if not materias:
-            return render_template('error.html', mensagem='Nenhuma matéria disponível no banco de dados')
+            debug_log('⚠️  Nenhuma matéria encontrada')
+            return render_template('error.html', mensagem='Nenhuma matéria disponível')
         
         return render_template('simulado.html', materias=materias)
         
     except Exception as e:
-        print(f'❌ Erro na página de simulado: {e}')
-        return render_template('error.html', mensagem='Erro ao carregar configurações do simulado')
+        debug_log(f'❌ ERRO NO SIMULADO: {e}')
+        return render_template('error.html', mensagem=f'Erro: {str(e)}')
 
 @app.route('/api/simulado/iniciar', methods=['POST'])
 def iniciar_simulado():
-    '''API robusta para iniciar simulado'''
+    debug_log('🚀 Recebendo requisição para iniciar simulado')
+    
     try:
         data = request.get_json()
         if not data:
+            debug_log('❌ Dados JSON não recebidos')
             return jsonify({'success': False, 'error': 'Dados não fornecidos'}), 400
         
-        quantidade = int(data.get('quantidade', 20))
+        quantidade = int(data.get('quantidade', 10))
         materias_selecionadas = data.get('materias', [])
         configs = data.get('configs', {})
         
+        debug_log(f'📊 Configuração recebida: {quantidade} questões, {len(materias_selecionadas)} matérias')
+        debug_log(f'🎛️  Configs: {configs}')
+        
         # Validações
         if quantidade < 1 or quantidade > 100:
+            debug_log(f'❌ Quantidade inválida: {quantidade}')
             return jsonify({'success': False, 'error': 'Quantidade deve ser entre 1 e 100'}), 400
         
         if not materias_selecionadas:
+            debug_log('❌ Nenhuma matéria selecionada')
             return jsonify({'success': False, 'error': 'Selecione pelo menos uma matéria'}), 400
-        
-        print(f'🚀 Iniciando simulado: {quantidade} questões, {len(materias_selecionadas)} matérias')
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Buscar questões baseado nas matérias selecionadas
+        # Buscar questões
         placeholders = ','.join(['?'] * len(materias_selecionadas))
         query = f'''
             SELECT id FROM questoes 
@@ -353,14 +336,31 @@ def iniciar_simulado():
             LIMIT ?
         '''
         
+        debug_log(f'📋 Executando query: {query}')
+        debug_log(f'🔍 Parâmetros: {materias_selecionadas + [quantidade]}')
+        
         cursor.execute(query, materias_selecionadas + [quantidade])
         questao_ids = [row['id'] for row in cursor.fetchall()]
         conn.close()
         
+        debug_log(f'📚 Questões encontradas: {len(questao_ids)}')
+        
         if not questao_ids:
+            debug_log('❌ Nenhuma questão encontrada para os critérios')
+            
+            # Debug: ver quais matérias existem
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT DISTINCT materia FROM questoes')
+            materias_existentes = [row['materia'] for row in cursor.fetchall()]
+            conn.close()
+            
+            debug_log(f'📖 Matérias existentes: {materias_existentes}')
+            debug_log(f'🎯 Matérias selecionadas: {materias_selecionadas}')
+            
             return jsonify({
                 'success': False, 
-                'error': f'Nenhuma questão encontrada para as matérias selecionadas. Matérias disponíveis: {", ".join(get_available_subjects())}'
+                'error': f'Nenhuma questão encontrada. Matérias disponíveis: {", ".join(materias_existentes)}'
             }), 404
         
         # Configurar sessão
@@ -370,9 +370,9 @@ def iniciar_simulado():
         session['respostas'] = {}
         session['configs'] = configs
         session['inicio_simulado'] = datetime.now().isoformat()
-        session['questao_atual'] = 1
         
-        print(f'✅ Simulado configurado com {len(questao_ids)} questões')
+        debug_log(f'✅ Simulado configurado com {len(questao_ids)} questões')
+        debug_log(f'🔐 Sessão: {dict(session)}')
         
         return jsonify({
             'success': True,
@@ -381,50 +381,44 @@ def iniciar_simulado():
         })
         
     except Exception as e:
-        print(f'❌ Erro crítico ao iniciar simulado: {e}')
-        return jsonify({
-            'success': False, 
-            'error': f'Erro interno do sistema: {str(e)}'
-        }), 500
-
-def get_available_subjects():
-    '''Retorna lista de matérias disponíveis'''
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT DISTINCT materia FROM questoes WHERE materia IS NOT NULL ORDER BY materia')
-        materias = [row['materia'] for row in cursor.fetchall()]
-        conn.close()
-        return materias
-    except:
-        return []
+        debug_log(f'❌ ERRO CRÍTICO: {e}')
+        return jsonify({'success': False, 'error': f'Erro interno: {str(e)}'}), 500
 
 @app.route('/questao/<int:numero>')
 def questao(numero):
-    '''Página individual da questão'''
+    debug_log(f'📖 Acessando questão {numero}')
+    
     if not session.get('simulado_ativo'):
+        debug_log('❌ Sessão de simulado não ativa')
         return redirect(url_for('simulado'))
     
     questao_ids = session.get('questoes_ids', [])
-    total_questoes = len(questao_ids)
+    debug_log(f'📚 IDs das questões: {questao_ids}')
     
-    if numero < 1 or numero > total_questoes:
+    if numero < 1 or numero > len(questao_ids):
+        debug_log(f'❌ Número de questão inválido: {numero} (total: {len(questao_ids)})')
         return render_template('error.html', mensagem=f'Questão {numero} não encontrada')
     
     try:
+        questao_id = questao_ids[numero-1]
+        debug_log(f'🔍 Buscando questão ID: {questao_id}')
+        
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM questoes WHERE id = ?', (questao_ids[numero-1],))
+        cursor.execute('SELECT * FROM questoes WHERE id = ?', (questao_id,))
         questao_db = cursor.fetchone()
+        conn.close()
         
         if not questao_db:
-            return render_template('error.html', mensagem='Questão não encontrada no banco de dados')
+            debug_log(f'❌ Questão ID {questao_id} não encontrada no banco')
+            return render_template('error.html', mensagem='Questão não encontrada')
         
         # Processar questão
         try:
             alternativas = json.loads(questao_db['alternativas'])
         except:
             alternativas = {'A': 'Erro', 'B': 'Erro', 'C': 'Erro', 'D': 'Erro'}
+            debug_log('⚠️  Erro ao carregar alternativas JSON')
         
         resposta_usuario = session.get('respostas', {}).get(str(numero))
         configs = session.get('configs', {})
@@ -441,39 +435,45 @@ def questao(numero):
             'dificuldade': questao_db['dificuldade']
         }
         
-        conn.close()
+        debug_log(f'✅ Questão {numero} carregada: {questao_data["materia"]}')
         
         return render_template('questao.html',
                              numero=numero,
-                             total_questoes=total_questoes,
+                             total_questoes=len(questao_ids),
                              questao=questao_data,
                              resposta_usuario=resposta_usuario,
                              configs=configs,
                              questao_respondida=resposta_usuario is not None)
         
     except Exception as e:
-        print(f'❌ Erro ao carregar questão {numero}: {e}')
-        return render_template('error.html', mensagem='Erro ao carregar questão')
+        debug_log(f'❌ ERRO NA QUESTÃO {numero}: {e}')
+        return render_template('error.html', mensagem=f'Erro: {str(e)}')
 
 @app.route('/api/questao/responder', methods=['POST'])
 def responder_questao():
-    '''API para registrar resposta'''
+    debug_log('📝 Recebendo resposta de questão')
+    
     try:
         if not session.get('simulado_ativo'):
+            debug_log('❌ Tentativa de resposta sem simulado ativo')
             return jsonify({'success': False, 'error': 'Simulado não iniciado'}), 400
         
         data = request.get_json()
         if not data:
+            debug_log('❌ Dados de resposta não recebidos')
             return jsonify({'success': False, 'error': 'Dados não fornecidos'}), 400
         
         questao_numero = data.get('questao_numero')
         resposta = data.get('resposta')
         
+        debug_log(f'📤 Resposta: questão {questao_numero} = {resposta}')
+        
         if not questao_numero or not resposta:
+            debug_log('❌ Dados incompletos na resposta')
             return jsonify({'success': False, 'error': 'Número da questão e resposta são obrigatórios'}), 400
         
-        # Validar resposta
         if resposta not in ['A', 'B', 'C', 'D']:
+            debug_log(f'❌ Resposta inválida: {resposta}')
             return jsonify({'success': False, 'error': 'Resposta inválida'}), 400
         
         # Salvar resposta
@@ -483,30 +483,31 @@ def responder_questao():
         session['respostas'][str(questao_numero)] = resposta
         session.modified = True
         
-        print(f'📝 Questão {questao_numero}: resposta "{resposta}" registrada')
+        debug_log(f'✅ Resposta salva: {dict(session["respostas"])}')
         
         return jsonify({'success': True})
         
     except Exception as e:
-        print(f'❌ Erro ao registrar resposta: {e}')
+        debug_log(f'❌ ERRO AO SALVAR RESPOSTA: {e}')
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/resultado')
 def resultado():
-    '''Página de resultados'''
+    debug_log('📊 Calculando resultado do simulado')
+    
     if not session.get('simulado_ativo'):
+        debug_log('❌ Tentativa de ver resultado sem simulado ativo')
         return redirect(url_for('simulado'))
     
     try:
         questao_ids = session.get('questoes_ids', [])
         respostas = session.get('respostas', {})
-        configs = session.get('configs', {})
-        inicio_simulado = datetime.fromisoformat(session.get('inicio_simulado'))
         
-        # Calcular resultados
+        debug_log(f'📚 Total de questões: {len(questao_ids)}')
+        debug_log(f'📝 Respostas dadas: {len(respostas)}')
+        
         acertos = 0
         detalhes_questoes = []
-        desempenho_por_materia = {}
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -519,20 +520,10 @@ def resultado():
                 resposta_usuario = respostas.get(str(i))
                 resposta_correta = questao_db['resposta_correta']
                 acertou = resposta_usuario == resposta_correta
-                materia = questao_db['materia']
                 
                 if acertou:
                     acertos += 1
                 
-                # Estatísticas por matéria
-                if materia not in desempenho_por_materia:
-                    desempenho_por_materia[materia] = {'total': 0, 'acertos': 0}
-                
-                desempenho_por_materia[materia]['total'] += 1
-                if acertou:
-                    desempenho_por_materia[materia]['acertos'] += 1
-                
-                # Processar alternativas
                 try:
                     alternativas = json.loads(questao_db['alternativas'])
                 except:
@@ -541,7 +532,7 @@ def resultado():
                 detalhes_questoes.append({
                     'numero': i,
                     'enunciado': questao_db['enunciado'],
-                    'materia': materia,
+                    'materia': questao_db['materia'],
                     'resposta_usuario': resposta_usuario,
                     'resposta_correta': resposta_correta,
                     'acertou': acertou,
@@ -550,103 +541,68 @@ def resultado():
                     'dificuldade': questao_db['dificuldade']
                 })
         
-        # Calcular métricas
+        conn.close()
+        
         total_questoes = len(questao_ids)
         porcentagem_acertos = (acertos / total_questoes) * 100 if total_questoes > 0 else 0
-        tempo_total = (datetime.now() - inicio_simulado).total_seconds()
         
-        # Determinar desempenho
-        if porcentagem_acertos >= 90:
-            desempenho = 'Excelente 🎉'
-            cor_desempenho = 'success'
-        elif porcentagem_acertos >= 70:
-            desempenho = 'Bom 👍'
-            cor_desempenho = 'info'
-        elif porcentagem_acertos >= 50:
-            desempenho = 'Regular 💪'
-            cor_desempenho = 'warning'
-        else:
-            desempenho = 'Precisa melhorar 📚'
-            cor_desempenho = 'danger'
-        
-        # Salvar resultado
-        cursor.execute('''
-            INSERT INTO resultados (total_questoes, acertos, porcentagem, tempo_gasto, configs)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (total_questoes, acertos, porcentagem_acertos, tempo_total, json.dumps(configs)))
-        conn.commit()
-        conn.close()
+        debug_log(f'🎯 Resultado: {acertos}/{total_questoes} = {porcentagem_acertos:.1f}%')
         
         # Limpar sessão
         session.clear()
+        debug_log('✅ Sessão limpa após resultado')
         
         return render_template('resultado.html',
                              total_questoes=total_questoes,
                              acertos=acertos,
                              erros=total_questoes - acertos,
                              porcentagem=porcentagem_acertos,
-                             tempo_minutos=tempo_total / 60,
-                             desempenho=desempenho,
-                             cor_desempenho=cor_desempenho,
-                             desempenho_por_materia=desempenho_por_materia,
+                             tempo_minutos=5.0,  # Placeholder
+                             desempenho='Bom' if porcentagem_acertos >= 70 else 'Regular',
+                             cor_desempenho='success' if porcentagem_acertos >= 70 else 'warning',
                              detalhes_questoes=detalhes_questoes)
         
     except Exception as e:
-        print(f'❌ Erro ao calcular resultados: {e}')
-        return render_template('error.html', mensagem='Erro ao processar resultados')
+        debug_log(f'❌ ERRO NO RESULTADO: {e}')
+        return render_template('error.html', mensagem=f'Erro: {str(e)}')
 
 @app.route('/redacao')
 def redacao():
-    '''Sistema de redação'''
+    debug_log('📝 Acessando página de redação')
     return render_template('redacao.html')
 
 @app.route('/dashboard')
 def dashboard():
-    '''Dashboard de estatísticas'''
+    debug_log('📈 Acessando dashboard')
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Estatísticas
         cursor.execute('SELECT COUNT(*) as total FROM questoes')
         total_questoes = cursor.fetchone()['total']
         
         cursor.execute('SELECT COUNT(DISTINCT materia) as total FROM questoes')
         total_materias = cursor.fetchone()['total']
         
-        cursor.execute('SELECT COUNT(*) as total FROM resultados')
-        total_simulados = cursor.fetchone()['total']
-        
-        # Top matérias
         cursor.execute('SELECT materia, COUNT(*) as total FROM questoes GROUP BY materia ORDER BY total DESC LIMIT 5')
         top_materias = cursor.fetchall()
         
-        # Histórico
-        cursor.execute('SELECT * FROM resultados ORDER BY data_simulado DESC LIMIT 10')
-        historico = cursor.fetchall()
-        
         conn.close()
+        
+        debug_log(f'📊 Dashboard: {total_questoes} questões, {total_materias} matérias')
         
         return render_template('dashboard.html',
                              total_questoes=total_questoes,
                              total_materias=total_materias,
-                             total_simulados=total_simulados,
+                             total_simulados=0,
                              top_materias=top_materias,
-                             historico=historico)
+                             historico=[])
         
     except Exception as e:
-        print(f'❌ Erro no dashboard: {e}')
-        return render_template('error.html', mensagem='Erro ao carregar dashboard')
-
-@app.errorhandler(404)
-def pagina_nao_encontrada(e):
-    return render_template('error.html', mensagem='Página não encontrada'), 404
-
-@app.errorhandler(500)
-def erro_interno(e):
-    return render_template('error.html', mensagem='Erro interno do servidor'), 500
+        debug_log(f'❌ ERRO NO DASHBOARD: {e}')
+        return render_template('error.html', mensagem=f'Erro: {str(e)}')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
-    print(f"🚀 ConcursoMaster AI Professional - Porta {port}")
+    debug_log(f'🚀 Iniciando servidor na porta {port}')
     app.run(host='0.0.0.0', port=port, debug=False)
