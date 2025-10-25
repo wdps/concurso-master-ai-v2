@@ -3,30 +3,20 @@
 {% block title %}Erro - ConcursoMaster AI{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-5 mt-5">
     <div class="row justify-content-center">
         <div class="col-lg-6">
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-exclamation-triangle"></i> Ops! Algo deu errado
-                    </h3>
-                </div>
-                <div class="card-body text-center py-5">
-                    <i class="fas fa-bug display-1 text-danger mb-4"></i>
-                    <h4 class="text-danger mb-3">{{ mensagem }}</h4>
-                    <p class="text-muted mb-4">
-                        Pedimos desculpas pelo inconveniente. Tente novamente ou 
-                        volte para a página inicial.
-                    </p>
-                    <div class="d-grid gap-2 d-md-flex justify-content-center">
-                        <a href="{{ url_for('index') }}" class="btn btn-primary me-md-2">
-                            <i class="fas fa-home"></i> Página Inicial
-                        </a>
-                        <a href="{{ url_for('simulado') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-redo"></i> Tentar Novamente
-                        </a>
-                    </div>
+            <div class="premium-card p-5 text-center">
+                <i class="fas fa-exclamation-triangle display-1 text-danger mb-4"></i>
+                <h2 class="fw-bold text-dark mb-3">Ops! Algo deu errado</h2>
+                <p class="text-muted mb-4">{{ mensagem }}</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-premium me-md-2">
+                        <i class="fas fa-home me-2"></i> Página Inicial
+                    </a>
+                    <a href="{{ url_for('simulado') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-redo me-2"></i> Tentar Novamente
+                    </a>
                 </div>
             </div>
         </div>

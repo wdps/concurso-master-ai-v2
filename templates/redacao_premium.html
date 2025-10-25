@@ -1,0 +1,44 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Redação - ConcursoMaster AI{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="premium-card p-5">
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold text-dark">
+                        <i class="fas fa-edit me-2"></i>Corretor de Redação
+                    </h1>
+                    <p class="lead text-muted">Receba feedback detalhado da sua redação</p>
+                </div>
+
+                <form id="formRedacao">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold fs-5">Título da Redação</label>
+                        <input type="text" class="form-control form-control-lg" id="tituloRedacao" 
+                               placeholder="Digite o título da sua redação">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold fs-5">Texto da Redação</label>
+                        <textarea class="form-control" id="textoRedacao" rows="15" 
+                                  placeholder="Digite sua redação aqui..."></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-premium btn-lg">
+                            <i class="fas fa-check-circle me-2"></i> Corrigir Redação
+                        </button>
+                    </div>
+                </form>
+
+                <div id="resultadoRedacao" class="mt-5" style="display: none;">
+                    <!-- Resultado será inserido aqui via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

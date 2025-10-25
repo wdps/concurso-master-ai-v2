@@ -1,0 +1,240 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Questão {{ numero }} - ConcursoMaster AI{% endblock %}
+
+{% block extra_css %}
+<style>
+.questao-premium {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.header-questao {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+}
+
+.dica-container {
+    background: linear-gradient(135deg, #fff9c4, #ffecb3);
+    border-left: 5px solid #f8961e;
+    border-radius: 10px;
+}
+
+.formula-container {
+    background: rgba(76, 201, 240, 0.1);
+    border: 2px dashed #4895ef;
+    border-radius: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="questao-premium">
+                <!-- CABEÇALHO -->
+                <div class="header-questao p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="fw-bold mb-2">🎯 Questão {{ numero }} de {{ total_questoes }}</h2>
+                            <p class="mb-0">
+                                <strong>Matéria:</strong> {{ questao.materia }} • 
+                                <strong>Dificuldade:</strong> {{ questao.dificuldade }}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-white" style="width: {{ (numero / total_questoes * 100) }}%"></div>
+                            </div>
+                            <p class="text-center mb-0 mt-2">{{ numero }}/{{ total_questoes }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-5">
+                    <!-- DICA AUTOMÁTICA -->
+                    {% if configs.dicasAutomaticas and questao.dica %}
+                    <div class="dica-container p-3 mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-lightbulb text-warning fs-4 me-3"></i>
+                            <div>
+                                <strong class="d-block">Dica Inteligente</strong>
+                                {{ questao.dica }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- FÓRMULA MATEMÁTICA -->
+                    {% if configs.formulasMatematicas and questao.formula %}
+                    <div class="formula-container p-3 mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-square-root-alt text-info fs-4 me-3"></i>
+                            <div>
+                                <strong class="d-block">Fórmula Útil</strong>
+                                {{ questao.formula }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ENUNCIADO -->
+                    <div class="enunciado mb-4">
+                        <h4 class="fw-bold text-dark mb-3">Enunciado</h4>
+                        <p class="fs-5 lh-base text-dark">{{ questao.enunciado }}</p>
+                    </div>
+
+                    <!-- ALTERNATIVAS -->
+                    <div class="alternativas mb-5">
+                        <h4 class="fw-bold text-dark mb-3">Alternativas</h4>
+                        <div id="alternativasContainer">
+                            {% for letra, texto in questao.alternativas.items() %}
+                            <div class="alternativa-item p-3 mb-3 border rounded-3" data-letra="{{ letra }}">
+                                <input type="radio" name="alternativa" value="{{ letra }}" id="alt{{ letra }}" 
+                                       class="form-check-input" {% if questao_respondida %}disabled{% endif %}>
+                                <label for="alt{{ letra }}" class="form-check-label w-100 ms-3 cursor-pointer">
+                                    <strong class="fs-5 me-3">{{ letra }}.</strong>
+                                    <span class="fs-5">{{ texto }}</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- FEEDBACK -->
+                    {% if questao_respondida %}
+                    <div class="feedback p-4 rounded-3 mb-4 {% if resposta_usuario == questao.resposta_correta %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+                        <h4 class="fw-bold mb-3">
+                            {% if resposta_usuario == questao.resposta_correta %}
+                            ✅ Resposta Correta!
+                            {% else %}
+                            ❌ Resposta Incorreta
+                            {% endif %}
+                        </h4>
+                        <p><strong>Sua resposta:</strong> {{ resposta_usuario }}</p>
+                        {% if resposta_usuario != questao.resposta_correta %}
+                        <p><strong>Resposta correta:</strong> {{ questao.resposta_correta }}</p>
+                        {% endif %}
+                        <div class="mt-3">
+                            <strong>Explicação:</strong>
+                            <p class="mb-0">{{ questao.explicacao }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- BOTÕES DE NAVEGAÇÃO -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if numero > 1 %}
+                            <a href="{{ url_for('questao', numero=numero-1) }}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i> Anterior
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('simulado') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-home me-2"></i> Voltar
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            {% if not questao_respondida %}
+                            <button class="btn btn-premium btn-lg px-4" id="btnResponder" disabled>
+                                <i class="fas fa-paper-plane me-2"></i> Confirmar Resposta
+                            </button>
+                            {% else %}
+                                {% if numero < total_questoes %}
+                                <a href="{{ url_for('questao', numero=numero+1) }}" class="btn btn-success btn-lg">
+                                    Próxima <i class="fas fa-arrow-right ms-2"></i>
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('resultado') }}" class="btn btn-warning btn-lg">
+                                    Finalizar <i class="fas fa-flag-checkered ms-2"></i>
+                                </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const alternativas = document.querySelectorAll('.alternativa-item');
+    const btnResponder = document.getElementById('btnResponder');
+    let respostaSelecionada = null;
+
+    {% if not questao_respondida %}
+    alternativas.forEach(alt => {
+        const input = alt.querySelector('input');
+        const label = alt.querySelector('label');
+
+        input.addEventListener('change', function() {
+            if (this.checked) {
+                respostaSelecionada = this.value;
+                btnResponder.disabled = false;
+                
+                alternativas.forEach(a => a.classList.remove('border-primary', 'bg-primary', 'text-white'));
+                alt.classList.add('border-primary', 'bg-primary', 'text-white');
+            }
+        });
+
+        label.addEventListener('click', function() {
+            input.checked = true;
+            input.dispatchEvent(new Event('change'));
+        });
+    });
+
+    btnResponder.addEventListener('click', async function() {
+        if (!respostaSelecionada) return;
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Enviando...';
+
+        try {
+            const response = await fetch('/api/questao/responder', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    questao_numero: {{ numero }},
+                    resposta: respostaSelecionada
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.reload();
+            } else {
+                throw new Error(data.error);
+            }
+
+        } catch (error) {
+            alert('Erro: ' + error.message);
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Confirmar Resposta';
+        }
+    });
+    {% else %}
+    // Destacar resposta do usuário e resposta correta
+    alternativas.forEach(alt => {
+        const letra = alt.dataset.letra;
+        if (letra === '{{ questao.resposta_correta }}') {
+            alt.classList.add('border-success', 'bg-success', 'text-white');
+        } else if (letra === '{{ resposta_usuario }}' && letra !== '{{ questao.resposta_correta }}') {
+            alt.classList.add('border-danger', 'bg-danger', 'text-white');
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
