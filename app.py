@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+ï»¿from flask import Flask, render_template, request, jsonify, session
 import sqlite3
 import json
 import random
@@ -9,20 +9,17 @@ app = Flask(__name__)
 app.secret_key = 'concurso_master_ai_2024'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
-# Configuração mínima do banco
 def get_db_connection():
     conn = sqlite3.connect('concurso.db')
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_database():
-    \"\"\"Inicialização mínima e segura do banco\"\"\"
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Apenas tabelas essenciais
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS questões (
+        CREATE TABLE IF NOT EXISTS questoes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             enunciado TEXT,
             materia TEXT,
@@ -41,7 +38,6 @@ def init_database():
         )
     ''')
     
-    # Dados mínimos
     cursor.execute('SELECT COUNT(*) FROM temas_redacao')
     if cursor.fetchone()[0] == 0:
         cursor.execute('INSERT INTO temas_redacao (tema, categoria, dicas) VALUES (?, ?, ?)', 
@@ -51,10 +47,9 @@ def init_database():
     conn.close()
     return True
 
-# Rotas básicas
 @app.route('/')
 def index():
-    return 'ConcursoMaster AI - Online! ??'
+    return 'ConcursoMaster AI - Online!'
 
 @app.route('/simulado')
 def simulado():
@@ -69,7 +64,7 @@ def redacao():
     tema = cursor.fetchone()
     conn.close()
     
-    tema_dict = dict(tema) if tema else {'tema': 'Tema padrão', 'categoria': 'Geral', 'dicas': 'Dicas aqui'}
+    tema_dict = dict(tema) if tema else {'tema': 'Tema padrao', 'categoria': 'Geral', 'dicas': 'Dicas aqui'}
     return render_template('redacao.html', tema=tema_dict)
 
 @app.route('/dashboard')
@@ -80,24 +75,23 @@ def dashboard():
 def health():
     return {'status': 'online', 'message': 'ConcursoMaster AI funcionando'}
 
-# API simples
 @app.route('/api/questoes/random')
 def get_questoes():
     try:
         init_database()
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM questões LIMIT 5')
-        questões = [dict(row) for row in cursor.fetchall()]
+        cursor.execute('SELECT * FROM questoes LIMIT 5')
+        questao_list = [dict(row) for row in cursor.fetchall()]
         conn.close()
         
-        for q in questões:
+        for q in questao_list:
             try:
                 q['alternativas'] = json.loads(q['alternativas'])
             except:
                 q['alternativas'] = {'A': 'Alt A', 'B': 'Alt B', 'C': 'Alt C', 'D': 'Alt D'}
         
-        return jsonify({'questoes': questões})
+        return jsonify({'questoes': questao_list})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
