@@ -3,309 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConcursoMaster AI - Simulados</title>
+    <title>ConcursoMaster AI 3.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { text-align: center; color: white; margin-bottom: 30px; }
-        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
-        .card { background: white; border-radius: 15px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .stats { display: flex; gap: 20px; margin-bottom: 30px; }
-        .stat { flex: 1; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px; }
-        .stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }
-        .materias-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .materia-card { background: #667eea; color: white; padding: 20px; border-radius: 10px; cursor: pointer; transition: transform 0.3s; text-align: center; }
-        .materia-card:hover { transform: translateY(-5px); background: #5a6fd8; }
-        
-        /* SIMULADO */
-        #simulado { display: none; }
-        .questao-card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 20px; }
-        .alternativa { padding: 15px; margin: 10px 0; border: 2px solid #e9ecef; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
-        .alternativa:hover { border-color: #667eea; background: #f8f9fa; }
-        .alternativa.selecionada { background: #667eea; color: white; border-color: #667eea; }
-        .alternativa.correta { background: #28a745; color: white; border-color: #28a745; }
-        .alternativa.incorreta { background: #dc3545; color: white; border-color: #dc3545; }
-        .btn { padding: 12px 25px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; margin: 10px; font-size: 1rem; }
-        .btn:hover { background: #5a6fd8; }
-        .btn-voltar { background: #6c757d; }
-        .btn-voltar:hover { background: #5a6268; }
-        .controles { display: flex; justify-content: space-between; margin-top: 20px; }
-        .contador { color: #666; font-size: 0.9rem; }
-        .resultado { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px; margin-top: 20px; }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+        }
+        .feature-card {
+            transition: transform 0.3s;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- DASHBOARD -->
-        <div id="dashboard">
-            <div class="header">
-                <h1>🎯 ConcursoMaster AI</h1>
-                <p>Sistema Inteligente de Simulados para Concursos</p>
-            </div>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI 3.0
+            </a>
+        </div>
+    </nav>
 
-            <div class="card">
-                <div class="stats">
-                    <div class="stat">
-                        <div class="stat-number" id="totalQuestoes">0</div>
-                        <div>Total de Questões</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number" id="totalMaterias">0</div>
-                        <div>Matérias Disponíveis</div>
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Sua Plataforma Completa de Estudos</h1>
+            <p class="lead">Simulados inteligentes, redações corrigidas e dashboard personalizado</p>
+            <div class="mt-4">
+                <a href="/simulado" class="btn btn-light btn-lg me-3">
+                    <i class="fas fa-play-circle"></i> Iniciar Simulado
+                </a>
+                <a href="/redacao" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-edit"></i> Praticar Redação
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section class="container my-5">
+        <h2 class="text-center mb-4">Dashboard de Desempenho</h2>
+        
+        <div class="row">
+            <!-- Estatísticas Gerais -->
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <h5><i class="fas fa-chart-bar text-primary"></i> Estatísticas</h5>
+                    <div id="estatisticas-gerais">
+                        Carregando...
                     </div>
                 </div>
+            </div>
 
-                <h3 style="margin-bottom: 20px; text-align: center;">📚 Escolha uma Matéria para Simular:</h3>
-                <div class="materias-grid" id="materiasGrid">
-                    <!-- Matérias carregadas via JavaScript -->
+            <!-- Gráfico de Desempenho -->
+            <div class="col-md-8">
+                <div class="stats-card">
+                    <h5><i class="fas fa-chart-line text-success"></i> Desempenho por Matéria</h5>
+                    <canvas id="desempenhoChart" width="400" height="200"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- SIMULADO -->
-        <div id="simulado">
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 id="questaoTitulo">Questão 1</h3>
-                    <button class="btn btn-voltar" onclick="voltarDashboard()">← Voltar ao Início</button>
-                </div>
-
-                <div class="questao-card">
-                    <div id="questaoEnunciado" style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px;">
-                        Carregando questão...
-                    </div>
-
-                    <div id="alternativas">
-                        <!-- Alternativas carregadas via JavaScript -->
-                    </div>
-
-                    <div class="controles">
-                        <div class="contador" id="contadorQuestao">Questão 1 de 10</div>
-                        <div>
-                            <button class="btn" id="btnAnterior" onclick="questaoAnterior()" style="display: none;">← Anterior</button>
-                            <button class="btn" id="btnProxima" onclick="proximaQuestao()">Próxima Questão →</button>
-                            <button class="btn" id="btnVerificar" onclick="verificarResposta()" style="display: none; background: #28a745;">Verificar Resposta</button>
-                        </div>
+        <!-- Cards de Funcionalidades -->
+        <div class="row mt-5">
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                        <h4>Simulados Inteligentes</h4>
+                        <p>Simulados personalizáveis com questões aleatórias e relatórios detalhados</p>
+                        <a href="/simulado" class="btn btn-primary">Começar</a>
                     </div>
                 </div>
+            </div>
 
-                <div id="resultado" class="resultado" style="display: none;">
-                    <!-- Resultado da resposta -->
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-edit fa-3x text-success mb-3"></i>
+                        <h4>Redações Corrigidas</h4>
+                        <p>Pratique redações com temas atuais e receba correção detalhada</p>
+                        <a href="/redacao" class="btn btn-success">Escrever</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card feature-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-pie fa-3x text-info mb-3"></i>
+                        <h4>Dashboard Avançado</h4>
+                        <p>Acompanhe seu progresso com métricas detalhadas e recomendações</p>
+                        <a href="/dashboard" class="btn btn-info">Ver Detalhes</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let questoes = [];
-        let questaoAtual = 0;
-        let materiaSelecionada = '';
-        let respostaSelecionada = null;
-        let respostasCorretas = 0;
-
-        // Carregar dashboard
+        // Carregar dados do dashboard
         async function carregarDashboard() {
             try {
-                // Carregar dados do dashboard
-                const [dashboardResponse, materiasResponse] = await Promise.all([
-                    fetch('/api/dashboard-data'),
-                    fetch('/api/materias')
-                ]);
-
-                const dashboardData = await dashboardResponse.json();
-                const materiasData = await materiasResponse.json();
-
-                // Atualizar estatísticas
-                document.getElementById('totalQuestoes').textContent = dashboardData.total_questoes;
-                document.getElementById('totalMaterias').textContent = materiasData.materias.length;
-
-                // Carregar matérias
-                let html = '';
-                materiasData.materias.forEach(materia => {
-                    const quantidade = dashboardData.questoes_por_materia[materia] || 0;
-                    html += `
-                        <div class="materia-card" onclick="iniciarSimulado('${materia}')">
-                            <div style="font-size: 1.2rem; font-weight: bold;">${materia}</div>
-                            <div>${quantidade} questões disponíveis</div>
-                        </div>
-                    `;
-                });
-                document.getElementById('materiasGrid').innerHTML = html;
-
-            } catch (error) {
-                console.error('Erro ao carregar dashboard:', error);
-                document.getElementById('materiasGrid').innerHTML = '<p>Erro ao carregar matérias. Tente recarregar a página.</p>';
-            }
-        }
-
-        // Iniciar simulado
-        async function iniciarSimulado(materia) {
-            materiaSelecionada = materia;
-            questaoAtual = 0;
-            respostasCorretas = 0;
-            
-            try {
-                // Carregar questões da matéria
-                const response = await fetch(`/api/questoes/${encodeURIComponent(materia)}?limit=10`);
+                const response = await fetch('/api/dashboard/estatisticas');
                 const data = await response.json();
                 
-                if (data.questoes && data.questoes.length > 0) {
-                    questoes = data.questoes;
-                    
-                    // Mostrar simulado
-                    document.getElementById('dashboard').style.display = 'none';
-                    document.getElementById('simulado').style.display = 'block';
-                    
-                    mostrarQuestao();
-                } else {
-                    alert(`Nenhuma questão encontrada para ${materia}.`);
+                // Atualizar estatísticas gerais
+                document.getElementById('estatisticas-gerais').innerHTML = `
+                    <p>Total de Questões: ${data.estatisticas.total_questoes || 0}</p>
+                    <p>Matérias Disponíveis: ${Object.keys(data.estatisticas.questoes_por_materia || {}).length}</p>
+                `;
+                
+                // Criar gráfico
+                if (data.estatisticas.questoes_por_materia) {
+                    criarGraficoDesempenho(data.estatisticas.questoes_por_materia);
                 }
+                
             } catch (error) {
-                console.error('Erro ao carregar questões:', error);
-                alert('Erro ao carregar questões. Tente novamente.');
+                console.error('Erro ao carregar dashboard:', error);
             }
         }
-
-        // Mostrar questão atual
-        function mostrarQuestao() {
-            if (questoes.length === 0) return;
-
-            const questao = questoes[questaoAtual];
-            respostaSelecionada = null;
+        
+        function criarGraficoDesempenho(dados) {
+            const ctx = document.getElementById('desempenhoChart').getContext('2d');
+            const materias = Object.keys(dados);
+            const quantidades = Object.values(dados);
             
-            // Atualizar título e contador
-            document.getElementById('questaoTitulo').textContent = `Questão ${questaoAtual + 1} - ${materiaSelecionada}`;
-            document.getElementById('contadorQuestao').textContent = `Questão ${questaoAtual + 1} de ${questoes.length}`;
-            
-            // Atualizar enunciado
-            document.getElementById('questaoEnunciado').textContent = questao.enunciado;
-            
-            // Criar alternativas
-            let alternativasHTML = '';
-            const alternativas = [
-                { letra: 'A', texto: questao.alternativa_a },
-                { letra: 'B', texto: questao.alternativa_b },
-                { letra: 'C', texto: questao.alternativa_c },
-                { letra: 'D', texto: questao.alternativa_d }
-            ];
-
-            alternativas.forEach(alt => {
-                alternativasHTML += `
-                    <div class="alternativa" onclick="selecionarAlternativa(this, '${alt.letra}')">
-                        <strong>${alt.letra})</strong> ${alt.texto}
-                    </div>
-                `;
-            });
-
-            document.getElementById('alternativas').innerHTML = alternativasHTML;
-            
-            // Mostrar/ocultar botões
-            document.getElementById('btnAnterior').style.display = questaoAtual > 0 ? 'inline-block' : 'none';
-            document.getElementById('btnProxima').style.display = questaoAtual < questoes.length - 1 ? 'inline-block' : 'none';
-            document.getElementById('btnVerificar').style.display = 'inline-block';
-            
-            // Ocultar resultado
-            document.getElementById('resultado').style.display = 'none';
-            
-            // Limpar seleções
-            document.querySelectorAll('.alternativa').forEach(alt => {
-                alt.classList.remove('selecionada', 'correta', 'incorreta');
-            });
-        }
-
-        // Selecionar alternativa
-        function selecionarAlternativa(elemento, letra) {
-            respostaSelecionada = letra;
-            
-            // Remover seleção de todas
-            document.querySelectorAll('.alternativa').forEach(alt => {
-                alt.classList.remove('selecionada');
-            });
-            
-            // Selecionar atual
-            elemento.classList.add('selecionada');
-        }
-
-        // Verificar resposta
-        function verificarResposta() {
-            if (!respostaSelecionada) {
-                alert('Selecione uma alternativa antes de verificar.');
-                return;
-            }
-
-            const questao = questoes[questaoAtual];
-            const correta = questao.resposta_correta;
-            const acertou = respostaSelecionada === correta;
-            
-            if (acertou) {
-                respostasCorretas++;
-            }
-
-            // Mostrar resultado
-            const resultadoDiv = document.getElementById('resultado');
-            resultadoDiv.innerHTML = `
-                <h4>${acertou ? '✅ Parabéns! Resposta Correta!' : '❌ Resposta Incorreta'}</h4>
-                <p><strong>Sua resposta:</strong> ${respostaSelecionada}</p>
-                <p><strong>Resposta correta:</strong> ${correta}</p>
-                ${!acertou ? `<p><strong>Explicação:</strong> A alternativa ${correta} é a correta.</p>` : ''}
-                <p><strong>Estatística:</strong> ${respostasCorretas} de ${questaoAtual + 1} questões corretas</p>
-            `;
-            resultadoDiv.style.display = 'block';
-
-            // Destacar alternativas
-            document.querySelectorAll('.alternativa').forEach(alt => {
-                const letra = alt.textContent.charAt(0);
-                if (letra === correta) {
-                    alt.classList.add('correta');
-                } else if (letra === respostaSelecionada && !acertou) {
-                    alt.classList.add('incorreta');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: materias,
+                    datasets: [{
+                        label: 'Questões por Matéria',
+                        data: quantidades,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
                 }
             });
-
-            // Desabilitar mais seleções
-            document.querySelectorAll('.alternativa').forEach(alt => {
-                alt.style.pointerEvents = 'none';
-            });
         }
-
-        // Navegação
-        function questaoAnterior() {
-            if (questaoAtual > 0) {
-                questaoAtual--;
-                mostrarQuestao();
-            }
-        }
-
-        function proximaQuestao() {
-            if (questaoAtual < questoes.length - 1) {
-                questaoAtual++;
-                mostrarQuestao();
-            } else {
-                // Fim do simulado
-                const resultadoFinal = document.getElementById('resultado');
-                resultadoFinal.innerHTML = `
-                    <h3>🎉 Simulado Concluído!</h3>
-                    <p><strong>Resultado Final:</strong> ${respostasCorretas} de ${questoes.length} questões corretas</p>
-                    <p><strong>Percentual de acerto:</strong> ${((respostasCorretas / questoes.length) * 100).toFixed(1)}%</p>
-                    <button class="btn" onclick="voltarDashboard()">Voltar ao Início</button>
-                    <button class="btn" onclick="reiniciarSimulado()">Fazer Outro Simulado</button>
-                `;
-                resultadoFinal.style.display = 'block';
-            }
-        }
-
-        function reiniciarSimulado() {
-            iniciarSimulado(materiaSelecionada);
-        }
-
-        function voltarDashboard() {
-            document.getElementById('dashboard').style.display = 'block';
-            document.getElementById('simulado').style.display = 'none';
-            carregarDashboard(); // Recarregar estatísticas
-        }
-
-        // Inicializar
+        
+        // Inicializar dashboard
         carregarDashboard();
     </script>
 </body>
