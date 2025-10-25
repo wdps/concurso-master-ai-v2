@@ -1,555 +1,65 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulados Personalizados - ConcursoMaster AI</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Simulado - ConcursoMaster AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulado.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-brain"></i> ConcursoMaster AI
-            </a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Início</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/simulado">Simulados</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/redacao">Redação</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
-                    </li>
-                </ul>
+    <div class="simulado-container">
+        <div class="config-panel">
+            <h2>🎯 Configurar Simulado</h2>
+            
+            <div class="config-group">
+                <h3>📊 Quantidade de Questões</h3>
+                <div class="quantidade-buttons">
+                    <button class="quantidade-btn active" data-quantidade="5">5 Questões</button>
+                    <button class="quantidade-btn" data-quantidade="10">10 Questões</button>
+                    <button class="quantidade-btn" data-quantidade="15">15 Questões</button>
+                    <button class="quantidade-btn" data-quantidade="20">20 Questões</button>
+                </div>
             </div>
+
+            <div class="config-group">
+                <div class="select-all-group">
+                    <h3>📚 Matérias</h3>
+                    <button type="button" class="select-all-btn" id="selectAll">
+                        ✅ Selecionar Todas
+                    </button>
+                </div>
+                <div class="materias-container">
+                    <div class="materias-grid">
+                        {% for materia in materias %}
+                        <div class="materia-item">
+                            <input type="checkbox" 
+                                   class="materia-checkbox" 
+                                   id="materia-{{ loop.index }}" 
+                                   value="{{ materia }}"
+                                   checked>
+                            <label for="materia-{{ loop.index }}">{{ materia }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; color: rgba(255,255,255,0.8);">
+                    <small id="contadorMaterias">{{ materias|length }} matérias selecionadas</small>
+                </div>
+            </div>
+
+            <button class="btn-iniciar" id="btnIniciarSimulado">
+                🚀 Iniciar Simulado
+            </button>
         </div>
-    </nav>
 
-    <div class="main-container">
-        <div class="container">
-            <!-- Tela de Configuração -->
-            <div id="config-screen" class="fade-in">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div class="config-card">
-                            <h2 class="text-center mb-4">
-                                <i class="fas fa-cogs me-2"></i>Configurar Simulado
-                            </h2>
-                            
-                            <!-- Quantidade de Questões -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Quantidade de Questões</label>
-                                <input type="range" class="form-range" id="quantidade-slider" min="5" max="50" value="10">
-                                <div class="d-flex justify-content-between">
-                                    <small>5 questões</small>
-                                    <span id="quantidade-value" class="fw-bold">10 questões</span>
-                                    <small>50 questões</small>
-                                </div>
-                            </div>
-
-                            <!-- Tempo por Questão -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Tempo por Questão (segundos)</label>
-                                <input type="range" class="form-range" id="tempo-slider" min="30" max="180" value="60">
-                                <div class="d-flex justify-content-between">
-                                    <small>30s</small>
-                                    <span id="tempo-value" class="fw-bold">60 segundos</span>
-                                    <small>180s</small>
-                                </div>
-                            </div>
-
-                            <!-- Matérias -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Selecione as Matérias</label>
-                                <div class="materias-grid" id="materias-container">
-                                    <!-- Matérias serão carregadas via JavaScript -->
-                                </div>
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="selectAllMaterias()">
-                                        <i class="fas fa-check-double me-1"></i>Selecionar Todas
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllMaterias()">
-                                        <i class="fas fa-times me-1"></i>Limpar Seleção
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Resumo -->
-                            <div class="card bg-light mb-4">
-                                <div class="card-body">
-                                    <h6 class="card-title">
-                                        <i class="fas fa-info-circle me-2"></i>Resumo do Simulado
-                                    </h6>
-                                    <div id="resumo-simulado" class="small">
-                                        Selecione as matérias para ver o resumo...
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Ações -->
-                            <div class="text-center">
-                                <button id="btn-iniciar" class="btn btn-primary btn-lg px-5" onclick="iniciarSimulado()">
-                                    <i class="fas fa-play me-2"></i>Iniciar Simulado
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tela do Simulado -->
-            <div id="simulado-screen" class="d-none fade-in">
-                <div class="row">
-                    <div class="col-lg-8 mx-auto">
-                        <!-- Header do Simulado -->
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-md-6">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-clock me-2 text-warning"></i>
-                                            <span id="timer">00:00</span>
-                                        </h5>
-                                    </div>
-                                    <div class="col-md-6 text-md-end">
-                                        <span id="progress-text">Questão 1 de 10</span>
-                                    </div>
-                                </div>
-                                <div class="progress-container mt-3">
-                                    <div class="progress">
-                                        <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Questão -->
-                        <div id="questao-container" class="questao-card">
-                            <!-- Questão será carregada via JavaScript -->
-                        </div>
-
-                        <!-- Navegação -->
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <button id="btn-anterior" class="btn btn-outline-primary" onclick="questaoAnterior()" disabled>
-                                        <i class="fas fa-arrow-left me-2"></i>Anterior
-                                    </button>
-                                    <button id="btn-proxima" class="btn btn-primary" onclick="proximaQuestao()">
-                                        Próxima<i class="fas fa-arrow-right ms-2"></i>
-                                    </button>
-                                    <button id="btn-finalizar" class="btn btn-success d-none" onclick="finalizarSimulado()">
-                                        <i class="fas fa-flag-checkered me-2"></i>Finalizar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tela de Resultado -->
-            <div id="resultado-screen" class="d-none fade-in">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="config-card text-center">
-                            <h2 class="mb-4">
-                                <i class="fas fa-trophy me-2 text-warning"></i>Simulado Finalizado!
-                            </h2>
-                            
-                            <div id="resultado-content">
-                                <!-- Resultados serão carregados via JavaScript -->
-                            </div>
-
-                            <div class="mt-4">
-                                <button class="btn btn-primary me-3" onclick="voltarParaConfig()">
-                                    <i class="fas fa-redo me-2"></i>Novo Simulado
-                                </button>
-                                <a href="/dashboard" class="btn btn-success">
-                                    <i class="fas fa-chart-line me-2"></i>Ver Dashboard
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{{ url_for('index') }}" style="color: #667eea; text-decoration: none; font-weight: 500;">
+                ← Voltar para a Página Inicial
+            </a>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let simuladoData = {
-            questões: [],
-            respostas: {},
-            questaoAtual: 0,
-            tempoRestante: 0,
-            timerInterval: null,
-            config: {}
-        };
-
-        // Carregar matérias disponíveis
-        async function carregarMaterias() {
-            try {
-                const response = await fetch('/api/questoes/random?quantidade=1');
-                const data = await response.json();
-                
-                // Buscar matérias únicas
-                const materiasResponse = await fetch('/api/questoes/random?quantidade=100');
-                const materiasData = await materiasResponse.json();
-                
-                const materiasUnicas = [...new Set(materiasData.questoes.map(q => q.materia))];
-                const container = document.getElementById('materias-container');
-                
-                container.innerHTML = materiasUnicas.map(materia => `
-                    <div class="materia-option" onclick="toggleMateria(this)" data-materia="${materia}">
-                        ${materia}
-                    </div>
-                `).join('');
-                
-            } catch (error) {
-                console.error('Erro ao carregar matérias:', error);
-            }
-        }
-
-        // Sliders
-        document.getElementById('quantidade-slider').addEventListener('input', function() {
-            const value = this.value;
-            document.getElementById('quantidade-value').textContent = `${value} questões`;
-            atualizarResumo();
-        });
-
-        document.getElementById('tempo-slider').addEventListener('input', function() {
-            const value = this.value;
-            document.getElementById('tempo-value').textContent = `${value} segundos`;
-            atualizarResumo();
-        });
-
-        // Controle de matérias
-        function toggleMateria(element) {
-            element.classList.toggle('selected');
-            atualizarResumo();
-        }
-
-        function selectAllMaterias() {
-            document.querySelectorAll('.materia-option').forEach(opt => {
-                opt.classList.add('selected');
-            });
-            atualizarResumo();
-        }
-
-        function deselectAllMaterias() {
-            document.querySelectorAll('.materia-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            atualizarResumo();
-        }
-
-        function getMateriasSelecionadas() {
-            return Array.from(document.querySelectorAll('.materia-option.selected'))
-                       .map(opt => opt.dataset.materia);
-        }
-
-        function atualizarResumo() {
-            const quantidade = document.getElementById('quantidade-slider').value;
-            const tempo = document.getElementById('tempo-slider').value;
-            const materias = getMateriasSelecionadas();
-            
-            const resumo = `
-                <strong>${quantidade} questões</strong> | 
-                <strong>${tempo}s por questão</strong> | 
-                <strong>${materias.length} matérias</strong> selecionadas
-                ${materias.length > 0 ? `<br><small>${materias.join(', ')}</small>` : ''}
-            `;
-            
-            document.getElementById('resumo-simulado').innerHTML = resumo;
-        }
-
-        // Iniciar simulado
-        async function iniciarSimulado() {
-            const quantidade = parseInt(document.getElementById('quantidade-slider').value);
-            const materias = getMateriasSelecionadas();
-            const tempoPorQuestao = parseInt(document.getElementById('tempo-slider').value);
-            
-            if (materias.length === 0) {
-                alert('Selecione pelo menos uma matéria!');
-                return;
-            }
-
-            try {
-                document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
-                document.getElementById('btn-iniciar').disabled = true;
-
-                const response = await fetch('/api/simulado/iniciar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        quantidade: quantidade,
-                        materias: materias,
-                        tempo_por_questao: tempoPorQuestao
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    simuladoData.config = { quantidade, materias, tempoPorQuestao };
-                    simuladoData.tempoRestante = quantidade * tempoPorQuestao;
-                    
-                    // Mostrar tela do simulado
-                    document.getElementById('config-screen').classList.add('d-none');
-                    document.getElementById('simulado-screen').classList.remove('d-none');
-                    
-                    // Iniciar timer e carregar primeira questão
-                    iniciarTimer();
-                    carregarQuestao(0);
-                } else {
-                    alert('Erro ao iniciar simulado: ' + data.error);
-                }
-                
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao iniciar simulado');
-            } finally {
-                document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-play me-2"></i>Iniciar Simulado';
-                document.getElementById('btn-iniciar').disabled = false;
-            }
-        }
-
-        // Timer
-        function iniciarTimer() {
-            atualizarTimerDisplay();
-            simuladoData.timerInterval = setInterval(() => {
-                simuladoData.tempoRestante--;
-                atualizarTimerDisplay();
-                
-                if (simuladoData.tempoRestante <= 0) {
-                    clearInterval(simuladoData.timerInterval);
-                    finalizarSimulado();
-                }
-            }, 1000);
-        }
-
-        function atualizarTimerDisplay() {
-            const minutes = Math.floor(simuladoData.tempoRestante / 60);
-            const seconds = simuladoData.tempoRestante % 60;
-            document.getElementById('timer').textContent = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        // Navegação de questões
-        async function carregarQuestao(index) {
-            try {
-                const response = await fetch(`/api/simulado/questao/${simuladoData.questoes[index].id}`);
-                const data = await response.json();
-                
-                if (data.questao) {
-                    exibirQuestao(data.questao, index);
-                    simuladoData.questaoAtual = index;
-                    atualizarNavegacao();
-                }
-            } catch (error) {
-                console.error('Erro ao carregar questão:', error);
-            }
-        }
-
-        function exibirQuestao(questao, index) {
-            const container = document.getElementById('questao-container');
-            const alternativas = Object.entries(questao.alternativas)
-                .map(([letra, texto]) => `
-                    <button class="alternativa-btn" onclick="selecionarAlternativa('${letra}')" data-letra="${letra}">
-                        <div class="alternativa-letter">${letra}</div>
-                        <div class="alternativa-texto">${texto}</div>
-                    </button>
-                `).join('');
-            
-            container.innerHTML = `
-                <div class="questao-header mb-4">
-                    <span class="badge bg-primary">${questao.materia}</span>
-                    <span class="badge bg-secondary ms-2">${questao.dificuldade}</span>
-                </div>
-                <div class="questao-enunciado">
-                    ${questao.enunciado}
-                </div>
-                <div class="alternativas-list">
-                    ${alternativas}
-                </div>
-            `;
-            
-            // Restaurar resposta selecionada se existir
-            const respostaSalva = simuladoData.respostas[questao.id];
-            if (respostaSalva) {
-                selecionarAlternativa(respostaSalva.resposta, false);
-            }
-            
-            // Atualizar progresso
-            const progresso = ((index + 1) / simuladoData.config.quantidade) * 100;
-            document.getElementById('progress-bar').style.width = `${progresso}%`;
-            document.getElementById('progress-text').textContent = 
-                `Questão ${index + 1} de ${simuladoData.config.quantidade}`;
-        }
-
-        function selecionarAlternativa(letra, salvar = true) {
-            // Remover seleção anterior
-            document.querySelectorAll('.alternativa-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            
-            // Selecionar nova
-            const btn = document.querySelector(`.alternativa-btn[data-letra="${letra}"]`);
-            if (btn) {
-                btn.classList.add('selected');
-                
-                if (salvar) {
-                    const questaoAtual = simuladoData.questoes[simuladoData.questaoAtual];
-                    salvarResposta(questaoAtual.id, letra);
-                }
-            }
-        }
-
-        async function salvarResposta(questaoId, resposta) {
-            try {
-                await fetch('/api/simulado/responder', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        questao_id: questaoId,
-                        resposta: resposta
-                    })
-                });
-                
-                simuladoData.respostas[questaoId] = { resposta, timestamp: new Date().toISOString() };
-            } catch (error) {
-                console.error('Erro ao salvar resposta:', error);
-            }
-        }
-
-        function questaoAnterior() {
-            if (simuladoData.questaoAtual > 0) {
-                carregarQuestao(simuladoData.questaoAtual - 1);
-            }
-        }
-
-        function proximaQuestao() {
-            if (simuladoData.questaoAtual < simuladoData.config.quantidade - 1) {
-                carregarQuestao(simuladoData.questaoAtual + 1);
-            }
-        }
-
-        function atualizarNavegacao() {
-            const btnAnterior = document.getElementById('btn-anterior');
-            const btnProxima = document.getElementById('btn-proxima');
-            const btnFinalizar = document.getElementById('btn-finalizar');
-            
-            btnAnterior.disabled = simuladoData.questaoAtual === 0;
-            
-            const isUltimaQuestao = simuladoData.questaoAtual === simuladoData.config.quantidade - 1;
-            btnProxima.classList.toggle('d-none', isUltimaQuestao);
-            btnFinalizar.classList.toggle('d-none', !isUltimaQuestao);
-        }
-
-        // Finalizar simulado
-        async function finalizarSimulado() {
-            if (simuladoData.timerInterval) {
-                clearInterval(simuladoData.timerInterval);
-            }
-            
-            try {
-                const response = await fetch('/api/simulado/finalizar', {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    exibirResultado(data.relatorio);
-                    document.getElementById('simulado-screen').classList.add('d-none');
-                    document.getElementById('resultado-screen').classList.remove('d-none');
-                }
-            } catch (error) {
-                console.error('Erro ao finalizar simulado:', error);
-                alert('Erro ao finalizar simulado');
-            }
-        }
-
-        function exibirResultado(relatorio) {
-            const geral = relatorio.geral;
-            const container = document.getElementById('resultado-content');
-            
-            container.innerHTML = `
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.percentual_acerto}%</div>
-                            <div class="kpi-label">Acerto</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.acertos}</div>
-                            <div class="kpi-label">Acertos</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.erros}</div>
-                            <div class="kpi-label">Erros</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.tempo_total_minutos}m</div>
-                            <div class="kpi-label">Tempo</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-chart-bar me-2"></i>Desempenho por Matéria
-                    </div>
-                    <div class="card-body">
-                        ${Object.entries(relatorio.por_materia).map(([materia, stats]) => `
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>${materia}</span>
-                                <span class="score-badge ${getScoreBadgeClass(stats.percentual)}">
-                                    ${stats.acertos}/${stats.total} (${stats.percentual}%)
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function getScoreBadgeClass(percentual) {
-            if (percentual >= 80) return 'score-high';
-            if (percentual >= 60) return 'score-medium';
-            return 'score-low';
-        }
-
-        function voltarParaConfig() {
-            document.getElementById('resultado-screen').classList.add('d-none');
-            document.getElementById('config-screen').classList.remove('d-none');
-            location.reload(); // Recarregar para limpar estado
-        }
-
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarMaterias();
-            atualizarResumo();
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/simulado.js') }}"></script>
 </body>
 </html>
