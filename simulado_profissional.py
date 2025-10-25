@@ -574,4 +574,8 @@ def main():
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     main()
+=======
+    main()
+>>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
