@@ -10,198 +10,258 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI 3.0
+                <i class="fas fa-brain"></i> ConcursoMaster AI
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Início</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/simulado">Simulado</a>
+                        <a class="nav-link" href="/simulado">Simulados</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/redacao">Redação</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/dashboard">Dashboard</a>
+                        <a class="nav-link active" href="/dashboard">Dashboard</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="dashboard-container container-fluid">
-        
-        <h1 class="page-header"><i class="fas fa-chart-line"></i> Dashboard de Desempenho</h1>
+    <div class="dashboard-container">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="page-header text-center mb-5">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-chart-line me-3"></i>Dashboard de Desempenho
+                </h1>
+                <p class="lead">Acompanhe sua evolução e otimize seus estudos</p>
+            </div>
 
-        <div class="row">
-            <div class="col-xl-3 col-md-6">
-                <div class="kpi-card">
-                    <div class="kpi-icon icon-primary">
-                        <i class="fas fa-tachometer-alt"></i>
+            <!-- Loading -->
+            <div id="loading-indicator" class="text-center py-5">
+                <div class="loading-spinner mx-auto mb-3"></div>
+                <p>Carregando seus dados...</p>
+            </div>
+
+            <!-- Conteúdo Principal -->
+            <div id="dashboard-content" class="d-none">
+                <!-- KPIs -->
+                <div class="row g-4 mb-5">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-primary">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <div class="kpi-value" id="kpi-media-geral">--%</div>
+                                <div class="kpi-label">Média Geral</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="kpi-info">
-                        <div class="kpi-value" id="kpi-media-geral">--%</div>
-                        <div class="kpi-label">Média Geral</div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-info">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <div class="kpi-value" id="kpi-tempo-estudo">--h</div>
+                                <div class="kpi-label">Tempo de Estudo</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <div class="kpi-value" id="kpi-simulados">--</div>
+                                <div class="kpi-label">Simulados Realizados</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="kpi-card">
+                            <div class="kpi-icon icon-warning">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="kpi-info">
+                                <div class="kpi-value" id="kpi-questoes">--</div>
+                                <div class="kpi-label">Questões Respondidas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos Principais -->
+                <div class="row g-4 mb-5">
+                    <div class="col-lg-8">
+                        <div class="chart-container">
+                            <h5><i class="fas fa-chart-line text-primary me-2"></i>Evolução do Desempenho</h5>
+                            <canvas id="evolucaoChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="chart-container">
+                            <h5><i class="fas fa-chart-pie text-info me-2"></i>Distribuição por Matéria</h5>
+                            <canvas id="materiasChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estatísticas Detalhadas -->
+                <div class="row g-4 mb-5">
+                    <div class="col-lg-6">
+                        <div class="chart-container">
+                            <h5><i class="fas fa-chart-bar text-success me-2"></i>Desempenho por Matéria</h5>
+                            <canvas id="desempenhoMateriasChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="chart-container">
+                            <h5><i class="fas fa-clock text-warning me-2"></i>Evolução do Tempo</h5>
+                            <canvas id="tempoChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Histórico -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="history-card">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-history text-success me-2"></i>Histórico Recente de Simulados
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="exportarDados()">
+                                    <i class="fas fa-download me-1"></i>Exportar Dados
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Desempenho</th>
+                                            <th>Acertos</th>
+                                            <th>Erros</th>
+                                            <th>Respondidas</th>
+                                            <th>Tempo Total</th>
+                                            <th>Tempo Médio</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historico-tbody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="kpi-card">
-                    <div class="kpi-icon icon-info">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="kpi-info">
-                        <div class="kpi-value" id="kpi-tempo-estudo">-- min</div>
-                        <div class="kpi-label">Tempo de Estudo</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="kpi-card">
-                    <div class="kpi-icon icon-success">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="kpi-info">
-                        <div class="kpi-value" id="kpi-simulados">--</div>
-                        <div class="kpi-label">Simulados Realizados</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="kpi-card">
-                    <div class="kpi-icon icon-warning">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="kpi-info">
-                        <div class="kpi-value" id="kpi-questoes">--</div>
-                        <div class="kpi-label">Questões Respondidas</div>
-                    </div>
+
+            <!-- Estado Vazio -->
+            <div id="empty-state" class="text-center py-5 d-none">
+                <div class="empty-state">
+                    <i class="fas fa-chart-pie fa-4x mb-4"></i>
+                    <h3>Nenhum dado disponível</h3>
+                    <p class="text-muted mb-4">Realize alguns simulados para ver suas estatísticas</p>
+                    <a href="/simulado" class="btn btn-primary btn-lg">
+                        <i class="fas fa-play me-2"></i>Iniciar Primeiro Simulado
+                    </a>
                 </div>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-lg-7">
-                <div class="chart-container">
-                    <h5><i class="fas fa-chart-line text-primary"></i> Evolução do Desempenho</h5>
-                    <canvas id="evolucaoChart"></canvas>
-                </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="chart-container">
-                    <h5><i class="fas fa-chart-pie text-info"></i> Desempenho por Matéria (Global)</h5>
-                    <canvas id="materiasChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="history-card">
-                    <h5><i class="fas fa-history text-success"></i> Histórico Recente de Simulados</h5>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>% Acerto</th>
-                                    <th>Acertos</th>
-                                    <th>Erros</th>
-                                    <th>Respondidas</th>
-                                    <th>Tempo Médio / Questão</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historico-tbody">
-                                <tr><td colspan="6" class="text-center">Carregando histórico...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        // Variáveis globais para os gráficos, para poderem ser destruídos e recriados
-        let evolucaoChartInstance = null;
-        let materiasChartInstance = null;
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardData();
-        });
+        // Variáveis globais
+        let dashboardData = {};
+        let charts = {};
 
-        // Função principal para carregar todos os dados
+        // Função principal para carregar dados
         async function loadDashboardData() {
+            showLoading(true);
+            
             try {
                 const response = await fetch('/api/dashboard/estatisticas');
-                if (!response.ok) {
-                    throw new Error('Falha ao carregar dados da API');
-                }
-                const data = await response.json();
-                const stats = data.estatisticas;
-
-                // 1. Preencher os KPIs
-                populateKPIs(stats);
-
-                // 2. Renderizar Gráfico de Evolução (Line)
-                renderEvolucaoChart(stats.evolucao_desempenho);
+                if (!response.ok) throw new Error('Falha ao carregar dados');
                 
-                // 3. Renderizar Gráfico de Matérias (Doughnut)
-                renderMateriasChart(stats.desempenho_global_materia);
-
-                // 4. Preencher Tabela de Histórico
-                populateHistoryTable(stats.historico_recente);
-
-            } catch (error)
+                const data = await response.json();
+                dashboardData = data.estatisticas;
+                
+                if (dashboardData.total_simulados_realizados === 0) {
+                    showEmptyState();
+                } else {
+                    renderDashboard();
+                }
+                
+            } catch (error) {
                 console.error('Erro ao carregar dashboard:', error);
-                document.getElementById('historico-tbody').innerHTML = 
-                    `<tr><td colspan="6" class="text-center text-danger">Erro ao carregar dados.</td></tr>`;
+                showError('Erro ao carregar dados. Tente novamente.');
+            } finally {
+                showLoading(false);
             }
         }
 
-        // Preenche os 4 cartões de KPI
-        function populateKPIs(stats) {
-            document.getElementById('kpi-media-geral').innerText = `${stats.media_geral_percentual}%`;
-            document.getElementById('kpi-tempo-estudo').innerText = `${stats.tempo_total_estudo_min.toFixed(1)} min`;
-            document.getElementById('kpi-simulados').innerText = stats.total_simulados_realizados;
-            document.getElementById('kpi-questoes').innerText = stats.total_questoes_respondidas;
+        // Renderizar todo o dashboard
+        function renderDashboard() {
+            populateKPIs();
+            renderEvolucaoChart();
+            renderMateriasChart();
+            renderDesempenhoMateriasChart();
+            renderTempoChart();
+            populateHistoryTable();
+            
+            document.getElementById('dashboard-content').classList.remove('d-none');
         }
 
-        // Renderiza o gráfico de linha
-        function renderEvolucaoChart(evolucaoData) {
+        // Preencher KPIs
+        function populateKPIs() {
+            const stats = dashboardData;
+            
+            document.getElementById('kpi-media-geral').textContent = `${stats.media_geral_percentual}%`;
+            document.getElementById('kpi-tempo-estudo').textContent = `${Math.round(stats.tempo_total_estudo_min / 60)}h`;
+            document.getElementById('kpi-simulados').textContent = stats.total_simulados_realizados;
+            document.getElementById('kpi-questoes').textContent = stats.total_questoes_respondidas;
+        }
+
+        // Gráfico de Evolução
+        function renderEvolucaoChart() {
             const ctx = document.getElementById('evolucaoChart').getContext('2d');
+            const evolucao = dashboardData.evolucao_desempenho;
             
-            if (evolucaoChartInstance) {
-                evolucaoChartInstance.destroy(); // Destrói gráfico anterior se existir
-            }
+            const labels = evolucao.map(d => d.data);
+            const dataPoints = evolucao.map(d => d.percentual);
             
-            const labels = evolucaoData.map(d => d.data);
-            const dataPoints = evolucaoData.map(d => d.percentual);
-
-            evolucaoChartInstance = new Chart(ctx, {
+            // Destruir gráfico anterior se existir
+            if (charts.evolucao) charts.evolucao.destroy();
+            
+            charts.evolucao = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: 'Percentual de Acerto (%)',
                         data: dataPoints,
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderColor: '#4361ee',
                         borderWidth: 3,
                         fill: true,
-                        tension: 0.3
+                        tension: 0.4,
+                        pointBackgroundColor: '#4361ee',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
@@ -211,10 +271,18 @@
                         y: {
                             beginAtZero: true,
                             max: 100,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
                             ticks: {
                                 callback: function(value) {
-                                    return value + '%'
+                                    return value + '%';
                                 }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
                             }
                         }
                     },
@@ -225,7 +293,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y}%`;
+                                    return `Acerto: ${context.parsed.y}%`;
                                 }
                             }
                         }
@@ -234,55 +302,46 @@
             });
         }
 
-        // Renderiza o gráfico de rosca/pizza
-        function renderMateriasChart(materiasData) {
+        // Gráfico de Matérias (Pizza)
+        function renderMateriasChart() {
             const ctx = document.getElementById('materiasChart').getContext('2d');
+            const materiasData = dashboardData.desempenho_global_materia;
             
-            if (materiasChartInstance) {
-                materiasChartInstance.destroy();
-            }
-
             const labels = Object.keys(materiasData);
             const dataPoints = Object.values(materiasData);
-
-            // Se não há dados, mostra mensagem
-            if (labels.length === 0) {
-                ctx.font = "16px Arial";
-                ctx.fillStyle = "#6c757d";
-                ctx.textAlign = "center";
-                ctx.fillText("Realize simulados para ver seu desempenho", ctx.canvas.width / 2, ctx.canvas.height / 2);
-                return;
-            }
             
-            materiasChartInstance = new Chart(ctx, {
-                type: 'doughnut', // 'pie' ou 'doughnut'
+            if (charts.materias) charts.materias.destroy();
+            
+            charts.materias = new Chart(ctx, {
+                type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Desempenho por Matéria (%)',
                         data: dataPoints,
                         backgroundColor: [
-                            '#0d6efd', '#198754', '#0dcaf0', '#ffc107', '#dc3545',
-                            '#6f42c1', '#fd7e14', '#20c997', '#6c757d', '#f8f9fa'
+                            '#4361ee', '#3a0ca3', '#4cc9f0', '#4895ef', '#560bad',
+                            '#7209b7', '#b5179e', '#f72585', '#480ca8', '#3f37c9'
                         ],
-                        borderColor: '#fff',
-                        borderWidth: 2
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '60%',
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: 'bottom',
                             labels: {
-                                boxWidth: 20
+                                padding: 20,
+                                usePointStyle: true
                             }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return ` ${context.label}: ${context.parsed}%`;
+                                    return `${context.label}: ${context.parsed}%`;
                                 }
                             }
                         }
@@ -291,48 +350,228 @@
             });
         }
 
-        // Preenche a tabela de histórico
-        function populateHistoryTable(historicoData) {
-            const tbody = document.getElementById('historico-tbody');
-            tbody.innerHTML = ''; // Limpa dados antigos
-
-            if (historicoData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Nenhum simulado realizado ainda.</td></tr>';
-                return;
-            }
-
-            historicoData.forEach(item => {
-                const geral = item.geral;
-                const percentual = geral.percentual_acerto;
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${item.data}</td>
-                    <td>
-                        <span class="score-badge ${getScoreBadgeClass(percentual)}">
-                            ${percentual}%
-                        </span>
-                    </td>
-                    <td>${geral.acertos}</td>
-                    <td>${geral.erros}</td>
-                    <td>${geral.questoes_respondidas}</td>
-                    <td>${geral.tempo_medio_questao.toFixed(1)}s</td>
-                `;
-                tbody.appendChild(tr);
+        // Gráfico de Desempenho por Matéria (Barras)
+        function renderDesempenhoMateriasChart() {
+            const ctx = document.getElementById('desempenhoMateriasChart').getContext('2d');
+            const materiasData = dashboardData.desempenho_global_materia;
+            
+            // Ordenar por desempenho
+            const sortedEntries = Object.entries(materiasData).sort((a, b) => b[1] - a[1]);
+            const labels = sortedEntries.map(([materia]) => materia);
+            const dataPoints = sortedEntries.map(([, percentual]) => percentual);
+            
+            if (charts.desempenhoMaterias) charts.desempenhoMaterias.destroy();
+            
+            charts.desempenhoMaterias = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Desempenho (%)',
+                        data: dataPoints,
+                        backgroundColor: dataPoints.map(p => 
+                            p >= 80 ? '#4cc9f0' : 
+                            p >= 60 ? '#4895ef' : 
+                            '#f72585'
+                        ),
+                        borderColor: dataPoints.map(p => 
+                            p >= 80 ? '#3a0ca3' : 
+                            p >= 60 ? '#4361ee' : 
+                            '#b5179e'
+                        ),
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
             });
         }
 
-        // Helper para colorir a nota
-        function getScoreBadgeClass(percentual) {
-            if (percentual >= 80) {
-                return 'score-high';
-            } else if (percentual >= 60) {
-                return 'score-medium';
-            } else {
-                return 'score-low';
-            }
+        // Gráfico de Evolução do Tempo
+        function renderTempoChart() {
+            const ctx = document.getElementById('tempoChart').getContext('2d');
+            const evolucao = dashboardData.evolucao_desempenho;
+            
+            // Simular dados de tempo (em produção viria da API)
+            const tempoData = evolucao.map((_, index) => 
+                Math.max(20, 60 - index * 5) // Tempo diminuindo com a prática
+            );
+            
+            if (charts.tempo) charts.tempo.destroy();
+            
+            charts.tempo = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: evolucao.map(d => d.data),
+                    datasets: [{
+                        label: 'Tempo Médio por Questão (s)',
+                        data: tempoData,
+                        backgroundColor: 'rgba(76, 201, 240, 0.1)',
+                        borderColor: '#4cc9f0',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#4cc9f0',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 0,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 's';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
         }
 
+        // Preencher tabela de histórico
+        function populateHistoryTable() {
+            const tbody = document.getElementById('historico-tbody');
+            const historico = dashboardData.historico_recente;
+            
+            if (historico.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-inbox me-2"></i>Nenhum simulado realizado
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = historico.map(item => {
+                const geral = item.geral;
+                const percentual = geral.percentual_acerto;
+                
+                return `
+                    <tr>
+                        <td>${item.data}</td>
+                        <td>
+                            <span class="score-badge ${getScoreBadgeClass(percentual)}">
+                                ${percentual}%
+                            </span>
+                        </td>
+                        <td>${geral.acertos}</td>
+                        <td>${geral.erros}</td>
+                        <td>${geral.questoes_respondidas}</td>
+                        <td>${geral.tempo_total_minutos.toFixed(1)}min</td>
+                        <td>${geral.tempo_medio_questao.toFixed(1)}s</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="detalhesSimulado('${item.data}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Helper para badges de desempenho
+        function getScoreBadgeClass(percentual) {
+            if (percentual >= 80) return 'score-high';
+            if (percentual >= 60) return 'score-medium';
+            return 'score-low';
+        }
+
+        // Controles de UI
+        function showLoading(show) {
+            document.getElementById('loading-indicator').style.display = show ? 'block' : 'none';
+        }
+
+        function showEmptyState() {
+            document.getElementById('empty-state').classList.remove('d-none');
+        }
+
+        function showError(message) {
+            // Implementar toast de erro
+            console.error(message);
+        }
+
+        // Exportar dados
+        function exportarDados() {
+            const dataStr = JSON.stringify(dashboardData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `dashbord-concursomaster-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        // Detalhes do simulado
+        function detalhesSimulado(data) {
+            alert(`Detalhes do simulado de ${data}\n\nEm uma versão futura, esta função mostrará análises detalhadas do simulado selecionado.`);
+        }
+
+        // Atualização automática a cada 30 segundos
+        function startAutoRefresh() {
+            setInterval(loadDashboardData, 30000);
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            startAutoRefresh();
+        });
+
+        // Redimensionar gráficos quando a janela for redimensionada
+        window.addEventListener('resize', function() {
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.resize();
+            });
+        });
     </script>
 </body>
 </html>
