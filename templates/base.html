@@ -3,72 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ConcursoMaster AI{% endblock %}</title>
+    <title>{% block title %}ConcursoMaster AI - Sistema Premium{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --danger: #e74c3c;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.5rem;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .btn-primary {
-            background: var(--secondary);
-            border: none;
-            padding: 12px 30px;
-            font-weight: 600;
-            border-radius: 10px;
-        }
-        
-        .btn-primary:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-        }
-        
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            background: var(--secondary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            color: white;
-            font-size: 1.5rem;
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- NAVBAR PREMIUM -->
+    <nav class="navbar navbar-expand-lg navbar-light premium-header fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i class="fas fa-brain me-2"></i>ConcursoMaster AI
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -78,23 +25,28 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
-                            <i class="fas fa-home"></i> Início
+                        <a class="nav-link fw-semibold" href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-1"></i> Início
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('simulado') }}">
-                            <i class="fas fa-play-circle"></i> Simulado
+                        <a class="nav-link fw-semibold" href="{{ url_for('simulado') }}">
+                            <i class="fas fa-play-circle me-1"></i> Simulados
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="fas fa-chart-bar"></i> Dashboard
+                        <a class="nav-link fw-semibold" href="{{ url_for('redacao') }}">
+                            <i class="fas fa-edit me-1"></i> Redação
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('redacao') }}">
-                            <i class="fas fa-edit"></i> Redação
+                        <a class="nav-link fw-semibold" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-chart-bar me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="{{ url_for('materiais') }}">
+                            <i class="fas fa-book me-1"></i> Materiais
                         </a>
                     </li>
                 </ul>
@@ -102,17 +54,52 @@
         </div>
     </nav>
 
-    <main>
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-dark text-light py-4 mt-5">
-        <div class="container text-center">
-            <p>&copy; 2024 ConcursoMaster AI. Todos os direitos reservados.</p>
+    <!-- FOOTER PREMIUM -->
+    <footer class="bg-dark text-light py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-graduation-cap me-2"></i>ConcursoMaster AI
+                    </h5>
+                    <p class="text-light-50">
+                        Sistema inteligente de preparação para concursos com tecnologia de ponta.
+                    </p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h6 class="fw-bold mb-3">Recursos</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('simulado') }}" class="text-light-50 text-decoration-none">Simulados Personalizados</a></li>
+                        <li><a href="{{ url_for('redacao') }}" class="text-light-50 text-decoration-none">Corretor de Redação</a></li>
+                        <li><a href="{{ url_for('dashboard') }}" class="text-light-50 text-decoration-none">Dashboard de Performance</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h6 class="fw-bold mb-3">Contato</h6>
+                    <p class="text-light-50 mb-2">
+                        <i class="fas fa-envelope me-2"></i>contato@concursomaster.com
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="text-light-50 me-3"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-light-50 me-3"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-light-50"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4 bg-light-50">
+            <div class="text-center">
+                <p class="mb-0 text-light-50">&copy; 2024 ConcursoMaster AI. Todos os direitos reservados.</p>
+            </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% block scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
