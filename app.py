@@ -175,8 +175,22 @@ def simulado():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT DISTINCT materia FROM questoes WHERE materia IS NOT NULL')
-        materias = [row['materia'] for row in cursor.fetchall()]
+        materias_db = cursor.fetchall()
         conn.close()
+        
+        materias = [row['materia'] for row in materias_db]
+        
+        # Gerar HTML das matérias
+        materias_html = ''
+        for materia in materias:
+            materias_html += f'''
+            <div class="materia-item">
+                <label>
+                    <input type="checkbox" name="materias" value="{materia}" checked>
+                    {materia}
+                </label>
+            </div>
+            '''
         
         return f'''
         <!DOCTYPE html>
@@ -303,14 +317,7 @@ def simulado():
                     <div class="form-group">
                         <label>Matérias:</label>
                         <div class="materias">
-                            {"".join([f'''
-                            <div class="materia-item">
-                                <label>
-                                    <input type="checkbox" name="materias" value="{materia}" checked>
-                                    {materia}
-                                </label>
-                            </div>
-                            ''' for materia in materias])}
+                            {materias_html}
                         </div>
                     </div>
                     
@@ -468,6 +475,46 @@ def questao(numero):
         alternativas = json.loads(questao_db['alternativas'])
         resposta_usuario = session.get('respostas', {}).get(str(numero))
         
+        # Gerar HTML das alternativas
+        alternativas_html = ''
+        for letra, texto in alternativas.items():
+            alternativas_html += f'''
+            <div class="alternativa" onclick="selecionarAlternativa('{letra}')" id="alt{letra}">
+                <strong>{letra}.</strong> {texto}
+            </div>
+            '''
+        
+        # Gerar feedback se respondida
+        feedback_html = ''
+        if resposta_usuario:
+            correta = resposta_usuario == questao_db['resposta_correta']
+            classe_feedback = 'correct' if correta else 'incorrect'
+            mensagem_feedback = '✅ Resposta Correta!' if correta else '❌ Resposta Incorreta'
+            resposta_correta_html = f'<p><strong>Resposta correta:</strong> {questao_db["resposta_correta"]}</p>' if not correta else ''
+            
+            feedback_html = f'''
+            <div class="feedback {classe_feedback}">
+                <h3>{mensagem_feedback}</h3>
+                <p><strong>Sua resposta:</strong> {resposta_usuario}</p>
+                {resposta_correta_html}
+                <p><strong>Explicação:</strong> {questao_db['explicacao']}</p>
+            </div>
+            '''
+        
+        # Gerar botões de navegação
+        botao_anterior = '<a href="/simulado" class="btn btn-secondary">↩️ Voltar</a>'
+        if numero > 1:
+            botao_anterior = f'<a href="/questao/{numero-1}" class="btn btn-secondary">⬅️ Anterior</a>'
+        
+        botao_proximo = ''
+        if not resposta_usuario:
+            botao_proximo = f'<button class="btn btn-primary" onclick="verificarResposta()" id="btnVerificar">✅ Verificar Resposta</button>'
+        else:
+            if numero < total_questoes:
+                botao_proximo = f'<a href="/questao/{numero+1}" class="btn btn-primary">Próxima ➡️</a>'
+            else:
+                botao_proximo = '<a href="/resultado" class="btn btn-primary">🏁 Finalizar</a>'
+        
         return f'''
         <!DOCTYPE html>
         <html>
@@ -553,29 +600,18 @@ def questao(numero):
                 </div>
                 
                 <div id="alternativas">
-                    {"".join([f'''
-                    <div class="alternativa" onclick="selecionarAlternativa('{letra}')" id="alt{letra}">
-                        <strong>{letra}.</strong> {texto}
-                    </div>
-                    ''' for letra, texto in alternativas.items()])}
+                    {alternativas_html}
                 </div>
                 
-                {"f'''
-                <div class="feedback {'correct' if resposta_usuario == questao_db['resposta_correta'] else 'incorrect'}">
-                    <h3>{'✅ Resposta Correta!' if resposta_usuario == questao_db['resposta_correta'] else '❌ Resposta Incorreta'}</h3>
-                    <p><strong>Sua resposta:</strong> {resposta_usuario}</p>
-                    {"f'<p><strong>Resposta correta:</strong> {questao_db["resposta_correta"]}</p>' if resposta_usuario != questao_db['resposta_correta'] else ''}
-                    <p><strong>Explicação:</strong> {questao_db['explicacao']}</p>
-                </div>
-                ''' if resposta_usuario else ''}
+                {feedback_html}
                 
                 <div style="display: flex; justify-content: space-between; margin-top: 30px;">
                     <div>
-                        {"f'<a href=\"/questao/{numero-1}\" class=\"btn btn-secondary\">⬅️ Anterior</a>' if numero > 1 else '<a href=\"/simulado\" class=\"btn btn-secondary\">↩️ Voltar</a>'}
+                        {botao_anterior}
                     </div>
                     
                     <div>
-                        {"f'<button class=\"btn btn-primary\" onclick=\"verificarResposta()\" id=\"btnVerificar\">✅ Verificar Resposta</button>' if not resposta_usuario else (f'<a href=\"/questao/{numero+1}\" class=\"btn btn-primary\">Próxima ➡️</a>' if numero < total_questoes else '<a href=\"/resultado\" class=\"btn btn-primary\">🏁 Finalizar</a>')"}
+                        {botao_proximo}
                     </div>
                 </div>
             </div>
@@ -615,7 +651,7 @@ def questao(numero):
                 }}
                 
                 // Carregar resposta anterior se existir
-                {"f'selecionarAlternativa(\"{resposta_usuario}\");' if resposta_usuario else ''}
+                {"selecionarAlternativa('" + resposta_usuario + "');" if resposta_usuario else ""}
             </script>
         </body>
         </html>
