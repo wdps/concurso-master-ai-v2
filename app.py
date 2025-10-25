@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session
 import sqlite3
 import json
 import random
@@ -64,15 +64,6 @@ def criar_tabelas_se_necessario():
             )
         ''')
         
-        # Tabela de configurações do usuário
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_config (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                config_name TEXT UNIQUE NOT NULL,
-                config_value TEXT NOT NULL
-            )
-        ''')
-        
         conn.commit()
         logger.info("✅ Tabelas verificadas/criadas com sucesso!")
         return True
@@ -87,33 +78,36 @@ def carregar_questoes_csv():
     """Carrega questões do CSV para o banco de dados"""
     if not os.path.exists('questoes.csv'):
         logger.warning("❌ Arquivo questoes.csv não encontrado")
-        return False
+        # Criar algumas questões de exemplo
+        criar_questoes_exemplo()
+        return True
     
     try:
         df = pd.read_csv('questoes.csv')
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Limpar tabela existente (opcional)
-        # cursor.execute("DELETE FROM questões")
-        
         questões_carregadas = 0
         for index, row in df.iterrows():
             try:
-                # Converter alternativas para JSON se necessário
-                alternativas = row['alternativas']
-                if isinstance(alternativas, str) and alternativas.startswith('['):
-                    alternativas_json = alternativas
-                else:
-                    # Criar estrutura padrão de alternativas
-                    alternativas_data = {
-                        'A': row.get('A', ''),
-                        'B': row.get('B', ''),
-                        'C': row.get('C', ''),
-                        'D': row.get('D', ''),
-                        'E': row.get('E', '')
+                # Verificar se a linha tem dados válidos
+                if pd.isna(row.get('enunciado')) or pd.isna(row.get('resposta_correta')):
+                    continue
+                    
+                # Converter alternativas para JSON
+                alternativas_dict = {}
+                for letra in ['A', 'B', 'C', 'D', 'E']:
+                    if letra in row and not pd.isna(row[letra]):
+                        alternativas_dict[letra] = str(row[letra])
+                
+                # Se não encontrou alternativas, criar padrão
+                if not alternativas_dict:
+                    alternativas_dict = {
+                        'A': 'Alternativa A',
+                        'B': 'Alternativa B', 
+                        'C': 'Alternativa C',
+                        'D': 'Alternativa D'
                     }
-                    alternativas_json = json.dumps(alternativas_data)
                 
                 cursor.execute('''
                     INSERT OR IGNORE INTO questões 
@@ -122,7 +116,7 @@ def carregar_questoes_csv():
                 ''', (
                     str(row['enunciado']),
                     str(row.get('materia', 'Geral')),
-                    alternativas_json,
+                    json.dumps(alternativas_dict),
                     str(row['resposta_correta']),
                     str(row.get('explicacao', 'Explicação não disponível'))
                 ))
@@ -136,12 +130,64 @@ def carregar_questoes_csv():
         
         conn.commit()
         conn.close()
-        logger.info(f"✅ {questões_carregadas}/{len(df)} questões carregadas com sucesso!")
+        logger.info(f"✅ {questões_carregadas} questões carregadas com sucesso!")
         return True
         
     except Exception as e:
         logger.error(f"❌ Erro ao carregar questões do CSV: {e}")
-        return False
+        # Criar questões de exemplo em caso de erro
+        criar_questoes_exemplo()
+        return True
+
+def criar_questoes_exemplo():
+    """Cria questões de exemplo se o CSV não existir"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        questões_exemplo = [
+            {
+                'enunciado': 'Qual é a capital do Brasil?',
+                'materia': 'Geografia',
+                'alternativas': {'A': 'Rio de Janeiro', 'B': 'Brasília', 'C': 'São Paulo', 'D': 'Salvador'},
+                'resposta_correta': 'B',
+                'explicacao': 'Brasília é a capital federal do Brasil desde 1960.'
+            },
+            {
+                'enunciado': 'Quem escreveu "Dom Casmurro"?',
+                'materia': 'Literatura',
+                'alternativas': {'A': 'Machado de Assis', 'B': 'José de Alencar', 'C': 'Lima Barreto', 'D': 'Graciliano Ramos'},
+                'resposta_correta': 'A', 
+                'explicacao': 'Machado de Assis é o autor de "Dom Casmurro", publicado em 1899.'
+            },
+            {
+                'enunciado': 'Qual é o resultado de 2 + 2?',
+                'materia': 'Matemática',
+                'alternativas': {'A': '3', 'B': '4', 'C': '5', 'D': '6'},
+                'resposta_correta': 'B',
+                'explicacao': 'A soma de 2 + 2 é igual a 4.'
+            }
+        ]
+        
+        for questao in questões_exemplo:
+            cursor.execute('''
+                INSERT OR IGNORE INTO questões 
+                (enunciado, materia, alternativas, resposta_correta, explicacao)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (
+                questao['enunciado'],
+                questao['materia'],
+                json.dumps(questao['alternativas']),
+                questao['resposta_correta'],
+                questao['explicacao']
+            ))
+        
+        conn.commit()
+        conn.close()
+        logger.info("✅ Questões de exemplo criadas com sucesso!")
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar questões exemplo: {e}")
 
 # Rotas principais
 @app.route('/')
@@ -180,11 +226,10 @@ def dashboard():
 # API Routes
 @app.route('/api/questoes/random')
 def get_questoes_random():
-    """API para obter questões aleatórias baseadas nos filtros"""
+    """API para obter questões aleatórias"""
     try:
-        data = request.get_json() or {}
-        quantidade = int(data.get('quantidade', 10))
-        materias = data.get('materias', [])
+        quantidade = int(request.args.get('quantidade', 10))
+        materias = request.args.getlist('materias') or []
         
         conn = get_db_connection()
         if not conn:
@@ -221,7 +266,7 @@ def get_questoes_random():
                 'alternativas': alternativas,
                 'resposta_correta': questao['resposta_correta'],
                 'explicacao': questao['explicacao'],
-                'dificuldade': questao['dificuldade']
+                'dificuldade': questao.get('dificuldade', 'Média')
             })
         
         return jsonify({'questoes': questões_formatadas})
@@ -279,7 +324,7 @@ def iniciar_simulado():
                 'alternativas': alternativas,
                 'resposta_correta': questao['resposta_correta'],
                 'explicacao': questao['explicacao'],
-                'dificuldade': questao['dificuldade']
+                'dificuldade': questao.get('dificuldade', 'Média')
             })
         
         # Iniciar sessão do simulado
@@ -475,7 +520,7 @@ def get_estatisticas_dashboard():
         cursor.execute("SELECT COUNT(*) as total FROM questões")
         total_questoes_banco = cursor.fetchone()['total']
         
-        # 2. Histórico de simulados (para gráficos e tabela)
+        # 2. Histórico de simulados
         cursor.execute("SELECT relatorio, data_fim FROM historico_simulados ORDER BY data_fim ASC")
         todos_relatorios = cursor.fetchall()
         
@@ -491,8 +536,9 @@ def get_estatisticas_dashboard():
                 data_fim_str = row['data_fim']
                 
                 # Para gráfico de evolução
+                data_obj = datetime.fromisoformat(data_fim_str.replace('Z', '+00:00'))
                 historico_evolucao.append({
-                    'data': datetime.fromisoformat(data_fim_str).strftime('%d/%m'),
+                    'data': data_obj.strftime('%d/%m'),
                     'percentual': relatorio['geral']['percentual_acerto']
                 })
                 
@@ -516,14 +562,15 @@ def get_estatisticas_dashboard():
             percentual = (stats['acertos'] * 100 / stats['total']) if stats['total'] > 0 else 0
             desempenho_global_materia[materia] = round(percentual, 2)
             
-        # 4. Histórico recente (para a tabela, 10 últimos)
+        # 4. Histórico recente
         historico_recente_formatado = []
         for row in reversed(todos_relatorios[-10:]): 
             try:
                 relatorio = json.loads(row['relatorio'])
                 data_fim_str = row['data_fim']
+                data_obj = datetime.fromisoformat(data_fim_str.replace('Z', '+00:00'))
                 historico_recente_formatado.append({
-                    'data': datetime.fromisoformat(data_fim_str).strftime('%d/%m/%Y %H:%M'),
+                    'data': data_obj.strftime('%d/%m/%Y %H:%M'),
                     'geral': relatorio['geral']
                 })
             except:
@@ -555,13 +602,12 @@ def get_estatisticas_dashboard():
         return jsonify({"estatisticas": {}})
 
 # Inicialização
-@app.before_first_request
+@app.before_request
 def initialize_app():
     """Inicializa a aplicação"""
-    logger.info("🚀 Inicializando ConcursoMaster AI...")
     criar_tabelas_se_necessario()
     carregar_questoes_csv()
-    logger.info("✅ Aplicação inicializada com sucesso!")
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
