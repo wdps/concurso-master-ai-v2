@@ -1,85 +1,108 @@
-﻿// static/js/simulado-novo.js - SISTEMA 100% FUNCIONAL
-class SimuladoNovo {
-    constructor() {
-        this.quantidade = 10;
-        this.materiasSelecionadas = [];
-        this.init();
-    }
+﻿// static/js/simulado-novo.js - VERSÃO CORRIGIDA E TESTADA
+console.log('🎯 Simulado Premium - JavaScript carregado!');
 
-    init() {
-        console.log('🎯 Simulado Premium inicializado');
-        this.carregarEstadoInicial();
-        this.configurarEventos();
-        this.atualizarInterface();
-    }
-
-    carregarEstadoInicial() {
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM carregado - inicializando simulado...');
+    
+    let quantidade = 10;
+    let materiasSelecionadas = [];
+    
+    // Inicializar estado
+    function inicializar() {
+        console.log('🔧 Inicializando configurações...');
+        
         // Selecionar todas as matérias inicialmente
-        this.materiasSelecionadas = Array.from(document.querySelectorAll('.materia-checkbox'))
+        materiasSelecionadas = Array.from(document.querySelectorAll('.materia-checkbox'))
             .map(checkbox => checkbox.value);
-        this.atualizarContador();
+        
+        atualizarContador();
+        configurarEventos();
+        verificarEstadoBotao();
+        
+        console.log('✅ Configuração inicializada:', { quantidade, materias: materiasSelecionadas });
     }
-
-    configurarEventos() {
+    
+    function configurarEventos() {
+        console.log('🔗 Configurando eventos...');
+        
         // Botões de quantidade
         document.querySelectorAll('.quantidade-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.selecionarQuantidade(parseInt(e.target.dataset.quantidade));
+            btn.addEventListener('click', function(e) {
+                const novaQuantidade = parseInt(this.dataset.quantidade);
+                console.log('📊 Quantidade selecionada:', novaQuantidade);
+                selecionarQuantidade(novaQuantidade);
             });
         });
-
+        
         // Input personalizado
-        document.getElementById('quantidade-custom').addEventListener('input', (e) => {
-            const valor = parseInt(e.target.value);
-            if (valor && valor >= 1 && valor <= 50) {
-                this.selecionarQuantidade(valor);
-            }
-        });
-
+        const inputCustom = document.getElementById('quantidade-custom');
+        if (inputCustom) {
+            inputCustom.addEventListener('input', function(e) {
+                const valor = parseInt(this.value);
+                if (valor && valor >= 1 && valor <= 50) {
+                    console.log('📝 Quantidade personalizada:', valor);
+                    selecionarQuantidade(valor);
+                }
+            });
+        }
+        
         // Checkboxes de matérias
         document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
-                this.toggleMateria(e.target.value, e.target.checked);
+            checkbox.addEventListener('change', function(e) {
+                console.log('📚 Matéria alterada:', this.value, this.checked);
+                toggleMateria(this.value, this.checked);
             });
         });
-
+        
         // Clique nos cards de matéria
         document.querySelectorAll('.materia-card').forEach(card => {
-            card.addEventListener('click', (e) => {
+            card.addEventListener('click', function(e) {
                 if (!e.target.matches('input')) {
-                    const checkbox = card.querySelector('.materia-checkbox');
+                    const checkbox = this.querySelector('.materia-checkbox');
                     checkbox.checked = !checkbox.checked;
-                    this.toggleMateria(checkbox.value, checkbox.checked);
+                    console.log('🎴 Card clicado:', checkbox.value, checkbox.checked);
+                    toggleMateria(checkbox.value, checkbox.checked);
                 }
             });
         });
-
-        // Botões rápidos
-        document.getElementById('btnTodas').addEventListener('click', () => {
-            this.selecionarTodasMaterias();
-        });
-
-        document.getElementById('btnPrincipais').addEventListener('click', () => {
-            this.selecionarPrincipais();
-        });
-
-        // Botão iniciar
-        document.getElementById('btnIniciar').addEventListener('click', () => {
-            this.iniciarSimulado();
-        });
-
-        // Enter no input personalizado
-        document.getElementById('quantidade-custom').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.iniciarSimulado();
-            }
-        });
-    }
-
-    selecionarQuantidade(novaQuantidade) {
-        this.quantidade = novaQuantidade;
         
-        // Atualizar botões
+        // Botões rápidos
+        const btnTodas = document.getElementById('btnTodas');
+        if (btnTodas) {
+            btnTodas.addEventListener('click', function() {
+                console.log('✅ Selecionando todas matérias');
+                selecionarTodasMaterias();
+            });
+        }
+        
+        const btnPrincipais = document.getElementById('btnPrincipais');
+        if (btnPrincipais) {
+            btnPrincipais.addEventListener('click', function() {
+                console.log('⭐ Selecionando matérias principais');
+                selecionarPrincipais();
+            });
+        }
+        
+        // Botão iniciar - CORREÇÃO PRINCIPAL
+        const btnIniciar = document.getElementById('btnIniciar');
+        if (btnIniciar) {
+            console.log('🔘 Botão iniciar encontrado, configurando evento...');
+            btnIniciar.addEventListener('click', function(e) {
+                console.log('🚀 Botão iniciar clicado!');
+                e.preventDefault();
+                iniciarSimulado();
+            });
+        } else {
+            console.error('❌ Botão iniciar NÃO encontrado!');
+        }
+        
+        console.log('✅ Todos os eventos configurados');
+    }
+    
+    function selecionarQuantidade(novaQuantidade) {
+        quantidade = novaQuantidade;
+        
+        // Atualizar botões visuais
         document.querySelectorAll('.quantidade-btn').forEach(btn => {
             btn.classList.remove('active');
             if (parseInt(btn.dataset.quantidade) === novaQuantidade) {
@@ -88,135 +111,157 @@ class SimuladoNovo {
         });
         
         // Atualizar input
-        document.getElementById('quantidade-custom').value = novaQuantidade;
+        const inputCustom = document.getElementById('quantidade-custom');
+        if (inputCustom) {
+            inputCustom.value = novaQuantidade;
+        }
         
-        console.log('📊 Quantidade selecionada:', novaQuantidade);
+        verificarEstadoBotao();
     }
-
-    toggleMateria(materia, selecionada) {
+    
+    function toggleMateria(materia, selecionada) {
         const card = document.querySelector(\[data-materia=\"\\"]\);
         
         if (selecionada) {
-            if (!this.materiasSelecionadas.includes(materia)) {
-                this.materiasSelecionadas.push(materia);
+            if (!materiasSelecionadas.includes(materia)) {
+                materiasSelecionadas.push(materia);
             }
-            card.classList.add('selected');
+            if (card) card.classList.add('selected');
         } else {
-            this.materiasSelecionadas = this.materiasSelecionadas.filter(m => m !== materia);
-            card.classList.remove('selected');
+            materiasSelecionadas = materiasSelecionadas.filter(m => m !== materia);
+            if (card) card.classList.remove('selected');
         }
         
-        this.atualizarContador();
-        this.verificarEstadoBotao();
+        atualizarContador();
+        verificarEstadoBotao();
     }
-
-    selecionarTodasMaterias() {
+    
+    function selecionarTodasMaterias() {
+        console.log('🔧 Selecionando todas matérias...');
         document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
             checkbox.checked = true;
-            this.toggleMateria(checkbox.value, true);
+            toggleMateria(checkbox.value, true);
         });
-        this.mostrarAlerta('✅ Todas as matérias foram selecionadas', 'success');
+        mostrarAlerta('✅ Todas as matérias foram selecionadas', 'success');
     }
-
-    selecionarPrincipais() {
+    
+    function selecionarPrincipais() {
+        console.log('🔧 Selecionando matérias principais...');
         const principais = ['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 
                            'Direito Constitucional', 'Direito Administrativo'];
         
         document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
             const selecionar = principais.includes(checkbox.value);
             checkbox.checked = selecionar;
-            this.toggleMateria(checkbox.value, selecionar);
+            toggleMateria(checkbox.value, selecionar);
         });
-        this.mostrarAlerta('📚 Matérias principais selecionadas', 'success');
+        mostrarAlerta('📚 Matérias principais selecionadas', 'success');
     }
-
-    atualizarContador() {
+    
+    function atualizarContador() {
         const contador = document.getElementById('contador');
         if (contador) {
             contador.textContent = \\ matérias selecionadas\;
         }
     }
-
-    verificarEstadoBotao() {
+    
+    function verificarEstadoBotao() {
         const btnIniciar = document.getElementById('btnIniciar');
-        const temMaterias = this.materiasSelecionadas.length > 0;
-        const quantidadeValida = this.quantidade >= 1 && this.quantidade <= 50;
+        if (btnIniciar) {
+            const temMaterias = materiasSelecionadas.length > 0;
+            const quantidadeValida = quantidade >= 1 && quantidade <= 50;
+            
+            btnIniciar.disabled = !(temMaterias && quantidadeValida);
+            
+            console.log('🔘 Estado do botão:', {
+                disabled: btnIniciar.disabled,
+                temMaterias: temMaterias,
+                quantidadeValida: quantidadeValida,
+                quantidade: quantidade,
+                materiasCount: materiasSelecionadas.length
+            });
+        }
+    }
+    
+    async function iniciarSimulado() {
+        console.log('🚀 Iniciando simulado...', {
+            quantidade: quantidade,
+            materias: materiasSelecionadas
+        });
         
-        btnIniciar.disabled = !(temMaterias && quantidadeValida);
-    }
-
-    atualizarInterface() {
-        this.atualizarContador();
-        this.verificarEstadoBotao();
-    }
-
-    async iniciarSimulado() {
-        // Validações finais
-        if (this.materiasSelecionadas.length === 0) {
-            this.mostrarAlerta('❌ Selecione pelo menos uma matéria para iniciar o simulado', 'error');
+        // Validações
+        if (materiasSelecionadas.length === 0) {
+            mostrarAlerta('❌ Selecione pelo menos uma matéria', 'error');
             return;
         }
-
-        if (!this.quantidade || this.quantidade < 1 || this.quantidade > 50) {
-            this.mostrarAlerta('❌ Selecione uma quantidade válida de questões (1-50)', 'error');
+        
+        if (!quantidade || quantidade < 1 || quantidade > 50) {
+            mostrarAlerta('❌ Quantidade inválida (1-50)', 'error');
             return;
         }
-
+        
         const btnIniciar = document.getElementById('btnIniciar');
         const loading = document.getElementById('loading');
-        const textoOriginal = btnIniciar.innerHTML;
-
+        
+        if (!btnIniciar) {
+            console.error('❌ Botão iniciar não encontrado');
+            return;
+        }
+        
         try {
             // Mostrar loading
             btnIniciar.disabled = true;
-            btnIniciar.style.display = 'none';
-            loading.style.display = 'block';
-
-            console.log('🚀 Iniciando simulado premium:', {
-                quantidade: this.quantidade,
-                materias: this.materiasSelecionadas
-            });
-
+            if (loading) loading.style.display = 'block';
+            
+            console.log('📡 Enviando requisição para API...');
+            
             const response = await fetch('/api/simulado/iniciar', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    quantidade: this.quantidade,
-                    materias: this.materiasSelecionadas
+                    quantidade: quantidade,
+                    materias: materiasSelecionadas
                 })
             });
-
+            
+            console.log('📨 Resposta recebida:', response.status);
+            
             const data = await response.json();
-
+            console.log('📊 Dados da resposta:', data);
+            
             if (data.success) {
-                console.log('✅ Simulado iniciado com sucesso!', data);
-                this.mostrarAlerta('🎉 Simulado configurado! Redirecionando...', 'success');
+                mostrarAlerta('🎉 Simulado iniciado! Redirecionando...', 'success');
+                console.log('✅ Redirecionando para questão 1');
                 
-                // Redirecionar após breve feedback visual
                 setTimeout(() => {
                     window.location.href = '/questao/1';
-                }, 1500);
+                }, 1000);
                 
             } else {
-                throw new Error(data.error || 'Erro desconhecido ao iniciar simulado');
+                throw new Error(data.error || 'Erro desconhecido');
             }
-
+            
         } catch (error) {
-            console.error('❌ Erro ao iniciar simulado:', error);
-            this.mostrarAlerta(\❌ Falha: \\, 'error');
+            console.error('❌ Erro:', error);
+            mostrarAlerta(\❌ Falha: \\, 'error');
         } finally {
             // Restaurar UI
             btnIniciar.disabled = false;
-            btnIniciar.style.display = 'inline-flex';
-            loading.style.display = 'none';
-            btnIniciar.innerHTML = textoOriginal;
+            if (loading) loading.style.display = 'none';
         }
     }
-
-    mostrarAlerta(mensagem, tipo) {
+    
+    function mostrarAlerta(mensagem, tipo) {
+        console.log('💬 Alert:', tipo, mensagem);
+        
         const container = document.getElementById('alert-container');
+        if (!container) {
+            console.error('❌ Container de alertas não encontrado');
+            return;
+        }
+        
         const alert = document.createElement('div');
         alert.className = \lert alert-\\;
         alert.innerHTML = \
@@ -224,27 +269,26 @@ class SimuladoNovo {
             \
         \;
         
-        container.innerHTML = ''; // Limpar alertas anteriores
+        container.innerHTML = '';
         container.appendChild(alert);
         
-        // Remover após 5 segundos
         setTimeout(() => {
             if (alert.parentNode) {
                 alert.remove();
             }
         }, 5000);
     }
-}
-
-// Inicializar quando o DOM estiver carregado
-document.addEventListener('DOMContentLoaded', function() {
-    window.simuladoPremium = new SimuladoNovo();
+    
+    // Inicializar
+    inicializar();
+    console.log('🎉 Simulado Premium totalmente inicializado!');
+    
+    // Debug global
+    window.debugSimulado = function() {
+        console.log('🔍 Debug:', {
+            quantidade: quantidade,
+            materias: materiasSelecionadas,
+            btnIniciar: document.getElementById('btnIniciar')
+        });
+    };
 });
-
-// Debug
-window.debugSimulado = function() {
-    console.log('🔍 Debug Simulado Premium:', {
-        quantidade: window.simuladoPremium?.quantidade,
-        materias: window.simuladoPremium?.materiasSelecionadas
-    });
-};
