@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redação - ConcursoMaster AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .editor-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 2rem;
+        }
+        
+        #redacao-editor {
+            min-height: 400px;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+        
+        #redacao-editor:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .contador {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        
+        .dica-item {
+            background: white;
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+            box-shadow: var(--shadow-sm);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain"></i> ConcursoMaster AI
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/simulado">Simulados</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/redacao">Redação</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="editor-container">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="mb-0">
+                                <i class="fas fa-edit me-2"></i>Editor de Redação
+                            </h3>
+                            <div class="contador">
+                                <span id="contador-palavras">0</span> palavras
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tema da Redação</label>
+                            <input type="text" class="form-control form-control-lg" id="tema-redacao" 
+                                   placeholder="Digite o tema da redação..." value="Os desafios da educação digital no Brasil contemporâneo">
+                        </div>
+                        
+                        <textarea id="redacao-editor" class="form-control" placeholder="Comece a escrever sua redação aqui..."></textarea>
+                        
+                        <div class="mt-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <button class="btn btn-outline-primary btn-sm" onclick="formatarTexto('bold')">
+                                    <i class="fas fa-bold"></i>
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="formatarTexto('italic')">
+                                    <i class="fas fa-italic"></i>
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="formatarTexto('underline')">
+                                    <i class="fas fa-underline"></i>
+                                </button>
+                            </div>
+                            <div>
+                                <button class="btn btn-success" onclick="salvarRedacao()">
+                                    <i class="fas fa-save me-2"></i>Salvar Rascunho
+                                </button>
+                                <button class="btn btn-primary" onclick="analisarRedacao()">
+                                    <i class="fas fa-chart-line me-2"></i>Analisar Texto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Análise da Redação -->
+                    <div id="analise-container" class="editor-container d-none">
+                        <h4 class="mb-4">
+                            <i class="fas fa-chart-bar me-2"></i>Análise da Redação
+                        </h4>
+                        <div id="analise-content">
+                            <!-- Análise será carregada aqui -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <!-- Dicas de Redação -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-lightbulb me-2"></i>Dicas para uma Boa Redação
+                        </div>
+                        <div class="card-body">
+                            <div class="dica-item">
+                                <h6>Estrutura Básica</h6>
+                                <p class="small mb-0">Introdução, Desenvolvimento (2-3 parágrafos) e Conclusão</p>
+                            </div>
+                            <div class="dica-item">
+                                <h6>Coesão e Coerência</h6>
+                                <p class="small mb-0">Use conectivos para ligar as ideias de forma lógica</p>
+                            </div>
+                            <div class="dica-item">
+                                <h6>Argumentação</h6>
+                                <p class="small mb-0">Apresente dados, exemplos e fatos para sustentar suas ideias</p>
+                            </div>
+                            <div class="dica-item">
+                                <h6>Norma Culta</h6>
+                                <p class="small mb-0">Evite gírias e linguagem informal</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modelos de Estrutura -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-project-diagram me-2"></i>Modelo de Estrutura
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion" id="accordionModelos">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                            Dissertação Argumentativa
+                                        </button>
+                                    </h2>
+                                    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionModelos">
+                                        <div class="accordion-body small">
+                                            <strong>Introdução:</strong> Apresente o tema e sua tese<br>
+                                            <strong>Desenvolvimento:</strong> Argumentos + exemplos<br>
+                                            <strong>Conclusão:</strong> Solução + final impactante
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                            Texto Expositivo
+                                        </button>
+                                    </h2>
+                                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionModelos">
+                                        <div class="accordion-body small">
+                                            <strong>Introdução:</strong> Contextualize o tema<br>
+                                            <strong>Desenvolvimento:</strong> Explique causas e consequências<br>
+                                            <strong>Conclusão:</strong> Síntese das ideias principais
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Histórico de Redações -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-history me-2"></i>Rascunhos Salvos
+                        </div>
+                        <div class="card-body">
+                            <div id="lista-rascunhos" class="small">
+                                <div class="text-center text-muted">
+                                    Nenhum rascunho salvo
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Contador de palavras
+        function atualizarContador() {
+            const texto = document.getElementById('redacao-editor').value;
+            const palavras = texto.trim() === '' ? 0 : texto.trim().split(/\s+/).length;
+            document.getElementById('contador-palavras').textContent = palavras;
+        }
+        
+        // Formatação de texto
+        function formatarTexto(comando) {
+            const editor = document.getElementById('redacao-editor');
+            editor.focus();
+            document.execCommand(comando, false, null);
+            atualizarContador();
+        }
+        
+        // Salvar rascunho
+        function salvarRedacao() {
+            const tema = document.getElementById('tema-redacao').value;
+            const texto = document.getElementById('redacao-editor').value;
+            const data = new Date().toLocaleString();
+            
+            if (!texto.trim()) {
+                alert('Digite algo na redação antes de salvar!');
+                return;
+            }
+            
+            const rascunho = {
+                tema: tema,
+                texto: texto,
+                data: data,
+                palavras: texto.trim().split(/\s+/).length
+            };
+            
+            // Salvar no localStorage
+            let rascunhos = JSON.parse(localStorage.getItem('redacao_rascunhos') || '[]');
+            rascunhos.unshift(rascunho);
+            
+            // Manter apenas os 10 últimos
+            if (rascunhos.length > 10) {
+                rascunhos = rascunhos.slice(0, 10);
+            }
+            
+            localStorage.setItem('redacao_rascunhos', JSON.stringify(rascunhos));
+            carregarRascunhos();
+            
+            // Feedback visual
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>Salvo!';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-secondary');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-success');
+            }, 2000);
+        }
+        
+        // Carregar rascunhos
+        function carregarRascunhos() {
+            const rascunhos = JSON.parse(localStorage.getItem('redacao_rascunhos') || '[]');
+            const container = document.getElementById('lista-rascunhos');
+            
+            if (rascunhos.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">Nenhum rascunho salvo</div>';
+                return;
+            }
+            
+            container.innerHTML = rascunhos.map((rascunho, index) => `
+                <div class="card mb-2">
+                    <div class="card-body p-3">
+                        <h6 class="card-title">${rascunho.tema}</h6>
+                        <p class="card-text small text-muted mb-1">
+                            ${rascunho.texto.substring(0, 100)}...
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">${rascunho.palavras} palavras</small>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="carregarRascunho(${index})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="excluirRascunho(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="text-muted">${rascunho.data}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Carregar rascunho específico
+        function carregarRascunho(index) {
+            const rascunhos = JSON.parse(localStorage.getItem('redacao_rascunhos') || '[]');
+            const rascunho = rascunhos[index];
+            
+            if (rascunho) {
+                document.getElementById('tema-redacao').value = rascunho.tema;
+                document.getElementById('redacao-editor').value = rascunho.texto;
+                atualizarContador();
+                
+                // Scroll para o editor
+                document.getElementById('redacao-editor').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Excluir rascunho
+        function excluirRascunho(index) {
+            if (confirm('Tem certeza que deseja excluir este rascunho?')) {
+                let rascunhos = JSON.parse(localStorage.getItem('redacao_rascunhos') || '[]');
+                rascunhos.splice(index, 1);
+                localStorage.setItem('redacao_rascunhos', JSON.stringify(rascunhos));
+                carregarRascunhos();
+            }
+        }
+        
+        // Análise simples da redação
+        function analisarRedacao() {
+            const texto = document.getElementById('redacao-editor').value;
+            const tema = document.getElementById('tema-redacao').value;
+            
+            if (!texto.trim()) {
+                alert('Digite algo na redação antes de analisar!');
+                return;
+            }
+            
+            // Análise básica
+            const palavras = texto.trim().split(/\s+/).length;
+            const paragrafos = texto.split('\n').filter(p => p.trim()).length;
+            const frases = texto.split(/[.!?]+/).filter(f => f.trim()).length;
+            const palavrasPorFrase = frases > 0 ? (palavras / frases).toFixed(1) : 0;
+            
+            // Verificar estrutura básica
+            const temIntroducao = /introdução|inicialmente|primeiramente|atualmente/gi.test(texto);
+            const temConclusao = /conclusão|portanto|assim|dessa forma|finalmente/gi.test(texto);
+            const temConectivos = /além disso|por outro lado|no entanto|entretanto|logo/gi.test(texto);
+            
+            // Pontuação simulada
+            let pontuacao = 0;
+            if (palavras >= 200) pontuacao += 25;
+            if (temIntroducao) pontuacao += 25;
+            if (temConclusao) pontuacao += 25;
+            if (temConectivos) pontuacao += 25;
+            
+            // Exibir análise
+            const analiseContent = document.getElementById('analise-content');
+            analiseContent.innerHTML = `
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${pontuacao}</div>
+                            <div class="kpi-label">Pontuação</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${palavras}</div>
+                            <div class="kpi-label">Palavras</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${paragrafos}</div>
+                            <div class="kpi-label">Parágrafos</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${palavrasPorFrase}</div>
+                            <div class="kpi-label">Palavras/Frase</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-header">Análise de Estrutura</div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Introdução identificada:</span>
+                            <span class="badge ${temIntroducao ? 'bg-success' : 'bg-danger'}">
+                                ${temIntroducao ? '✓' : '✗'}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Conclusão identificada:</span>
+                            <span class="badge ${temConclusao ? 'bg-success' : 'bg-danger'}">
+                                ${temConclusao ? '✓' : '✗'}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Conectivos utilizados:</span>
+                            <span class="badge ${temConectivos ? 'bg-success' : 'bg-warning'}">
+                                ${temConectivos ? '✓' : 'Poucos'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">Recomendações</div>
+                    <div class="card-body">
+                        ${palavras < 200 ? '<p class="text-danger">✗ Sua redação está muito curta. Tente escrever pelo menos 200 palavras.</p>' : '<p class="text-success">✓ Tamanho adequado da redação.</p>'}
+                        ${!temIntroducao ? '<p class="text-danger">✗ Inclua uma introdução clara apresentando o tema.</p>' : '<p class="text-success">✓ Introdução bem estruturada.</p>'}
+                        ${!temConclusao ? '<p class="text-danger">✗ Desenvolva uma conclusão que sintetize suas ideias.</p>' : '<p class="text-success">✓ Conclusão presente.</p>'}
+                        ${!temConectivos ? '<p class="text-warning">⚠ Use mais conectivos para melhorar a coesão.</p>' : '<p class="text-success">✓ Boa utilização de conectivos.</p>'}
+                    </div>
+                </div>
+            `;
+            
+            // Mostrar container de análise
+            document.getElementById('analise-container').classList.remove('d-none');
+            document.getElementById('analise-container').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            const editor = document.getElementById('redacao-editor');
+            editor.addEventListener('input', atualizarContador);
+            carregarRascunhos();
+            atualizarContador();
+        });
+    </script>
+</body>
+</html>

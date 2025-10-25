@@ -1,0 +1,3 @@
+uvicorn main:app --reload
+
+PS C:\Users\Wanderson de Paula\Desktop\TESTE\projeto_passo_2>
