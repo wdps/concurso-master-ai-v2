@@ -12,36 +12,39 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = 'concurso_master_secret_key_2024'
+# Chave secreta para gerenciamento de sessão (necessário para futuros sistemas de usuário)
+app.secret_key = 'concurso_master_secret_key_2024_super_segura'
 
 class SistemaSimulado:
+    """Gerencia a lógica de simulados ativos."""
     def __init__(self):
         self.simulados_ativos = {}
     
     def iniciar_simulado(self, user_id, config):
-        """Inicia um novo simulado"""
+        """Inicia um novo simulado e armazena em memória."""
         simulado_id = f"{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
         simulado_data = {
             'id': simulado_id,
             'config': config,
             'questoes': [],
-            'respostas': [],
+            'respostas': {}, # Usar um dicionário para respostas por índice
             'inicio': datetime.now(),
-            'tempo_restante': config.get('tempo_minutos', 180) * 60,
-            'status': 'ativo'
+            'tempo_limite_min': config.get('tempo_minutos', 180),
+            'status': 'ativo',
+            'questao_atual': 0
         }
         
         # Carregar questões
         questoes = self._carregar_questoes_simulado(config)
         simulado_data['questoes'] = questoes
-        simulado_data['questao_atual'] = 0
         
         self.simulados_ativos[simulado_id] = simulado_data
+        logger.info(f"Simulado {simulado_id} iniciado com {len(questoes)} questões.")
         return simulado_id
     
     def _carregar_questoes_simulado(self, config):
-        """Carrega questões baseado na configuração"""
+        """Carrega questões do banco baseado na configuração."""
         conn = get_db_connection()
         if not conn:
             return []
@@ -64,7 +67,7 @@ class SistemaSimulado:
             if aleatorio:
                 query += " ORDER BY RANDOM()"
             else:
-                query += " ORDER BY id"
+                query += " ORDER BY id" # Ou outra coluna de ordenação
             
             query += " LIMIT ?"
             params.append(quantidade)
@@ -100,14 +103,16 @@ class SistemaSimulado:
         finally:
             conn.close()
     
-    def registrar_resposta(self, simulado_id, questao_index, alternativa, tempo_gasto):
-        """Registra uma resposta do usuário"""
+    def registrar_resposta(self, simulado_id, questao_index, alternativa, tempo_gasto_na_questao):
+        """Registra uma resposta do usuário para uma questão específica."""
         if simulado_id not in self.simulados_ativos:
+            logger.warning(f"Tentativa de resposta para simulado {simulado_id} inexistente.")
             return False
         
         simulado = self.simulados_ativos[simulado_id]
         
         if questao_index >= len(simulado['questoes']):
+            logger.warning(f"Índice de questão {questao_index} fora do limite.")
             return False
         
         questao = simulado['questoes'][questao_index]
@@ -115,18 +120,19 @@ class SistemaSimulado:
         
         resposta = {
             'questao_id': questao['id'],
-            'questao_index': questao_index,
             'alternativa_escolhida': alternativa,
             'acertou': acertou,
-            'tempo_gasto': tempo_gasto,
+            'tempo_gasto': tempo_gasto_na_questao,
             'timestamp': datetime.now()
         }
         
-        simulado['respostas'].append(resposta)
+        # Armazena a resposta usando o índice da questão como chave
+        simulado['respostas'][questao_index] = resposta
+        logger.info(f"Resposta registrada para simulado {simulado_id}, questão {questao_index}.")
         return True
     
     def finalizar_simulado(self, simulado_id):
-        """Finaliza simulado e gera relatório"""
+        """Finaliza simulado, gera relatório e salva no histórico."""
         if simulado_id not in self.simulados_ativos:
             return None
         
@@ -137,39 +143,46 @@ class SistemaSimulado:
         relatorio = self._gerar_relatorio(simulado)
         simulado['relatorio'] = relatorio
         
-        # Salvar no histórico
+        # Salvar no histórico do banco de dados
         self._salvar_historico(simulado)
         
+        # Remover da memória ativa
+        del self.simulados_ativos[simulado_id]
+        
+        logger.info(f"Simulado {simulado_id} finalizado e salvo no histórico.")
         return relatorio
     
     def _gerar_relatorio(self, simulado):
-        """Gera relatório detalhado do simulado"""
-        respostas = simulado['respostas']
-        total_questoes = len(simulado['questoes'])
-        questoes_respondidas = len(respostas)
+        """Gera relatório detalhado do simulado."""
+        respostas = simulado['respostas'] # Agora é um dict {index: resposta}
+        total_questoes_planejadas = len(simulado['questoes'])
+        questoes_respondidas_obj = respostas.values()
+        questoes_respondidas_count = len(questoes_respondidas_obj)
         
         # Estatísticas gerais
-        acertos = sum(1 for r in respostas if r['acertou'])
-        percentual_acerto = (acertos / questoes_respondidas * 100) if questoes_respondidas > 0 else 0
+        acertos = sum(1 for r in questoes_respondidas_obj if r['acertou'])
+        percentual_acerto = (acertos / questoes_respondidas_count * 100) if questoes_respondidas_count > 0 else 0
         
         # Tempo total
-        tempo_total = sum(r['tempo_gasto'] for r in respostas)
+        tempo_total_gasto_seg = sum(r['tempo_gasto'] for r in questoes_respondidas_obj)
         
         # Estatísticas por matéria
         estatisticas_materia = {}
-        for resposta in respostas:
-            questao = simulado['questoes'][resposta['questao_index']]
-            materia = questao['materia']
-            
-            if materia not in estatisticas_materia:
-                estatisticas_materia[materia] = {'total': 0, 'acertos': 0, 'tempo': 0}
-            
-            estatisticas_materia[materia]['total'] += 1
-            estatisticas_materia[materia]['tempo'] += resposta['tempo_gasto']
-            if resposta['acertou']:
-                estatisticas_materia[materia]['acertos'] += 1
+        for questao_index, resposta in respostas.items():
+            # Garantir que o índice da questão ainda é válido
+            if questao_index < len(simulado['questoes']):
+                questao = simulado['questoes'][questao_index]
+                materia = questao['materia']
+                
+                if materia not in estatisticas_materia:
+                    estatisticas_materia[materia] = {'total': 0, 'acertos': 0, 'tempo': 0}
+                
+                estatisticas_materia[materia]['total'] += 1
+                estatisticas_materia[materia]['tempo'] += resposta['tempo_gasto']
+                if resposta['acertou']:
+                    estatisticas_materia[materia]['acertos'] += 1
         
-        # Calcular percentuais
+        # Calcular percentuais por matéria
         for materia, stats in estatisticas_materia.items():
             stats['percentual'] = (stats['acertos'] / stats['total'] * 100) if stats['total'] > 0 else 0
             stats['tempo_medio'] = stats['tempo'] / stats['total'] if stats['total'] > 0 else 0
@@ -179,13 +192,13 @@ class SistemaSimulado:
         
         return {
             'geral': {
-                'total_questoes': total_questoes,
-                'questoes_respondidas': questoes_respondidas,
+                'total_questoes_planejadas': total_questoes_planejadas,
+                'questoes_respondidas': questoes_respondidas_count,
                 'acertos': acertos,
-                'erros': questoes_respondidas - acertos,
+                'erros': questoes_respondidas_count - acertos,
                 'percentual_acerto': round(percentual_acerto, 2),
-                'tempo_total_minutos': round(tempo_total / 60, 2),
-                'tempo_medio_questao': round(tempo_total / questoes_respondidas, 2) if questoes_respondidas > 0 else 0
+                'tempo_total_minutos': round(tempo_total_gasto_seg / 60, 2),
+                'tempo_medio_questao': round(tempo_total_gasto_seg / questoes_respondidas_count, 2) if questoes_respondidas_count > 0 else 0
             },
             'por_materia': estatisticas_materia,
             'recomendacoes': recomendacoes,
@@ -193,32 +206,33 @@ class SistemaSimulado:
         }
     
     def _gerar_recomendacoes(self, estatisticas_materia):
-        """Gera recomendações personalizadas"""
+        """Gera recomendações personalizadas com base no desempenho."""
         recomendacoes = []
         
-        for materia, stats in estatisticas_materia.items():
+        # Ordenar por pior desempenho
+        materias_ordenadas = sorted(estatisticas_materia.items(), key=lambda item: item[1]['percentual'])
+        
+        for materia, stats in materias_ordenadas:
             if stats['percentual'] < 50:
-                recomendacoes.append(f"🚨 Foco urgente em {materia} - Apenas {stats['percentual']:.1f}% de acerto")
+                recomendacoes.append(f"🚨 Foco urgente em {materia} - Apenas {stats['percentual']:.1f}% de acerto.")
             elif stats['percentual'] < 70:
-                recomendacoes.append(f"📚 Continue estudando {materia} - {stats['percentual']:.1f}% de acerto")
+                recomendacoes.append(f"📚 Revisar {materia} - {stats['percentual']:.1f}% de acerto.")
             elif stats['percentual'] < 90:
-                recomendacoes.append(f"✅ Bom desempenho em {materia} - {stats['percentual']:.1f}% de acerto")
+                recomendacoes.append(f"✅ Bom desempenho em {materia} - {stats['percentual']:.1f}%. Continue mantendo.")
             else:
-                recomendacoes.append(f"🎉 Excelente em {materia} - {stats['percentual']:.1f}% de acerto")
+                recomendacoes.append(f"🎉 Excelente em {materia} - {stats['percentual']:.1f}%! Ótimo trabalho.")
         
         if not recomendacoes:
-            recomendacoes.append("📈 Continue com estudos equilibrados em todas as matérias")
+            recomendacoes.append("📈 Continue com estudos equilibrados em todas as matérias.")
         
         return recomendacoes
     
     def _preparar_questoes_detalhadas(self, simulado):
-        """Prepara questões com detalhes para revisão"""
+        """Prepara lista de questões com respostas para revisão do usuário."""
         detalhes = []
         
         for i, questao in enumerate(simulado['questoes']):
-            resposta_usuario = None
-            if i < len(simulado['respostas']):
-                resposta_usuario = simulado['respostas'][i]
+            resposta_usuario_obj = simulado['respostas'].get(i) # Busca a resposta pelo índice
             
             detalhe_questao = {
                 'numero': i + 1,
@@ -229,9 +243,9 @@ class SistemaSimulado:
                 'justificativa': questao.get('justificativa'),
                 'dica': questao.get('dica'),
                 'formula': questao.get('formula'),
-                'resposta_usuario': resposta_usuario['alternativa_escolhida'] if resposta_usuario else None,
-                'acertou': resposta_usuario['acertou'] if resposta_usuario else None,
-                'tempo_gasto': resposta_usuario['tempo_gasto'] if resposta_usuario else None
+                'resposta_usuario': resposta_usuario_obj['alternativa_escolhida'] if resposta_usuario_obj else None,
+                'acertou': resposta_usuario_obj['acertou'] if resposta_usuario_obj else None,
+                'tempo_gasto': resposta_usuario_obj['tempo_gasto'] if resposta_usuario_obj else None
             }
             
             detalhes.append(detalhe_questao)
@@ -239,30 +253,18 @@ class SistemaSimulado:
         return detalhes
     
     def _salvar_historico(self, simulado):
-        """Salva simulado no histórico"""
+        """Salva o relatório final do simulado no banco de dados."""
         conn = get_db_connection()
         if not conn:
+            logger.error("Falha ao salvar histórico: Sem conexão com DB.")
             return
         
         try:
             cursor = conn.cursor()
             
-            # Criar tabela de histórico se não existir
+            # Tabela de histórico (criada em criar_tabelas_se_necessario)
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS historico_simulados (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    simulado_id TEXT UNIQUE,
-                    config TEXT,
-                    relatorio TEXT,
-                    data_inicio TIMESTAMP,
-                    data_fim TIMESTAMP,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            # Salvar simulado
-            cursor.execute('''
-                INSERT OR REPLACE INTO historico_simulados 
+                INSERT INTO historico_simulados 
                 (simulado_id, config, relatorio, data_inicio, data_fim)
                 VALUES (?, ?, ?, ?, ?)
             ''', (
@@ -276,33 +278,37 @@ class SistemaSimulado:
             conn.commit()
             
         except Exception as e:
-            logger.error(f"Erro ao salvar histórico: {e}")
+            logger.error(f"Erro ao salvar histórico no DB: {e}")
+            conn.rollback() # Desfaz a transação em caso de erro
         finally:
             conn.close()
 
-# Instância global do sistema
+# --- Instância Global ---
 sistema_simulado = SistemaSimulado()
 
+# --- Conexão e Criação do Banco ---
+
 def get_db_connection():
-    """Conexão segura com o banco"""
+    """Conexão segura com o banco SQLite."""
     try:
         conn = sqlite3.connect('concurso.db')
         conn.row_factory = sqlite3.Row
         return conn
     except Exception as e:
-        logger.error(f"❌ Erro na conexão: {e}")
+        logger.error(f"❌ Erro na conexão com o DB: {e}")
         return None
 
 def criar_tabelas_se_necessario():
-    """Cria tabelas necessárias se não existirem"""
+    """Verifica e cria todas as tabelas necessárias na inicialização."""
     conn = get_db_connection()
     if not conn:
+        logger.error("Falha ao criar tabelas: Sem conexão com DB.")
         return False
     
     try:
         cursor = conn.cursor()
         
-        # Tabela de questões
+        # Tabela de questões (expandida)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS questões (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -317,14 +323,14 @@ def criar_tabelas_se_necessario():
                 justificativa TEXT,
                 dica TEXT,
                 formula TEXT,
-                tempo_estimado INTEGER DEFAULT 60,
+                tempo_estimado INTEGER DEFAULT 90,
                 ano_prova TEXT,
                 banca_organizadora TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         
-        # Tabela de redações
+        # Tabela de redações (temas)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS redacoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -337,7 +343,7 @@ def criar_tabelas_se_necessario():
             )
         ''')
         
-        # Tabela de histórico de redações
+        # Tabela de histórico de redações (submissões)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS historico_redacoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -350,42 +356,57 @@ def criar_tabelas_se_necessario():
                 FOREIGN KEY (redacao_id) REFERENCES redacoes (id)
             )
         ''')
+
+        # Tabela de histórico de simulados (relatórios)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS historico_simulados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                simulado_id TEXT UNIQUE,
+                config TEXT,
+                relatorio TEXT,
+                data_inicio TIMESTAMP,
+                data_fim TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         
         conn.commit()
-        conn.close()
+        logger.info("Verificação de tabelas concluída. Banco pronto.")
         return True
         
     except Exception as e:
-        logger.error(f"❌ Erro ao criar tabelas: {e}")
-        conn.close()
+        logger.error(f"❌ Erro ao criar/verificar tabelas: {e}")
         return False
+    finally:
+        conn.close()
 
-# ========== ROTAS PRINCIPAIS ==========
+# ========== ROTAS DE NAVEGAÇÃO (HTML) ==========
 
 @app.route('/')
 def home():
-    """Página inicial com dashboard"""
+    """Página inicial / Hub principal."""
     return render_template('index.html')
 
 @app.route('/simulado')
-def simulado():
-    """Página do simulado"""
+def simulado_page():
+    """Página do sistema de simulado."""
     return render_template('simulado.html')
 
 @app.route('/redacao')
-def redacao():
-    """Página de redação"""
+def redacao_page():
+    """Página do sistema de redação."""
     return render_template('redacao.html')
 
 @app.route('/dashboard')
 def dashboard_page():
-    """Página de dashboard detalhado"""
+    """Página do dashboard avançado."""
     return render_template('dashboard.html')
 
-# ========== API ENDPOINTS ==========
+# ========== API ENDPOINTS (JSON) ==========
 
 @app.route('/api/health')
 def health():
+    """Verificação de saúde da API."""
     return jsonify({
         "status": "online", 
         "message": "ConcursoMaster AI 3.0",
@@ -395,7 +416,7 @@ def health():
 
 @app.route('/api/materias')
 def materias():
-    """API de matérias"""
+    """API de matérias para preencher o formulário do simulado."""
     criar_tabelas_se_necessario()
     
     conn = get_db_connection()
@@ -419,7 +440,7 @@ def materias():
             
             estatisticas[materia] = {
                 'total': total_materia,
-                'faceis': 0,  # Simplificado para demo
+                'faceis': 0,  # Simplificado para demo, poderia ser calculado
                 'medias': total_materia,
                 'dificeis': 0
             }
@@ -438,11 +459,15 @@ def materias():
         logger.error(f"Erro em /api/materias: {e}")
         return jsonify({"materias": [], "estatisticas": {}, "total_geral": 0})
 
+# --- API do Sistema de Simulado ---
+
 @app.route('/api/simulado/iniciar', methods=['POST'])
-def iniciar_simulado():
-    """Inicia um novo simulado"""
+def iniciar_simulado_api():
+    """Endpoint para iniciar um novo simulado."""
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "Requisição sem dados"}), 400
         
         config = {
             'materias': data.get('materias', []),
@@ -451,42 +476,48 @@ def iniciar_simulado():
             'aleatorio': data.get('aleatorio', True)
         }
         
-        user_id = 'user_' + datetime.now().strftime('%Y%m%d%H%M%S')
+        # Gerar um ID de usuário temporário (idealmente viria da sessão)
+        user_id = session.get('user_id', 'anon_' + datetime.now().strftime('%f'))
+        
         simulado_id = sistema_simulado.iniciar_simulado(user_id, config)
         
+        primeira_questao = sistema_simulado.simulados_ativos[simulado_id]['questoes'][0]
+        total_questoes = len(sistema_simulado.simulados_ativos[simulado_id]['questoes'])
+
         return jsonify({
             "success": True,
             "simulado_id": simulado_id,
-            "quantidade_questoes": len(sistema_simulado.simulados_ativos[simulado_id]['questoes'])
+            "total_questoes": total_questoes,
+            "primeira_questao": primeira_questao,
+            "tempo_limite_seg": config['tempo_minutos'] * 60
         })
         
     except Exception as e:
         logger.error(f"Erro ao iniciar simulado: {e}")
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/simulado/<simulado_id>/questao/<int:questao_index>')
 def get_questao_simulado(simulado_id, questao_index):
-    """Obtém questão específica do simulado"""
+    """Obtém uma questão específica do simulado."""
     if simulado_id not in sistema_simulado.simulados_ativos:
-        return jsonify({"error": "Simulado não encontrado"}), 404
+        return jsonify({"error": "Simulado não encontrado ou finalizado"}), 404
     
     simulado = sistema_simulado.simulados_ativos[simulado_id]
     
     if questao_index >= len(simulado['questoes']):
-        return jsonify({"error": "Questão não encontrada"}), 404
+        return jsonify({"error": "Questão não encontrada (índice fora do limite)"}), 404
     
     questao = simulado['questoes'][questao_index]
     
     return jsonify({
         "questao": questao,
         "numero_questao": questao_index + 1,
-        "total_questoes": len(simulado['questoes']),
-        "tempo_restante": simulado['tempo_restante']
+        "total_questoes": len(simulado['questoes'])
     })
 
 @app.route('/api/simulado/<simulado_id>/responder', methods=['POST'])
-def responder_questao(simulado_id):
-    """Registra resposta da questão"""
+def responder_questao_api(simulado_id):
+    """Registra a resposta de uma questão."""
     try:
         data = request.get_json()
         
@@ -498,15 +529,18 @@ def responder_questao(simulado_id):
             simulado_id, questao_index, alternativa, tempo_gasto
         )
         
-        return jsonify({"success": success})
+        if not success:
+            return jsonify({"success": False, "error": "Falha ao registrar resposta"}), 400
+            
+        return jsonify({"success": True})
         
     except Exception as e:
         logger.error(f"Erro ao registrar resposta: {e}")
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/simulado/<simulado_id>/finalizar', methods=['POST'])
-def finalizar_simulado(simulado_id):
-    """Finaliza simulado e retorna relatório"""
+def finalizar_simulado_api(simulado_id):
+    """Endpoint para finalizar o simulado e obter o relatório."""
     try:
         relatorio = sistema_simulado.finalizar_simulado(simulado_id)
         
@@ -516,15 +550,17 @@ def finalizar_simulado(simulado_id):
                 "relatorio": relatorio
             })
         else:
-            return jsonify({"success": False, "error": "Simulado não encontrado"})
+            return jsonify({"success": False, "error": "Simulado não encontrado ou já finalizado"}), 404
             
     except Exception as e:
         logger.error(f"Erro ao finalizar simulado: {e}")
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# --- API do Sistema de Redação ---
 
 @app.route('/api/redacoes/temas')
 def get_temas_redacao():
-    """Obtém temas de redação disponíveis"""
+    """Obtém temas de redação disponíveis no banco."""
     criar_tabelas_se_necessario()
     
     conn = get_db_connection()
@@ -540,35 +576,41 @@ def get_temas_redacao():
         return jsonify({"temas": temas})
         
     except Exception as e:
-        logger.error(f"Erro ao obter temas: {e}")
+        logger.error(f"Erro ao obter temas de redação: {e}")
         return jsonify({"temas": []})
 
 @app.route('/api/redacoes/corrigir', methods=['POST'])
-def corrigir_redacao():
-    """Corrige uma redação"""
+def corrigir_redacao_api():
+    """Recebe uma redação e retorna uma correção simulada."""
     try:
         data = request.get_json()
         
         redacao_id = data.get('redacao_id')
         texto_redacao = data.get('texto_redacao')
         
-        # Simulação de correção (em produção, integrar com IA)
+        # --- SIMULAÇÃO DE CORREÇÃO (IA) ---
+        # Em um sistema real, aqui você chamaria uma API de IA (ex: GPT, Gemini)
+        # Vamos simular uma resposta com base no tamanho do texto
+        
+        nota_base = min(len(texto_redacao) / 10, 600) # Nota base pelo tamanho
+        nota_final = min(int(nota_base + random.randint(200, 400)), 1000) # Nota final
+        
         correcao = {
-            'nota': random.randint(600, 1000),
-            'competencia_1': {'nota': random.randint(120, 200), 'comentario': 'Bom domínio da norma culta'},
-            'competencia_2': {'nota': random.randint(120, 200), 'comentario': 'Tema bem desenvolvido'},
-            'competencia_3': {'nota': random.randint(120, 200), 'comentario': 'Argumentação consistente'},
-            'competencia_4': {'nota': random.randint(120, 200), 'comentario': 'Boa organização textual'},
-            'competencia_5': {'nota': random.randint(120, 200), 'comentario': 'Proposta de intervenção adequada'},
-            'feedback_geral': 'Redação bem estruturada, com argumentos consistentes e proposta de intervenção adequada ao tema.',
+            'nota': nota_final,
+            'competencia_1': {'nota': random.randint(120, 200), 'comentario': 'Bom domínio da norma culta, poucos desvios gramaticais.'},
+            'competencia_2': {'nota': random.randint(120, 200), 'comentario': 'Tema bem compreendido, com uso de repertório pertinente.'},
+            'competencia_3': {'nota': random.randint(100, 200), 'comentario': 'Argumentação consistente, mas pode aprofundar a relação entre os fatos.'},
+            'competencia_4': {'nota': random.randint(120, 200), 'comentario': 'Boa organização textual e uso de conectivos.'},
+            'competencia_5': {'nota': random.randint(100, 200), 'comentario': 'Proposta de intervenção presente, mas poderia ser mais detalhada.'},
+            'feedback_geral': f'Ótimo esforço! Sua nota foi {nota_final}. A redação está bem estruturada. Continue praticando a profundidade dos argumentos e o detalhamento da proposta de intervenção para alcançar a nota máxima.',
             'sugestoes_melhoria': [
-                'Ampliar o repertório sociocultural',
-                'Cuidado com repetição de conectivos',
-                'Desenvolver mais os argumentos no segundo parágrafo'
+                'Tente usar um repertório sociocultural mais diversificado.',
+                'Detalhe melhor os "agentes" e "meios" na sua proposta de intervenção.',
+                'Revise o uso de vírgulas em orações subordinadas.'
             ]
         }
         
-        # Salvar correção
+        # Salvar submissão e correção no histórico
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
@@ -587,11 +629,13 @@ def corrigir_redacao():
         
     except Exception as e:
         logger.error(f"Erro ao corrigir redação: {e}")
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# --- API do Dashboard Avançado ---
 
 @app.route('/api/dashboard/estatisticas')
 def get_estatisticas_dashboard():
-    """Estatísticas para o dashboard"""
+    """Estatísticas avançadas para o dashboard profissional."""
     criar_tabelas_se_necessario()
     
     conn = get_db_connection()
@@ -601,52 +645,113 @@ def get_estatisticas_dashboard():
     try:
         cursor = conn.cursor()
         
-        # Total de questões
+        # 1. Total de questões no banco
         cursor.execute("SELECT COUNT(*) as total FROM questões")
-        total_questoes = cursor.fetchone()['total']
+        total_questoes_banco = cursor.fetchone()['total']
         
-        # Questões por matéria
-        cursor.execute('''
-            SELECT disciplina, COUNT(*) as quantidade 
-            FROM questões 
-            GROUP BY disciplina 
-            ORDER BY quantidade DESC
-        ''')
-        questoes_materia = {row['disciplina']: row['quantidade'] for row in cursor.fetchall()}
+        # 2. Histórico de simulados (para gráficos e tabela)
+        # Ordenar por data ASC para o gráfico de evolução
+        cursor.execute("SELECT relatorio, data_fim FROM historico_simulados ORDER BY data_fim ASC")
+        todos_relatorios = cursor.fetchall()
         
-        # Histórico de simulados
-        cursor.execute('''
-            SELECT relatorio FROM historico_simulados 
-            ORDER BY data_fim DESC LIMIT 10
-        ''')
-        historico_simulados = []
-        for row in cursor.fetchall():
+        # 3. Processar dados agregados
+        historico_evolucao = []
+        global_stats_materia = {}
+        tempo_total_estudo = 0
+        total_questoes_respondidas = 0
+        
+        for row in todos_relatorios:
             try:
                 relatorio = json.loads(row['relatorio'])
-                historico_simulados.append(relatorio['geral'])
+                data_fim_str = row['data_fim']
+                
+                # Para gráfico de evolução
+                historico_evolucao.append({
+                    'data': datetime.fromisoformat(data_fim_str).strftime('%d/%m'),
+                    'percentual': relatorio['geral']['percentual_acerto']
+                })
+                
+                # Para stats de KPI
+                tempo_total_estudo += relatorio['geral'].get('tempo_total_minutos', 0)
+                total_questoes_respondidas += relatorio['geral'].get('questoes_respondidas', 0)
+                
+                # Para gráfico de desempenho por matéria
+                for materia, stats in relatorio.get('por_materia', {}).items():
+                    if materia not in global_stats_materia:
+                        global_stats_materia[materia] = {'acertos': 0, 'total': 0}
+                    global_stats_materia[materia]['acertos'] += stats['acertos']
+                    global_stats_materia[materia]['total'] += stats['total']
+                    
+            except Exception as e:
+                logger.error(f"Erro ao processar relatorio: {e}")
+
+        # Calcular percentuais globais por matéria
+        desempenho_global_materia = {}
+        for materia, stats in global_stats_materia.items():
+            percentual = (stats['acertos'] * 100 / stats['total']) if stats['total'] > 0 else 0
+            desempenho_global_materia[materia] = round(percentual, 2)
+            
+        # 4. Histórico recente (para a tabela, 10 últimos)
+        historico_recente_formatado = []
+        # Pegar os 10 últimos e inverter (mais novo primeiro)
+        for row in reversed(todos_relatorios[-10:]): 
+            try:
+                relatorio = json.loads(row['relatorio'])
+                data_fim_str = row['data_fim']
+                historico_recente_formatado.append({
+                    'data': datetime.fromisoformat(data_fim_str).strftime('%d/%m/%Y %H:%M'),
+                    'geral': relatorio['geral']
+                })
             except:
                 pass
-        
+
+        # 5. Média geral
+        media_geral = 0
+        if historico_evolucao:
+            media_geral = sum(h['percentual'] for h in historico_evolucao) / len(historico_evolucao)
+
         conn.close()
         
         return jsonify({
             "estatisticas": {
-                "total_questoes": total_questoes,
-                "questoes_por_materia": questoes_materia,
-                "historico_simulados": historico_simulados
+                "total_questoes_banco": total_questoes_banco,
+                "total_simulados_realizados": len(todos_relatorios),
+                "total_questoes_respondidas": total_questoes_respondidas,
+                "tempo_total_estudo_min": round(tempo_total_estudo, 2),
+                "media_geral_percentual": round(media_geral, 2),
+                "evolucao_desempenho": historico_evolucao, # Para gráfico de linha
+                "desempenho_global_materia": desempenho_global_materia, # Para gráfico de rosca
+                "historico_recente": historico_recente_formatado # Para tabela
             }
         })
         
     except Exception as e:
-        logger.error(f"Erro ao obter estatísticas: {e}")
+        logger.error(f"Erro em /api/dashboard/estatisticas: {e}")
+        conn.close()
         return jsonify({"estatisticas": {}})
+
+# --- Rota Estática ---
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('.', path)
+    """Serve arquivos estáticos como index.html (se não for pego por '/')"""
+    # Tenta servir da pasta 'static' primeiro
+    if os.path.exists(os.path.join('static', path)):
+        return send_from_directory('static', path)
+    # Se não, tenta servir da raiz (para index.html, etc.)
+    if os.path.exists(os.path.join('.', path)):
+        return send_from_directory('.', path)
+    
+    # Fallback para o index.html principal
+    return send_from_directory('.', 'index.html')
+
+
+# --- Inicialização ---
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
-    logger.info(f"🚀 ConcursoMaster AI 3.0 iniciando na porta {port}")
+    # Garante que as tabelas existam antes de rodar
     criar_tabelas_se_necessario()
+    logger.info(f"🚀 ConcursoMaster AI 3.0 iniciando na porta {port}")
+    # debug=False é crucial para produção (Gunicorn/Railway vai gerenciar)
     app.run(host='0.0.0.0', port=port, debug=False)
