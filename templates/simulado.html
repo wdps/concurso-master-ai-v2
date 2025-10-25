@@ -3,28 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado Inteligente - ConcursoMaster AI</title>
+    <title>Simulados Personalizados - ConcursoMaster AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="bg-light">
-
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI 3.0
+                <i class="fas fa-brain"></i> ConcursoMaster AI
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Início</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/simulado">Simulado</a>
+                        <a class="nav-link active" href="/simulado">Simulados</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/redacao">Redação</a>
@@ -37,573 +33,523 @@
         </div>
     </nav>
 
-    <div class="container">
-        <div id="tela-configuracao" class="simulado-container">
-            <h2 class="text-center mb-4">
-                <i class="fas fa-cogs text-primary"></i> Configurar Simulado
-            </h2>
-            
-            <div class="mb-4">
-                <h5>1. Selecione as Matérias</h5>
-                <div id="lista-materias" class="row">
-                    <p class="text-muted">Carregando matérias...</p>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <h5>2. Quantidade de Questões</h5>
-                    <label for="quantidade-questoes" class="form-label">
-                        Total: <span id="quantidade-value" class="fw-bold">50</span>
-                    </label>
-                    <input type="range" class="form-range" id="quantidade-questoes" 
-                           min="10" max="100" value="50" step="5">
-                </div>
-                <div class="col-md-6 mb-4">
-                    <h5>3. Tempo do Simulado</h5>
-                    <label for="tempo-simulado" class="form-label">
-                        Minutos: <span id="tempo-value" class="fw-bold">180</span>
-                    </label>
-                    <input type="range" class="form-range" id="tempo-simulado" 
-                           min="30" max="360" value="180" step="15">
-                </div>
-            </div>
-            
-            <div class="mb-4 form-check form-switch fs-5">
-                <input class="form-check-input" type="checkbox" id="modo-aleatorio" checked>
-                <label class="form-check-label" for="modo-aleatorio">
-                    Embaralhar Questões (Modo Aleatório)
-                </label>
-            </div>
-            
-            <div class="text-center border-top pt-4">
-                <button id="btn-iniciar-simulado" class="btn btn-primary btn-lg px-5">
-                    <i class="fas fa-play"></i> Iniciar Simulado
-                </button>
-            </div>
-        </div>
-
-        <div id="tela-simulado" class="simulado-container" style="display: none;">
-            
-            <div class="questao-header">
-                <div>
-                    <h4 class="mb-0">Questão <span id="numero-questao-atual">1</span> de <span id="total-questoes">0</span></h4>
-                    <small id="materia-atual" class="text-muted fw-bold"></small>
-                </div>
-                <div class="timer">
-                    <i class="fas fa-clock"></i> <span id="timer-display">00:00</span>
-                </div>
-            </div>
-            <div class="progress mb-4" style="height: 10px;">
-                <div id="progresso-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-            </div>
-
-            <div id="tela-questao">
-                <div id="questao-enunciado" class="mb-3 fs-5">
-                    <p>Carregando...</p>
-                </div>
-                
-                <div id="alternativas-container">
-                    </div>
-            </div>
-
-            <div id="feedback-container" class="feedback-box" style="display: none;">
-                <h5 id="feedback-titulo"></h5>
-                <p id="feedback-justificativa" class="justificativa"></p>
-                <div id="dica-container" class="dica-box" style="display: none;">
-                    <h6><i class="fas fa-lightbulb"></i> Dica:</h6>
-                    <p id="texto-dica"></p>
-                    <div id="formula-container" style="display: none;">
-                        <h6><i class="fas fa-square-root-variable"></i> Fórmula:</h6>
-                        <p id="texto-formula"></p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="d-flex justify-content-between mt-4 border-top pt-4">
-                <button id="btn-finalizar-simulado" class="btn btn-danger">
-                    <i class="fas fa-stop"></i> Finalizar e Ver Resultado
-                </button>
-                <button id="btn-proxima" class="btn btn-primary btn-lg" disabled>
-                    Próxima <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modal-resultado" tabindex="-1" aria-labelledby="modalResultadoLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title" id="modalResultadoLabel">
-                        <i class="fas fa-trophy icon-trophy"></i> Resultado do Simulado
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row text-center mb-4">
-                        <div class="col-md-3">
-                            <div class="stats-card p-3">
-                                <h3 id="total-acertos" class="text-success display-6 fw-bold">0</h3>
-                                <p class="text-muted mb-0">Acertos</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats-card p-3">
-                                <h3 id="total-erros" class="text-danger display-6 fw-bold">0</h3>
-                                <p class="text-muted mb-0">Erros</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats-card p-3">
-                                <h3 id="percentual-acerto" class="text-primary display-6 fw-bold">0%</h3>
-                                <p class="text-muted mb-0">Percentual</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats-card p-3">
-                                <h3 id="tempo-total" class="text-info display-6 fw-bold">0min</h3>
-                                <p class="text-muted mb-0">Tempo Total</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <h5>Desempenho por Matéria</h5>
-                            <div style="height: 300px;">
-                                <canvas id="grafico-desempenho-modal"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-4">
-                            <h5>Recomendações de Estudo</h5>
-                            <div id="lista-recomendacoes" class="list-group" style="max-height: 300px; overflow-y: auto;">
+    <div class="main-container">
+        <div class="container">
+            <!-- Tela de Configuração -->
+            <div id="config-screen" class="fade-in">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="config-card">
+                            <h2 class="text-center mb-4">
+                                <i class="fas fa-cogs me-2"></i>Configurar Simulado
+                            </h2>
+                            
+                            <!-- Quantidade de Questões -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Quantidade de Questões</label>
+                                <input type="range" class="form-range" id="quantidade-slider" min="5" max="50" value="10">
+                                <div class="d-flex justify-content-between">
+                                    <small>5 questões</small>
+                                    <span id="quantidade-value" class="fw-bold">10 questões</span>
+                                    <small>50 questões</small>
                                 </div>
+                            </div>
+
+                            <!-- Tempo por Questão -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Tempo por Questão (segundos)</label>
+                                <input type="range" class="form-range" id="tempo-slider" min="30" max="180" value="60">
+                                <div class="d-flex justify-content-between">
+                                    <small>30s</small>
+                                    <span id="tempo-value" class="fw-bold">60 segundos</span>
+                                    <small>180s</small>
+                                </div>
+                            </div>
+
+                            <!-- Matérias -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Selecione as Matérias</label>
+                                <div class="materias-grid" id="materias-container">
+                                    <!-- Matérias serão carregadas via JavaScript -->
+                                </div>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="selectAllMaterias()">
+                                        <i class="fas fa-check-double me-1"></i>Selecionar Todas
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllMaterias()">
+                                        <i class="fas fa-times me-1"></i>Limpar Seleção
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Resumo -->
+                            <div class="card bg-light mb-4">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-info-circle me-2"></i>Resumo do Simulado
+                                    </h6>
+                                    <div id="resumo-simulado" class="small">
+                                        Selecione as matérias para ver o resumo...
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ações -->
+                            <div class="text-center">
+                                <button id="btn-iniciar" class="btn btn-primary btn-lg px-5" onclick="iniciarSimulado()">
+                                    <i class="fas fa-play me-2"></i>Iniciar Simulado
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <a href="/dashboard" class="btn btn-outline-primary">
-                        <i class="fas fa-chart-line"></i> Ver Dashboard Completo
-                    </a>
-                    <button id="btn-novo-simulado" class="btn btn-primary" data-bs-dismiss="modal">
-                        <i class="fas fa-redo"></i> Fazer Novo Simulado
-                    </button>
+            </div>
+
+            <!-- Tela do Simulado -->
+            <div id="simulado-screen" class="d-none fade-in">
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <!-- Header do Simulado -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-clock me-2 text-warning"></i>
+                                            <span id="timer">00:00</span>
+                                        </h5>
+                                    </div>
+                                    <div class="col-md-6 text-md-end">
+                                        <span id="progress-text">Questão 1 de 10</span>
+                                    </div>
+                                </div>
+                                <div class="progress-container mt-3">
+                                    <div class="progress">
+                                        <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Questão -->
+                        <div id="questao-container" class="questao-card">
+                            <!-- Questão será carregada via JavaScript -->
+                        </div>
+
+                        <!-- Navegação -->
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <button id="btn-anterior" class="btn btn-outline-primary" onclick="questaoAnterior()" disabled>
+                                        <i class="fas fa-arrow-left me-2"></i>Anterior
+                                    </button>
+                                    <button id="btn-proxima" class="btn btn-primary" onclick="proximaQuestao()">
+                                        Próxima<i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                    <button id="btn-finalizar" class="btn btn-success d-none" onclick="finalizarSimulado()">
+                                        <i class="fas fa-flag-checkered me-2"></i>Finalizar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela de Resultado -->
+            <div id="resultado-screen" class="d-none fade-in">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="config-card text-center">
+                            <h2 class="mb-4">
+                                <i class="fas fa-trophy me-2 text-warning"></i>Simulado Finalizado!
+                            </h2>
+                            
+                            <div id="resultado-content">
+                                <!-- Resultados serão carregados via JavaScript -->
+                            </div>
+
+                            <div class="mt-4">
+                                <button class="btn btn-primary me-3" onclick="voltarParaConfig()">
+                                    <i class="fas fa-redo me-2"></i>Novo Simulado
+                                </button>
+                                <a href="/dashboard" class="btn btn-success">
+                                    <i class="fas fa-chart-line me-2"></i>Ver Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <script>
-        // --- Variáveis Globais de Estado ---
-        let simuladoId = null;
-        let questoesCache = []; // Armazena todas as questões do simulado
-        let questaoAtualIndex = 0;
-        let totalQuestoes = 0;
-        let respostasUsuario = {}; // Armazena as respostas {index: 'A'}
-        let tempoRestanteSeg = 0;
-        let timerInterval = null;
-        let tempoInicioQuestao = null;
-        let resultadoModal = null; // Instância do Modal Bootstrap
-        let graficoModalInstance = null;
+        let simuladoData = {
+            questões: [],
+            respostas: {},
+            questaoAtual: 0,
+            tempoRestante: 0,
+            timerInterval: null,
+            config: {}
+        };
 
-        // --- Elementos DOM ---
-        const telaConfiguracao = document.getElementById('tela-configuracao');
-        const telaSimulado = document.getElementById('tela-simulado');
-        const btnIniciarSimulado = document.getElementById('btn-iniciar-simulado');
-        const btnProxima = document.getElementById('btn-proxima');
-        const btnFinalizar = document.getElementById('btn-finalizar-simulado');
-        
-        // --- Inicialização ---
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarMaterias();
-            configurarEventListeners();
-            resultadoModal = new bootstrap.Modal(document.getElementById('modal-resultado'));
+        // Carregar matérias disponíveis
+        async function carregarMaterias() {
+            try {
+                const response = await fetch('/api/questoes/random?quantidade=1');
+                const data = await response.json();
+                
+                // Buscar matérias únicas
+                const materiasResponse = await fetch('/api/questoes/random?quantidade=100');
+                const materiasData = await materiasResponse.json();
+                
+                const materiasUnicas = [...new Set(materiasData.questoes.map(q => q.materia))];
+                const container = document.getElementById('materias-container');
+                
+                container.innerHTML = materiasUnicas.map(materia => `
+                    <div class="materia-option" onclick="toggleMateria(this)" data-materia="${materia}">
+                        ${materia}
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Erro ao carregar matérias:', error);
+            }
+        }
+
+        // Sliders
+        document.getElementById('quantidade-slider').addEventListener('input', function() {
+            const value = this.value;
+            document.getElementById('quantidade-value').textContent = `${value} questões`;
+            atualizarResumo();
         });
 
-        function carregarMaterias() {
-            fetch('/api/materias')
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('lista-materias');
-                    container.innerHTML = ''; // Limpa o "Carregando..."
-                    
-                    data.materias.forEach(materia => {
-                        const div = document.createElement('div');
-                        div.className = 'col-md-6';
-                        div.innerHTML = `
-                            <div class="form-check materia-checkbox">
-                                <input class="form-check-input materia-checkbox-input" type="checkbox" 
-                                       value="${materia}" id="materia-${materia}">
-                                <label class="form-check-label" for="materia-${materia}">
-                                    ${materia} (${data.estatisticas[materia]?.total || 0})
-                                </label>
-                            </div>
-                        `;
-                        container.appendChild(div);
-                    });
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar matérias:', error);
-                    document.getElementById('lista-materias').innerHTML = 
-                        '<p class="text-danger">Erro ao carregar matérias. Tente recarregar a página.</p>';
-                });
+        document.getElementById('tempo-slider').addEventListener('input', function() {
+            const value = this.value;
+            document.getElementById('tempo-value').textContent = `${value} segundos`;
+            atualizarResumo();
+        });
+
+        // Controle de matérias
+        function toggleMateria(element) {
+            element.classList.toggle('selected');
+            atualizarResumo();
         }
 
-        function configurarEventListeners() {
-            // Sliders de configuração
-            document.getElementById('quantidade-questoes').addEventListener('input', e => {
-                document.getElementById('quantidade-value').textContent = e.target.value;
+        function selectAllMaterias() {
+            document.querySelectorAll('.materia-option').forEach(opt => {
+                opt.classList.add('selected');
             });
-            document.getElementById('tempo-simulado').addEventListener('input', e => {
-                document.getElementById('tempo-value').textContent = e.target.value;
-            });
-
-            // Botões principais
-            btnIniciarSimulado.addEventListener('click', iniciarSimulado);
-            btnProxima.addEventListener('click', proximaQuestao);
-            btnFinalizar.addEventListener('click', confirmarFinalizarSimulado);
-            document.getElementById('btn-novo-simulado').addEventListener('click', reiniciarInterface);
+            atualizarResumo();
         }
-        
-        // --- Lógica Principal do Simulado ---
 
-        async function iniciarSimulado() {
-            const materiasCheckboxes = document.querySelectorAll('.materia-checkbox-input:checked');
-            const materiasSelecionadas = Array.from(materiasCheckboxes).map(cb => cb.value);
+        function deselectAllMaterias() {
+            document.querySelectorAll('.materia-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            atualizarResumo();
+        }
+
+        function getMateriasSelecionadas() {
+            return Array.from(document.querySelectorAll('.materia-option.selected'))
+                       .map(opt => opt.dataset.materia);
+        }
+
+        function atualizarResumo() {
+            const quantidade = document.getElementById('quantidade-slider').value;
+            const tempo = document.getElementById('tempo-slider').value;
+            const materias = getMateriasSelecionadas();
             
-            if (materiasSelecionadas.length === 0) {
+            const resumo = `
+                <strong>${quantidade} questões</strong> | 
+                <strong>${tempo}s por questão</strong> | 
+                <strong>${materias.length} matérias</strong> selecionadas
+                ${materias.length > 0 ? `<br><small>${materias.join(', ')}</small>` : ''}
+            `;
+            
+            document.getElementById('resumo-simulado').innerHTML = resumo;
+        }
+
+        // Iniciar simulado
+        async function iniciarSimulado() {
+            const quantidade = parseInt(document.getElementById('quantidade-slider').value);
+            const materias = getMateriasSelecionadas();
+            const tempoPorQuestao = parseInt(document.getElementById('tempo-slider').value);
+            
+            if (materias.length === 0) {
                 alert('Selecione pelo menos uma matéria!');
                 return;
             }
 
-            const config = {
-                materias: materiasSelecionadas,
-                quantidade_total: parseInt(document.getElementById('quantidade-questoes').value),
-                tempo_minutos: parseInt(document.getElementById('tempo-simulado').value),
-                aleatorio: document.getElementById('modo-aleatorio').checked
-            };
-
-            btnIniciarSimulado.disabled = true;
-            btnIniciarSimulado.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Carregando...';
-
             try {
+                document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+                document.getElementById('btn-iniciar').disabled = true;
+
                 const response = await fetch('/api/simulado/iniciar', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(config)
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quantidade: quantidade,
+                        materias: materias,
+                        tempo_por_questao: tempoPorQuestao
+                    })
                 });
-                
+
                 const data = await response.json();
                 
                 if (data.success) {
-                    simuladoId = data.simulado_id;
-                    totalQuestoes = data.total_questoes; // Total real retornado pela API
-                    tempoRestanteSeg = data.tempo_limite_seg;
+                    simuladoData.config = { quantidade, materias, tempoPorQuestao };
+                    simuladoData.tempoRestante = quantidade * tempoPorQuestao;
                     
-                    // A API de /iniciar agora retorna a primeira questão para economizar uma chamada
-                    questoesCache[0] = data.primeira_questao;
+                    // Mostrar tela do simulado
+                    document.getElementById('config-screen').classList.add('d-none');
+                    document.getElementById('simulado-screen').classList.remove('d-none');
                     
-                    // Mudar para tela do simulado
-                    telaConfiguracao.style.display = 'none';
-                    telaSimulado.style.display = 'block';
-                    
+                    // Iniciar timer e carregar primeira questão
                     iniciarTimer();
-                    carregarQuestao(0); // Carrega a primeira questão (já em cache)
+                    carregarQuestao(0);
                 } else {
                     alert('Erro ao iniciar simulado: ' + data.error);
                 }
+                
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Erro de conexão ao iniciar simulado.');
+                alert('Erro ao iniciar simulado');
             } finally {
-                btnIniciarSimulado.disabled = false;
-                btnIniciarSimulado.innerHTML = '<i class="fas fa-play"></i> Iniciar Simulado';
+                document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-play me-2"></i>Iniciar Simulado';
+                document.getElementById('btn-iniciar').disabled = false;
             }
         }
 
-        async function carregarQuestao(index) {
-            questaoAtualIndex = index;
-            tempoInicioQuestao = new Date(); // Marca o tempo de início
-            
-            // Limpa o feedback e reabilita botões
-            document.getElementById('feedback-container').style.display = 'none';
-            btnProxima.disabled = true;
-
-            // Atualiza progresso
-            document.getElementById('numero-questao-atual').textContent = index + 1;
-            document.getElementById('total-questoes').textContent = totalQuestoes;
-            const progresso = ((index + 1) / totalQuestoes) * 100;
-            document.getElementById('progresso-bar').style.width = `${progresso}%`;
-            
-            // Botão "Próxima" vira "Finalizar" na última questão
-            if (index === totalQuestoes - 1) {
-                btnProxima.innerHTML = 'Finalizar <i class="fas fa-check-circle"></i>';
-            } else {
-                btnProxima.innerHTML = 'Próxima <i class="fas fa-arrow-right"></i>';
-            }
-            
-            // Busca a questão (do cache ou da API)
-            let questao;
-            if (questoesCache[index]) {
-                questao = questoesCache[index];
-                renderizarQuestao(questao);
-            } else {
-                try {
-                    const response = await fetch(`/api/simulado/${simuladoId}/questao/${index}`);
-                    const data = await response.json();
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    questoesCache[index] = data.questao; // Salva no cache
-                    renderizarQuestao(data.questao);
-                } catch (error) {
-                    console.error('Erro ao carregar questão:', error);
-                    alert('Erro de conexão ao carregar questão.');
-                }
-            }
-        }
-
-        function renderizarQuestao(questao) {
-            document.getElementById('materia-atual').textContent = questao.materia;
-            document.getElementById('questao-enunciado').innerHTML = `<h5>${questao.enunciado}</h5>`;
-            
-            const alternativasContainer = document.getElementById('alternativas-container');
-            alternativasContainer.innerHTML = '';
-            
-            // Cria botões para as alternativas
-            Object.entries(questao.alternativas).forEach(([letra, texto]) => {
-                if (texto && texto.trim() !== '') {
-                    const button = document.createElement('button');
-                    button.className = 'alternativa text-start';
-                    button.dataset.alternativa = letra;
-                    button.innerHTML = `
-                        <strong class="me-2">${letra})</strong> ${texto}
-                    `;
-                    button.onclick = () => selecionarAlternativa(letra, button);
-                    alternativasContainer.appendChild(button);
-                }
-            });
-        }
-
-        function selecionarAlternativa(letra, botaoSelecionado) {
-            // Desabilita todas as alternativas para impedir nova seleção
-            const alternativas = document.querySelectorAll('.alternativa');
-            alternativas.forEach(btn => {
-                btn.disabled = true;
-                btn.classList.remove('selecionada');
-            });
-
-            botaoSelecionado.classList.add('selecionada');
-            
-            // Calcula o tempo gasto
-            const tempoFimQuestao = new Date();
-            const tempoGastoSeg = (tempoFimQuestao - tempoInicioQuestao) / 1000;
-            
-            // Salva a resposta localmente
-            respostasUsuario[questaoAtualIndex] = letra;
-            
-            // Envia a resposta para a API (em background)
-            fetch(`/api/simulado/${simuladoId}/responder`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    questao_index: questaoAtualIndex,
-                    alternativa: letra,
-                    tempo_gasto: tempoGastoSeg
-                })
-            });
-
-            // Mostra o feedback
-            mostrarFeedback(letra, botaoSelecionado);
-            
-            // Habilita o botão "Próxima"
-            btnProxima.disabled = false;
-        }
-
-        function mostrarFeedback(letraEscolhida, botaoSelecionado) {
-            const questao = questoesCache[questaoAtualIndex];
-            const respostaCorreta = questao.resposta_correta;
-            const feedbackContainer = document.getElementById('feedback-container');
-            const titulo = document.getElementById('feedback-titulo');
-            const justificativa = document.getElementById('feedback-justificativa');
-
-            const alternativas = document.querySelectorAll('.alternativa');
-
-            if (letraEscolhida === respostaCorreta) {
-                // Acertou
-                feedbackContainer.className = 'feedback-box correto';
-                titulo.innerHTML = '<i class="fas fa-check-circle"></i> Resposta Correta!';
-                botaoSelecionado.classList.add('correta');
-            } else {
-                // Errou
-                feedbackContainer.className = 'feedback-box incorreto';
-                titulo.innerHTML = '<i class="fas fa-times-circle"></i> Resposta Incorreta!';
-                botaoSelecionado.classList.add('errada');
-                
-                // Mostra qual era a correta
-                alternativas.forEach(btn => {
-                    if (btn.dataset.alternativa === respostaCorreta) {
-                        btn.classList.add('correta');
-                    }
-                });
-            }
-
-            // Mostra justificativa e dicas
-            if (questao.justificativa) {
-                justificativa.textContent = questao.justificativa;
-            } else {
-                justificativa.textContent = (letraEscolhida === respostaCorreta) ? "Parabéns!" : `A alternativa correta era a ${respostaCorreta}.`;
-            }
-
-            const dicaContainer = document.getElementById('dica-container');
-            if (questao.dica) {
-                document.getElementById('texto-dica').textContent = questao.dica;
-                dicaContainer.style.display = 'block';
-            } else {
-                dicaContainer.style.display = 'none';
-            }
-            
-            const formulaContainer = document.getElementById('formula-container');
-            if (questao.formula) {
-                document.getElementById('texto-formula').textContent = questao.formula;
-                formulaContainer.style.display = 'block';
-            } else {
-                formulaContainer.style.display = 'none';
-            }
-            
-            feedbackContainer.style.display = 'block';
-        }
-
-        function proximaQuestao() {
-            // Se for a última questão, o botão age como "Finalizar"
-            if (questaoAtualIndex === totalQuestoes - 1) {
-                finalizarSimulado();
-            } else {
-                carregarQuestao(questaoAtualIndex + 1);
-            }
-        }
-        
-        function confirmarFinalizarSimulado() {
-            if (confirm("Tem certeza que deseja finalizar o simulado agora? Questões não respondidas serão contadas como erro.")) {
-                finalizarSimulado();
-            }
-        }
-
-        async function finalizarSimulado() {
-            clearInterval(timerInterval);
-            telaSimulado.innerHTML = '<h3 class="text-center py-5"><span class="spinner-border"></span> Gerando seu relatório...</h3>';
-
-            try {
-                const response = await fetch(`/api/simulado/${simuladoId}/finalizar`, {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    mostrarResultado(data.relatorio);
-                } else {
-                    alert('Erro ao finalizar simulado: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro de conexão ao finalizar simulado.');
-            }
-        }
-
-        // --- Timer ---
+        // Timer
         function iniciarTimer() {
-            timerInterval = setInterval(() => {
-                tempoRestanteSeg--;
+            atualizarTimerDisplay();
+            simuladoData.timerInterval = setInterval(() => {
+                simuladoData.tempoRestante--;
+                atualizarTimerDisplay();
                 
-                const minutos = Math.floor(tempoRestanteSeg / 60);
-                const segundos = tempoRestanteSeg % 60;
-                document.getElementById('timer-display').textContent = 
-                    `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
-                
-                if (tempoRestanteSeg <= 0) {
-                    clearInterval(timerInterval);
-                    alert("O tempo acabou!");
+                if (simuladoData.tempoRestante <= 0) {
+                    clearInterval(simuladoData.timerInterval);
                     finalizarSimulado();
                 }
             }, 1000);
         }
 
-        // --- Resultado e Reinício ---
-        function mostrarResultado(relatorio) {
-            telaSimulado.style.display = 'none'; // Esconde a tela do simulado
-            
-            // Preenche os KPIs do modal
-            document.getElementById('total-acertos').textContent = relatorio.geral.acertos;
-            document.getElementById('total-erros').textContent = relatorio.geral.erros;
-            document.getElementById('percentual-acerto').textContent = relatorio.geral.percentual_acerto + '%';
-            document.getElementById('tempo-total').textContent = relatorio.geral.tempo_total_minutos + ' min';
-            
-            // Renderiza o gráfico do modal
-            renderGraficoModal(relatorio.por_materia);
-            
-            // Mostra recomendações
-            const listaRecomendacoes = document.getElementById('lista-recomendacoes');
-            listaRecomendacoes.innerHTML = '';
-            relatorio.recomendacoes.forEach(rec => {
-                const item = document.createElement('div');
-                item.className = 'list-group-item';
-                item.innerHTML = rec; // O HTML já vem formatado (com ícone)
-                listaRecomendacoes.appendChild(item);
-            });
-            
-            // Abre o modal
-            resultadoModal.show();
+        function atualizarTimerDisplay() {
+            const minutes = Math.floor(simuladoData.tempoRestante / 60);
+            const seconds = simuladoData.tempoRestante % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
-        
-        function renderGraficoModal(dadosMateria) {
-            const ctx = document.getElementById('grafico-desempenho-modal').getContext('2d');
-            
-            if (graficoModalInstance) {
-                graficoModalInstance.destroy();
-            }
 
-            const materias = Object.keys(dadosMateria);
-            const percentuais = materias.map(materia => dadosMateria[materia].percentual);
-            
-            graficoModalInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: materias,
-                    datasets: [{
-                        label: 'Percentual de Acerto (%)',
-                        data: percentuais,
-                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                        borderColor: 'rgba(13, 110, 253, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
+        // Navegação de questões
+        async function carregarQuestao(index) {
+            try {
+                const response = await fetch(`/api/simulado/questao/${simuladoData.questoes[index].id}`);
+                const data = await response.json();
+                
+                if (data.questao) {
+                    exibirQuestao(data.questao, index);
+                    simuladoData.questaoAtual = index;
+                    atualizarNavegacao();
                 }
+            } catch (error) {
+                console.error('Erro ao carregar questão:', error);
+            }
+        }
+
+        function exibirQuestao(questao, index) {
+            const container = document.getElementById('questao-container');
+            const alternativas = Object.entries(questao.alternativas)
+                .map(([letra, texto]) => `
+                    <button class="alternativa-btn" onclick="selecionarAlternativa('${letra}')" data-letra="${letra}">
+                        <div class="alternativa-letter">${letra}</div>
+                        <div class="alternativa-texto">${texto}</div>
+                    </button>
+                `).join('');
+            
+            container.innerHTML = `
+                <div class="questao-header mb-4">
+                    <span class="badge bg-primary">${questao.materia}</span>
+                    <span class="badge bg-secondary ms-2">${questao.dificuldade}</span>
+                </div>
+                <div class="questao-enunciado">
+                    ${questao.enunciado}
+                </div>
+                <div class="alternativas-list">
+                    ${alternativas}
+                </div>
+            `;
+            
+            // Restaurar resposta selecionada se existir
+            const respostaSalva = simuladoData.respostas[questao.id];
+            if (respostaSalva) {
+                selecionarAlternativa(respostaSalva.resposta, false);
+            }
+            
+            // Atualizar progresso
+            const progresso = ((index + 1) / simuladoData.config.quantidade) * 100;
+            document.getElementById('progress-bar').style.width = `${progresso}%`;
+            document.getElementById('progress-text').textContent = 
+                `Questão ${index + 1} de ${simuladoData.config.quantidade}`;
+        }
+
+        function selecionarAlternativa(letra, salvar = true) {
+            // Remover seleção anterior
+            document.querySelectorAll('.alternativa-btn').forEach(btn => {
+                btn.classList.remove('selected');
             });
+            
+            // Selecionar nova
+            const btn = document.querySelector(`.alternativa-btn[data-letra="${letra}"]`);
+            if (btn) {
+                btn.classList.add('selected');
+                
+                if (salvar) {
+                    const questaoAtual = simuladoData.questoes[simuladoData.questaoAtual];
+                    salvarResposta(questaoAtual.id, letra);
+                }
+            }
         }
-        
-        function reiniciarInterface() {
-            // Recarrega a página para um estado limpo
-            window.location.reload();
+
+        async function salvarResposta(questaoId, resposta) {
+            try {
+                await fetch('/api/simulado/responder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        questao_id: questaoId,
+                        resposta: resposta
+                    })
+                });
+                
+                simuladoData.respostas[questaoId] = { resposta, timestamp: new Date().toISOString() };
+            } catch (error) {
+                console.error('Erro ao salvar resposta:', error);
+            }
         }
+
+        function questaoAnterior() {
+            if (simuladoData.questaoAtual > 0) {
+                carregarQuestao(simuladoData.questaoAtual - 1);
+            }
+        }
+
+        function proximaQuestao() {
+            if (simuladoData.questaoAtual < simuladoData.config.quantidade - 1) {
+                carregarQuestao(simuladoData.questaoAtual + 1);
+            }
+        }
+
+        function atualizarNavegacao() {
+            const btnAnterior = document.getElementById('btn-anterior');
+            const btnProxima = document.getElementById('btn-proxima');
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            
+            btnAnterior.disabled = simuladoData.questaoAtual === 0;
+            
+            const isUltimaQuestao = simuladoData.questaoAtual === simuladoData.config.quantidade - 1;
+            btnProxima.classList.toggle('d-none', isUltimaQuestao);
+            btnFinalizar.classList.toggle('d-none', !isUltimaQuestao);
+        }
+
+        // Finalizar simulado
+        async function finalizarSimulado() {
+            if (simuladoData.timerInterval) {
+                clearInterval(simuladoData.timerInterval);
+            }
+            
+            try {
+                const response = await fetch('/api/simulado/finalizar', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    exibirResultado(data.relatorio);
+                    document.getElementById('simulado-screen').classList.add('d-none');
+                    document.getElementById('resultado-screen').classList.remove('d-none');
+                }
+            } catch (error) {
+                console.error('Erro ao finalizar simulado:', error);
+                alert('Erro ao finalizar simulado');
+            }
+        }
+
+        function exibirResultado(relatorio) {
+            const geral = relatorio.geral;
+            const container = document.getElementById('resultado-content');
+            
+            container.innerHTML = `
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${geral.percentual_acerto}%</div>
+                            <div class="kpi-label">Acerto</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${geral.acertos}</div>
+                            <div class="kpi-label">Acertos</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${geral.erros}</div>
+                            <div class="kpi-label">Erros</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value">${geral.tempo_total_minutos}m</div>
+                            <div class="kpi-label">Tempo</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar me-2"></i>Desempenho por Matéria
+                    </div>
+                    <div class="card-body">
+                        ${Object.entries(relatorio.por_materia).map(([materia, stats]) => `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>${materia}</span>
+                                <span class="score-badge ${getScoreBadgeClass(stats.percentual)}">
+                                    ${stats.acertos}/${stats.total} (${stats.percentual}%)
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getScoreBadgeClass(percentual) {
+            if (percentual >= 80) return 'score-high';
+            if (percentual >= 60) return 'score-medium';
+            return 'score-low';
+        }
+
+        function voltarParaConfig() {
+            document.getElementById('resultado-screen').classList.add('d-none');
+            document.getElementById('config-screen').classList.remove('d-none');
+            location.reload(); // Recarregar para limpar estado
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarMaterias();
+            atualizarResumo();
+        });
     </script>
 </body>
 </html>
