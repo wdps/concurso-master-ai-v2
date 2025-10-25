@@ -51,7 +51,7 @@
         .progress {
             height: 100%;
             background: linear-gradient(90deg, #4CAF50, #45a049);
-            width: {{ (numero / total_questoes * 100) | round }}%;
+            width: {{ (numero / total_questoes * 100) }}%;
             transition: width 0.3s ease;
         }
         
@@ -75,13 +75,14 @@
             line-height: 1.6;
             margin-bottom: 30px;
             color: #2c3e50;
+            white-space: pre-line;
         }
         
         .alternativas {
             display: flex;
             flex-direction: column;
             gap: 15px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         
         .alternativa {
@@ -105,6 +106,16 @@
             background: #e3f2fd;
         }
         
+        .alternativa.correta {
+            border-color: #27ae60;
+            background: #d4edda;
+        }
+        
+        .alternativa.incorreta {
+            border-color: #e74c3c;
+            background: #f8d7da;
+        }
+        
         .letra {
             width: 40px;
             height: 40px;
@@ -123,10 +134,48 @@
             color: white;
         }
         
+        .alternativa.correta .letra {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .alternativa.incorreta .letra {
+            background: #e74c3c;
+            color: white;
+        }
+        
         .texto-alternativa {
             flex: 1;
             font-size: 16px;
             line-height: 1.5;
+        }
+        
+        .feedback {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+        }
+        
+        .feedback.correta {
+            background: #d4edda;
+            border-color: #27ae60;
+        }
+        
+        .feedback.incorreta {
+            background: #f8d7da;
+            border-color: #e74c3c;
+        }
+        
+        .feedback h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .feedback p {
+            line-height: 1.5;
+            color: #495057;
         }
         
         .navigation {
@@ -222,20 +271,40 @@
         </div>
         
         <div class="questao-content">
-            <div class="materia-tag">{{ questao.materia }}</div>
+            <div class="materia-tag">{{ questao.materia }} • {{ questao.dificuldade }}</div>
             
-            <div class="enunciado">
-                {{ questao.enunciado }}
-            </div>
+            <div class="enunciado">{{ questao.enunciado }}</div>
             
             <div class="alternativas" id="alternativas">
                 {% for letra, texto in questao.alternativas.items() %}
-                <div class="alternativa" data-letra="{{ letra }}">
+                <div class="alternativa" data-letra="{{ letra }}" onclick="selecionarAlternativa('{{ letra }}')">
                     <div class="letra">{{ letra }}</div>
                     <div class="texto-alternativa">{{ texto }}</div>
                 </div>
                 {% endfor %}
             </div>
+            
+            {% if resposta_submetida %}
+            <div class="feedback {{ 'correta' if resposta_correta else 'incorreta' }}" id="feedback">
+                <h4>
+                    {% if resposta_correta %}
+                    ✅ Resposta Correta!
+                    {% else %}
+                    ❌ Resposta Incorreta
+                    {% endif %}
+                </h4>
+                <p>
+                    {% if resposta_correta %}
+                    Parabéns! Você acertou esta questão.
+                    {% else %}
+                    A resposta correta é: <strong>{{ questao.resposta_correta }}</strong>
+                    {% endif %}
+                </p>
+                {% if questao.explicacao %}
+                <p style="margin-top: 10px;"><strong>💡 Explicação:</strong> {{ questao.explicacao }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
         
         <div class="navigation">
@@ -250,14 +319,20 @@
             <div class="contador">{{ numero }}/{{ total_questoes }}</div>
             
             <div>
-                {% if numero < total_questoes %}
-                <button class="btn btn-primary" onclick="proximaQuestao()">
-                    Próxima ➡️
+                {% if not resposta_submetida %}
+                <button class="btn btn-primary" onclick="verificarResposta()" id="btnVerificar">
+                    ✅ Verificar Resposta
                 </button>
                 {% else %}
-                <button class="btn btn-success" onclick="finalizarSimulado()">
-                    ✅ Finalizar Simulado
-                </button>
+                    {% if numero < total_questoes %}
+                    <a href="/questao/{{ numero + 1 }}" class="btn btn-primary">
+                        Próxima ➡️
+                    </a>
+                    {% else %}
+                    <a href="/simulado/resultado" class="btn btn-success">
+                        🏁 Finalizar Simulado
+                    </a>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -265,25 +340,29 @@
 
     <script>
         let respostaSelecionada = null;
+        let respostaSubmetida = {{ 'true' if resposta_submetida else 'false' }};
         
-        // Selecionar alternativa
-        document.querySelectorAll('.alternativa').forEach(alt => {
-            alt.addEventListener('click', function() {
-                // Remover seleção anterior
-                document.querySelectorAll('.alternativa').forEach(a => {
-                    a.classList.remove('selected');
-                });
-                
-                // Selecionar atual
-                this.classList.add('selected');
-                respostaSelecionada = this.dataset.letra;
-                
-                // Salvar resposta
-                salvarResposta(respostaSelecionada);
+        function selecionarAlternativa(letra) {
+            if (respostaSubmetida) return; // Não permitir mudar após verificar
+            
+            // Remover seleção anterior
+            document.querySelectorAll('.alternativa').forEach(alt => {
+                alt.classList.remove('selected');
             });
-        });
+            
+            // Selecionar atual
+            const alternativa = document.querySelector(\[data-letra="\"]\);
+            alternativa.classList.add('selected');
+            respostaSelecionada = letra;
+        }
         
-        function salvarResposta(resposta) {
+        function verificarResposta() {
+            if (!respostaSelecionada) {
+                alert('Por favor, selecione uma alternativa antes de verificar.');
+                return;
+            }
+            
+            // Enviar resposta para o servidor
             fetch('/api/simulado/responder', {
                 method: 'POST',
                 headers: {
@@ -291,25 +370,31 @@
                 },
                 body: JSON.stringify({
                     questao_numero: {{ numero }},
-                    resposta: resposta
+                    resposta: respostaSelecionada
                 })
+            }).then(() => {
+                // Mostrar feedback
+                const correta = respostaSelecionada === '{{ questao.resposta_correta }}';
+                
+                // Destacar alternativas
+                document.querySelectorAll('.alternativa').forEach(alt => {
+                    alt.classList.remove('selected', 'correta', 'incorreta');
+                    if (alt.dataset.letra === '{{ questao.resposta_correta }}') {
+                        alt.classList.add('correta');
+                    } else if (alt.dataset.letra === respostaSelecionada && !correta) {
+                        alt.classList.add('incorreta');
+                    }
+                });
+                
+                // Atualizar interface
+                respostaSubmetida = true;
+                document.getElementById('btnVerificar').style.display = 'none';
+                
+                // Recarregar a página para mostrar feedback completo
+                setTimeout(() => {
+                    window.location.href = '/questao/{{ numero }}?verificado=true';
+                }, 500);
             });
-        }
-        
-        function proximaQuestao() {
-            if (respostaSelecionada) {
-                window.location.href = '/questao/{{ numero + 1 }}';
-            } else {
-                if (confirm('Deseja continuar sem responder esta questão?')) {
-                    window.location.href = '/questao/{{ numero + 1 }}';
-                }
-            }
-        }
-        
-        function finalizarSimulado() {
-            if (confirm('Tem certeza que deseja finalizar o simulado?')) {
-                window.location.href = '/simulado/resultado';
-            }
         }
         
         // Carregar resposta salva anteriormente
@@ -318,13 +403,15 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.resposta) {
-                        const alternativa = document.querySelector([data-letra=""]);
-                        if (alternativa) {
-                            alternativa.classList.add('selected');
-                            respostaSelecionada = data.resposta;
-                        }
+                        selecionarAlternativa(data.resposta);
                     }
                 });
+                
+            // Se já foi verificado, mostrar feedback
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('verificado')) {
+                respostaSubmetida = true;
+            }
         });
     </script>
 </body>

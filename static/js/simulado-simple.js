@@ -1,4 +1,4 @@
-﻿// static/js/simulado-simple.js - SUPER SIMPLES E FUNCIONAL
+﻿// static/js/simulado-simple.js - CORRIGIDO
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Simulado Simple carregado');
     
@@ -12,6 +12,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Quantidade padrão
     document.getElementById('quantidade').value = 10;
+    
+    // Verificar se há parâmetros na URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const quantidadeParam = urlParams.get('quantidade');
+    if (quantidadeParam) {
+        document.getElementById('quantidade').value = quantidadeParam;
+    }
 });
 
 function selecionarTodasMaterias() {
@@ -19,6 +26,7 @@ function selecionarTodasMaterias() {
     document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
         checkbox.checked = true;
     });
+    atualizarContador();
 }
 
 function selecionarPrincipais() {
@@ -28,12 +36,29 @@ function selecionarPrincipais() {
     document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
         checkbox.checked = principais.includes(checkbox.value);
     });
+    atualizarContador();
 }
+
+function atualizarContador() {
+    const materiasSelecionadas = Array.from(document.querySelectorAll('.materia-checkbox:checked')).length;
+    const contador = document.getElementById('contadorMaterias');
+    if (contador) {
+        contador.textContent = \\ matérias selecionadas\;
+    }
+}
+
+// Atualizar contador quando checkboxes mudarem
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', atualizarContador);
+    });
+    atualizarContador();
+});
 
 async function iniciarSimulado() {
     console.log('🎯 Iniciando simulado...');
     
-    const quantidade = document.getElementById('quantidade').value;
+    const quantidade = parseInt(document.getElementById('quantidade').value);
     const materias = Array.from(document.querySelectorAll('.materia-checkbox:checked'))
         .map(checkbox => checkbox.value);
     
@@ -44,12 +69,13 @@ async function iniciarSimulado() {
         return;
     }
     
-    if (!quantidade || quantidade < 1) {
-        alert('Por favor, informe uma quantidade válida de questões');
+    if (!quantidade || quantidade < 1 || quantidade > 100) {
+        alert('Por favor, informe uma quantidade válida de questões (1-100)');
         return;
     }
     
     const btn = document.getElementById('btnIniciarSimulado');
+    const textoOriginal = btn.textContent;
     btn.disabled = true;
     btn.textContent = '🔄 Iniciando...';
     
@@ -60,7 +86,7 @@ async function iniciarSimulado() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                quantidade: parseInt(quantidade),
+                quantidade: quantidade, // CORRIGIDO: garantir que é número
                 materias: materias
             })
         });
@@ -80,6 +106,6 @@ async function iniciarSimulado() {
         alert('Erro ao iniciar simulado: ' + error.message);
     } finally {
         btn.disabled = false;
-        btn.textContent = '🚀 Iniciar Simulado';
+        btn.textContent = textoOriginal;
     }
 }

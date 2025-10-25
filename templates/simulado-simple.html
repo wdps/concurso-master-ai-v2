@@ -22,14 +22,14 @@
                        id="quantidade" 
                        class="quantidade-input" 
                        min="1" 
-                       max="50" 
+                       max="100" 
                        value="10"
                        placeholder="Quantidade de questões">
-                <small>Digite quantas questões deseja (1-50)</small>
+                <small>Digite quantas questões deseja (1-100)</small>
             </div>
 
             <div class="config-group">
-                <h3>📚 Matérias</h3>
+                <h3>📚 Matérias <span id="contadorMaterias" style="font-size: 14px; color: rgba(255,255,255,0.8); margin-left: 10px;">{{ materias|length }} matérias selecionadas</span></h3>
                 <div class="materias-simple">
                     {% for materia in materias %}
                     <div class="materia-item-simple">

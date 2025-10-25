@@ -277,3 +277,38 @@
     </div>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado - ConcursoMaster</title>
+    <style>
+        /* (Manter todo o CSS anterior) */
+        .aviso {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="resultado-container">
+        <div class="header">
+            <h1>📊 Resultado do Simulado</h1>
+            {% if aviso_quantidade %}
+            <div class="aviso">
+                ⚠️ {{ aviso_quantidade }}
+            </div>
+            {% endif %}
+            <div class="score {{ 'excelente' if porcentagem >= 80 else 'bom' if porcentagem >= 60 else 'regular' if porcentagem >= 40 else 'baixo' }}">
+                {{ \"%.1f\"|format(porcentagem) }}%
+            </div>
+            <p>{{ feedback }}</p>
+        </div>
+        
+        <!-- (Manter o resto do template igual) -->

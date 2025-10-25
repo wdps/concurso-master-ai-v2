@@ -6,10 +6,10 @@ import csv
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'concurso_master_ai_2024_otimizado'
+app.secret_key = 'concurso_master_ai_2024_corrigido'
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = True  # Para HTTPS no Railway
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 DATABASE = 'concurso.db'
@@ -58,10 +58,10 @@ def carregar_questoes_csv():
                     resposta_correta = row.get('gabarito', 'A').strip()
                     
                     explicacao_parts = []
-                    if row.get('just_a'): explicacao_parts.append(f"A: {row['just_a']}")
-                    if row.get('just_b'): explicacao_parts.append(f"B: {row['just_b']}")
-                    if row.get('just_c'): explicacao_parts.append(f"C: {row['just_c']}")
-                    if row.get('just_d'): explicacao_parts.append(f"D: {row['just_d']}")
+                    if row.get('just_a'): explicacao_parts.append(f\"A: {row['just_a']}\")
+                    if row.get('just_b'): explicacao_parts.append(f\"B: {row['just_b']}\")
+                    if row.get('just_c'): explicacao_parts.append(f\"C: {row['just_c']}\")
+                    if row.get('just_d'): explicacao_parts.append(f\"D: {row['just_d']}\")
                     
                     explicacao = ' | '.join(explicacao_parts) if explicacao_parts else 'Explicação não disponível'
                     dificuldade = row.get('dificuldade', 'Média').strip()
@@ -112,18 +112,17 @@ def simulado():
 
 @app.route('/questao/<int:numero>')
 def questao(numero):
-    '''Página REAL da questão com todas as funcionalidades'''
+    '''Página REAL da questão com feedback educativo'''
     if 'simulado_ativo' not in session:
         return render_template('erro.html', mensagem='Simulado não iniciado. <a href=\"/simulado\">Iniciar simulado</a>')
     
-    # Obter questões do banco em vez da sessão (para evitar cookie grande)
+    # Obter questões do banco
     conn = get_db_connection()
     cursor = conn.cursor()
     
     if 'questoes_ids' in session:
-        # Buscar questões específicas do simulado atual
         questao_ids = session['questoes_ids']
-        if numero <= len(questao_ids):
+        if 1 <= numero <= len(questao_ids):
             cursor.execute('SELECT * FROM questoes WHERE id = ?', (questao_ids[numero-1],))
             questao_db = cursor.fetchone()
             
@@ -144,21 +143,32 @@ def questao(numero):
                     'dificuldade': questao_db['dificuldade'] if 'dificuldade' in questao_db.keys() else 'Média'
                 }
                 
+                # Verificar se resposta foi submetida
+                resposta_submetida = False
+                resposta_correta = False
+                resposta_usuario = session.get('respostas', {}).get(str(numero))
+                
+                if resposta_usuario:
+                    resposta_submetida = True
+                    resposta_correta = (resposta_usuario == questao_db['resposta_correta'])
+                
                 conn.close()
                 return render_template('questao.html',
                                      numero=numero,
                                      total_questoes=len(questao_ids),
-                                     questao=questao_atual)
+                                     questao=questao_atual,
+                                     resposta_submetida=resposta_submetida,
+                                     resposta_correta=resposta_correta)
     
     conn.close()
     return render_template('erro.html', mensagem='Questão não encontrada.')
 
 @app.route('/api/simulado/iniciar', methods=['POST'])
 def iniciar_simulado():
-    '''API para iniciar simulado - VERSÃO OTIMIZADA'''
+    '''API para iniciar simulado - CORRIGIDA quantidade'''
     try:
         data = request.get_json()
-        quantidade = min(data.get('quantidade', 5), 20)  # Limitar para evitar cookie grande
+        quantidade = int(data.get('quantidade', 5))  # CORRIGIDO: garantir que é int
         materias = data.get('materias', [])
         
         print(f'🚀 Iniciando simulado: {quantidade} questões, matérias: {materias}')
@@ -166,6 +176,7 @@ def iniciar_simulado():
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # CORREÇÃO: Garantir que busca exatamente a quantidade solicitada
         if not materias:
             cursor.execute('SELECT id FROM questoes ORDER BY RANDOM() LIMIT ?', (quantidade,))
         else:
@@ -173,29 +184,34 @@ def iniciar_simulado():
             query = f'SELECT id FROM questoes WHERE materia IN ({placeholders}) ORDER BY RANDOM() LIMIT ?'
             cursor.execute(query, materias + [quantidade])
         
-        # Armazenar apenas IDs na sessão (muito menor)
         questao_ids = [row['id'] for row in cursor.fetchall()]
         conn.close()
+        
+        # CORREÇÃO: Verificar se encontrou exatamente a quantidade solicitada
+        if len(questao_ids) < quantidade:
+            print(f'⚠️  Aviso: Solicitadas {quantidade} questões, mas só encontradas {len(questao_ids)}')
         
         if not questao_ids:
             return jsonify({'success': False, 'error': 'Nenhuma questão encontrada'}), 404
         
-        # Configurar sessão OTIMIZADA
+        # Configurar sessão
         session['simulado_ativo'] = True
         session['questoes_ids'] = questao_ids
         session['respostas'] = {}
         session['inicio'] = datetime.now().isoformat()
         session['config'] = {
-            'quantidade': quantidade,
+            'quantidade_solicitada': quantidade,
+            'quantidade_obtida': len(questao_ids),
             'materias': materias
         }
         
-        print(f'✅ Simulado configurado com {len(questao_ids)} questões (sessão otimizada)')
+        print(f'✅ Simulado configurado com {len(questao_ids)} questões')
         
         return jsonify({
             'success': True,
             'total': len(questao_ids),
-            'questoes_ids': questao_ids
+            'questoes_ids': questao_ids,
+            'aviso': f'Encontradas {len(questao_ids)} de {quantidade} questões solicitadas' if len(questao_ids) < quantidade else None
         })
         
     except Exception as e:
@@ -215,6 +231,8 @@ def responder_questao():
         
         session['respostas'][str(questao_numero)] = resposta
         session.modified = True
+        
+        print(f'📝 Questão {questao_numero}: resposta \"{resposta}\" salva')
         
         return jsonify({'success': True})
         
@@ -238,16 +256,16 @@ def obter_resposta(numero):
 
 @app.route('/simulado/resultado')
 def resultado_simulado():
-    '''Página de resultado COMPLETA'''
+    '''Página de resultado com feedback educativo'''
     if 'simulado_ativo' not in session:
         return render_template('erro.html', mensagem='Nenhum simulado em andamento.')
     
-    # Buscar questões do banco
     conn = get_db_connection()
     cursor = conn.cursor()
     
     questao_ids = session.get('questoes_ids', [])
     respostas = session.get('respostas', {})
+    config = session.get('config', {})
     
     corretas = 0
     revisao = []
@@ -277,10 +295,11 @@ def resultado_simulado():
                 'numero': i,
                 'enunciado': questao_db['enunciado'],
                 'materia': questao_db['materia'],
-                'resposta_usuario': f"{resposta_usuario}: {texto_resposta_usuario}" if resposta_usuario else 'Não respondida',
-                'resposta_correta': f"{resposta_correta}: {texto_resposta_correta}",
+                'resposta_usuario': f\"{resposta_usuario}: {texto_resposta_usuario}\" if resposta_usuario else 'Não respondida',
+                'resposta_correta': f\"{resposta_correta}: {texto_resposta_correta}\",
                 'correta': correta,
-                'explicacao': questao_db['explicacao']
+                'explicacao': questao_db['explicacao'],
+                'dificuldade': questao_db['dificuldade'] if 'dificuldade' in questao_db.keys() else 'Média'
             })
     
     conn.close()
@@ -295,15 +314,21 @@ def resultado_simulado():
     tempo_segundos = (fim - inicio).total_seconds()
     tempo_minutos = tempo_segundos / 60
     
-    # Feedback
+    # Feedback educativo
     if porcentagem >= 80:
-        feedback = '🎉 Excelente! Seu desempenho foi ótimo!'
+        feedback = '🎉 Excelente! Seu desempenho foi ótimo! Continue assim!'
     elif porcentagem >= 60:
-        feedback = '👍 Bom trabalho! Continue estudando!'
+        feedback = '👍 Bom trabalho! Você está no caminho certo, continue estudando!'
     elif porcentagem >= 40:
-        feedback = '💪 Está no caminho certo! Revise os conteúdos.'
+        feedback = '💪 Está evoluindo! Revise os conteúdos que errou para melhorar.'
     else:
-        feedback = '📚 Hora de reforçar os estudos!'
+        feedback = '📚 Hora de reforçar os estudos! Analise as explicações das questões erradas.'
+    
+    # Aviso sobre quantidade de questões
+    aviso_quantidade = None
+    if config.get('quantidade_solicitada') and config.get('quantidade_obtida'):
+        if config['quantidade_solicitada'] > config['quantidade_obtida']:
+            aviso_quantidade = f\"Foram utilizadas {config['quantidade_obtida']} questões (solicitadas: {config['quantidade_solicitada']})\"
     
     # Limpar sessão do simulado
     session.pop('simulado_ativo', None)
@@ -319,7 +344,8 @@ def resultado_simulado():
                          porcentagem=porcentagem,
                          tempo_minutos=tempo_minutos,
                          feedback=feedback,
-                         revisao=revisao)
+                         revisao=revisao,
+                         aviso_quantidade=aviso_quantidade)
 
 @app.route('/redacao')
 def redacao():
@@ -329,7 +355,6 @@ def redacao():
 def dashboard():
     return render_template('dashboard.html')
 
-# Template de erro simples
 @app.route('/erro')
 def erro():
     mensagem = request.args.get('mensagem', 'Ocorreu um erro.')
