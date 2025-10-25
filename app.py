@@ -384,8 +384,7 @@ def criar_tabelas_se_necessario():
 
 # ========== ROTAS DE NAVEGAÇÃO (HTML) ==========
 
-@app.route('/')
-def home():
+@app.route('/')`ndef index():
     """Página inicial / Hub principal."""
     return render_template('index.html')
 
@@ -775,3 +774,4 @@ if __name__ == '__main__':
     logger.info(f"🚀 ConcursoMaster AI 3.0 iniciando na porta {port}")
     # debug=False é crucial para produção (Gunicorn/Railway vai gerenciar)
     app.run(host='0.0.0.0', port=port, debug=False)
+
