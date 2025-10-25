@@ -258,8 +258,25 @@ def iniciar_simulado():
 def questao(numero):
     return render_template('questao.html', numero=numero)
 
+@app.route('/simulado')
+def simulado():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT DISTINCT materia FROM questoes WHERE materia IS NOT NULL')
+        materias = [row['materia'] for row in cursor.fetchall()]
+        conn.close()
+        
+        print(f'📚 Matérias disponíveis: {materias}')
+        return render_template('simulado-simple.html', materias=materias)
+        
+    except Exception as e:
+        print(f'❌ Erro no /simulado: {e}')
+        return render_template('simulado-simple.html', materias=['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 'Direito Constitucional'])
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
