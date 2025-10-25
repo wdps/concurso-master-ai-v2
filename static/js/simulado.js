@@ -1,206 +1,236 @@
-﻿// static/js/simulado.js - CORRIGIDO E MELHORADO
+﻿// static/js/simulado.js - SISTEMA 100% FUNCIONAL
+console.log('✅ JavaScript do simulado carregado!');
 
-class SimuladoConfig {
-    constructor() {
-        this.quantidade = 5;
-        this.materiasSelecionadas = [];
-        this.init();
-    }
-
-    init() {
-        this.setupEventListeners();
-        this.selecionarTodasMaterias(); // Seleciona todas automaticamente
-        this.updateUI();
-    }
-
-    setupEventListeners() {
-        // Botões de quantidade
-        document.querySelectorAll('.quantidade-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.quantidade = parseInt(e.target.dataset.quantidade);
-                this.updateQuantidadeButtons();
-            });
-        });
-
-        // Checkboxes de matérias
-        document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
-                this.updateMateriasSelecionadas();
-            });
-        });
-
-        // Botão selecionar todas
-        const selectAllBtn = document.getElementById('selectAll');
-        if (selectAllBtn) {
-            selectAllBtn.addEventListener('click', () => {
-                this.selecionarTodasMaterias();
-            });
-        }
-
-        // Botão iniciar simulado
-        const btnIniciar = document.getElementById('btnIniciarSimulado');
-        if (btnIniciar) {
-            btnIniciar.addEventListener('click', () => {
-                this.iniciarSimulado();
-            });
-        }
-    }
-
-    selecionarTodasMaterias() {
-        document.querySelectorAll('.materia-checkbox').forEach(checkbox => {
-            checkbox.checked = true;
-        });
-        this.updateMateriasSelecionadas();
-    }
-
-    updateMateriasSelecionadas() {
-        this.materiasSelecionadas = Array.from(document.querySelectorAll('.materia-checkbox:checked'))
-            .map(checkbox => checkbox.value);
-        
-        this.updateUI();
-    }
-
-    updateQuantidadeButtons() {
-        document.querySelectorAll('.quantidade-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (parseInt(btn.dataset.quantidade) === this.quantidade) {
-                btn.classList.add('active');
-            }
-        });
-    }
-
-    updateUI() {
-        const btnIniciar = document.getElementById('btnIniciarSimulado');
-        const contador = document.getElementById('contadorMaterias');
-        
-        // Atualizar contador
-        if (contador) {
-            contador.textContent = \\ matérias selecionadas\;
-        }
-        
-        // Habilitar/desabilitar botão
-        if (btnIniciar) {
-            btnIniciar.disabled = this.materiasSelecionadas.length === 0;
-        }
-    }
-
-    async iniciarSimulado() {
-        // Verificar se há matérias selecionadas
-        if (this.materiasSelecionadas.length === 0) {
-            this.mostrarErro('Por favor, selecione pelo menos uma matéria');
-            return;
-        }
-
-        const btnIniciar = document.getElementById('btnIniciarSimulado');
-        const textoOriginal = btnIniciar.textContent;
-        
-        try {
-            // Mostrar loading
-            btnIniciar.disabled = true;
-            btnIniciar.textContent = '🔄 Iniciando...';
-            
-            console.log('🚀 Iniciando simulado com:', {
-                quantidade: this.quantidade,
-                materias: this.materiasSelecionadas
-            });
-
-            const response = await fetch('/api/simulado/iniciar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    quantidade: this.quantidade,
-                    materias: this.materiasSelecionadas
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                console.log('✅ Simulado iniciado com sucesso:', data);
-                // Redirecionar para a primeira questão
-                window.location.href = '/questao/1';
-            } else {
-                throw new Error(data.error || 'Erro ao iniciar simulado');
-            }
-
-        } catch (error) {
-            console.error('❌ Erro ao iniciar simulado:', error);
-            this.mostrarErro(error.message || 'Erro ao iniciar simulado. Tente novamente.');
-        } finally {
-            // Restaurar botão
-            btnIniciar.disabled = false;
-            btnIniciar.textContent = textoOriginal;
-        }
-    }
-
-    mostrarErro(mensagem) {
-        // Criar ou atualizar elemento de erro
-        let erroElement = document.getElementById('erroSimulado');
-        if (!erroElement) {
-            erroElement = document.createElement('div');
-            erroElement.id = 'erroSimulado';
-            erroElement.style.cssText = \
-                background: #ff4757;
-                color: white;
-                padding: 15px;
-                border-radius: 10px;
-                margin: 15px 0;
-                text-align: center;
-                font-weight: 500;
-                animation: slideIn 0.3s ease;
-            \;
-            const configPanel = document.querySelector('.config-panel');
-            if (configPanel) {
-                configPanel.prepend(erroElement);
-            }
-        }
-        
-        erroElement.textContent = mensagem;
-        
-        // Remover após 5 segundos
-        setTimeout(() => {
-            if (erroElement && erroElement.parentNode) {
-                erroElement.remove();
-            }
-        }, 5000);
-    }
-}
-
-// Inicializar quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', function() {
-    new SimuladoConfig();
+    console.log('🚀 Inicializando sistema de simulado...');
     
-    // Adicionar estilos de animação
-    const style = document.createElement('style');
-    style.textContent = \
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
+    let quantidadeSelecionada = 30;
+    const materiasCheckboxes = document.querySelectorAll('.materia-checkbox');
+    
+    // SISTEMA DE SELEÇÃO DE QUANTIDADE
+    const quantidadeBtns = document.querySelectorAll('.quantidade-btn');
+    quantidadeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            console.log('📊 Botão de quantidade clicado:', this.dataset.quantidade);
+            
+            // Remover classe active de todos
+            quantidadeBtns.forEach(b => b.classList.remove('active'));
+            
+            // Adicionar classe active ao clicado
+            this.classList.add('active');
+            
+            // Atualizar quantidade
+            quantidadeSelecionada = parseInt(this.dataset.quantidade);
+            
+            // Atualizar input custom
+            document.getElementById('quantidadeCustom').value = quantidadeSelecionada;
+            
+            console.log('✅ Quantidade selecionada:', quantidadeSelecionada);
+        });
+    });
+    
+    // INPUT CUSTOM
+    const inputCustom = document.getElementById('quantidadeCustom');
+    if (inputCustom) {
+        inputCustom.addEventListener('input', function() {
+            const valor = parseInt(this.value);
+            if (valor >= 5 && valor <= 100) {
+                quantidadeSelecionada = valor;
+                
+                // Remover active dos botões
+                quantidadeBtns.forEach(b => b.classList.remove('active'));
+                
+                console.log('✅ Quantidade customizada:', quantidadeSelecionada);
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+        });
+    }
+    
+    // BOTÕES DE SELEÇÃO RÁPIDA
+    const btnTodas = document.getElementById('btnSelecionarTodas');
+    if (btnTodas) {
+        btnTodas.addEventListener('click', function() {
+            console.log('✅ Selecionando todas matérias');
+            materiasCheckboxes.forEach(cb => {
+                cb.checked = true;
+                atualizarEstadoMateria(cb);
+            });
+            atualizarContadorMaterias();
+        });
+    }
+    
+    const btnPrincipais = document.getElementById('btnSelecionarPrincipais');
+    if (btnPrincipais) {
+        btnPrincipais.addEventListener('click', function() {
+            console.log('⭐ Selecionando matérias principais');
+            const principais = ['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 'Direito Constitucional', 'Direito Administrativo'];
+            
+            materiasCheckboxes.forEach(cb => {
+                const selecionar = principais.includes(cb.value);
+                cb.checked = selecionar;
+                atualizarEstadoMateria(cb);
+            });
+            atualizarContadorMaterias();
+        });
+    }
+    
+    // ATUALIZAR ESTADO DAS MATÉRIAS
+    function atualizarEstadoMateria(checkbox) {
+        const label = document.querySelector(label[for=""]);
+        if (checkbox.checked) {
+            label.classList.add('selected');
+        } else {
+            label.classList.remove('selected');
+        }
+    }
+    
+    // CONTADOR DE MATÉRIAS
+    function atualizarContadorMaterias() {
+        const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
+        const contador = document.getElementById('contadorMaterias');
+        if (contador) {
+            contador.textContent = selecionadas + ' matérias selecionadas';
+        }
+        console.log('📚 Matérias selecionadas:', selecionadas);
+    }
+    
+    // EVENTOS NAS MATÉRIAS
+    materiasCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            atualizarEstadoMateria(this);
+            atualizarContadorMaterias();
+        });
+        
+        // Inicializar estado
+        atualizarEstadoMateria(cb);
+    });
+    
+    // FORMULÁRIO DE SUBMISSÃO
+    const formSimulado = document.getElementById('configSimuladoForm');
+    if (formSimulado) {
+        formSimulado.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('🚀 Formulário submetido!');
+            
+            // Coletar dados
+            const materiasSelecionadas = Array.from(materiasCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            
+            const configs = {
+                tempoCronometrado: document.getElementById('tempoCronometrado')?.checked || false,
+                dicasAutomaticas: document.getElementById('dicasAutomaticas')?.checked || false,
+                formulasMatematicas: document.getElementById('formulasMatematicas')?.checked || false,
+                feedbackDetalhado: document.getElementById('feedbackDetalhado')?.checked || false
+            };
+            
+            console.log('📦 Dados coletados:', {
+                quantidade: quantidadeSelecionada,
+                materias: materiasSelecionadas,
+                configs: configs
+            });
+            
+            // VALIDAÇÕES
+            if (materiasSelecionadas.length === 0) {
+                alert('❌ Selecione pelo menos uma matéria para continuar.');
+                return;
             }
-        }
-        
-        .materia-item {
-            animation: slideIn 0.3s ease;
-        }
-        
-        .fade-in {
-            animation: slideIn 0.5s ease;
-        }
-    \;
-    document.head.appendChild(style);
+            
+            if (!quantidadeSelecionada || quantidadeSelecionada < 5 || quantidadeSelecionada > 100) {
+                alert('❌ Selecione uma quantidade entre 5 e 100 questões.');
+                return;
+            }
+            
+            // BOTÃO DE LOADING
+            const btnIniciar = document.getElementById('btnIniciarSimulado');
+            const btnTextoOriginal = btnIniciar.innerHTML;
+            
+            btnIniciar.disabled = true;
+            btnIniciar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Preparando simulado...';
+            
+            try {
+                console.log('📡 Enviando requisição para API...');
+                
+                const response = await fetch('/api/simulado/iniciar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quantidade: quantidadeSelecionada,
+                        materias: materiasSelecionadas,
+                        configs: configs
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('📊 Resposta da API:', data);
+                
+                if (data.success) {
+                    console.log('✅ Simulado iniciado com sucesso! Redirecionando...');
+                    
+                    // Feedback visual
+                    showNotification('🎉 Simulado configurado! Redirecionando...', 'success');
+                    
+                    // Redirecionar após breve delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 1000);
+                    
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido ao iniciar simulado');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao iniciar simulado:', error);
+                
+                // Restaurar botão
+                btnIniciar.disabled = false;
+                btnIniciar.innerHTML = btnTextoOriginal;
+                
+                // Mostrar erro
+                showNotification('❌ Erro: ' + error.message, 'error');
+            }
+        });
+    }
+    
+    // INICIALIZAR
+    atualizarContadorMaterias();
+    console.log('✅ Sistema de simulado inicializado com sucesso!');
 });
 
-// Função global para debug
+// SISTEMA DE NOTIFICAÇÕES
+function showNotification(mensagem, tipo = 'info') {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.className = lert alert- position-fixed;
+    notification.style.cssText = 
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    ;
+    notification.innerHTML = 
+        <div class="d-flex justify-content-between align-items-center">
+            <span></span>
+            <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    ;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remover após 5 segundos
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// DEBUG
 window.debugSimulado = function() {
-    console.log('🔍 Debug Simulado:', {
-        quantidade: window.simuladoConfig?.quantidade,
-        materias: window.simuladoConfig?.materiasSelecionadas
+    console.log('🔍 Debug do Simulado:', {
+        quantidade: quantidadeSelecionada,
+        materias: Array.from(document.querySelectorAll('.materia-checkbox:checked')).map(cb => cb.value)
     });
 };

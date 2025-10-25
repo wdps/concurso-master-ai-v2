@@ -4,40 +4,52 @@
 
 {% block extra_css %}
 <style>
-    .config-card {
-        background: rgba(255,255,255,0.95);
-        backdrop-filter: blur(20px);
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-    
-    .quantidade-btn {
-        border: 2px solid #e2e8f0;
-        border-radius: 15px;
-        padding: 15px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: white;
-    }
-    
-    .quantidade-btn:hover {
-        border-color: var(--primary);
-        transform: translateY(-3px);
-    }
-    
-    .quantidade-btn.active {
-        border-color: var(--primary);
-        background: var(--primary);
-        color: white;
-        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
-    }
-    
-    .materia-checkbox:checked + label {
-        background: rgba(67, 97, 238, 0.1);
-        border-color: var(--primary);
-    }
+.quantidade-btn {
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.quantidade-btn:hover {
+    border-color: #4361ee;
+    transform: translateY(-3px);
+}
+
+.quantidade-btn.active {
+    border-color: #4361ee;
+    background: #4361ee;
+    color: white;
+    box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+}
+
+.materia-label {
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.materia-label:hover {
+    border-color: #4361ee;
+}
+
+.materia-label.selected {
+    border-color: #4361ee;
+    background: rgba(67, 97, 238, 0.1);
+}
+
+.config-card {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+}
 </style>
 {% endblock %}
 
@@ -46,7 +58,6 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="config-card p-5">
-                <!-- CABEÇALHO -->
                 <div class="text-center mb-5">
                     <h1 class="display-5 fw-bold text-dark mb-3">
                         <i class="fas fa-cogs me-2"></i>Configurar Simulado
@@ -117,7 +128,7 @@
                                 <div class="col-md-6 col-lg-4">
                                     <input type="checkbox" class="materia-checkbox d-none" 
                                            value="{{ materia.nome }}" id="materia{{ loop.index }}" checked>
-                                    <label for="materia{{ loop.index }}" class="d-block p-3 border rounded-2 materia-label cursor-pointer">
+                                    <label for="materia{{ loop.index }}" class="materia-label d-block p-3 rounded-2 cursor-pointer">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <span class="fw-semibold">{{ materia.nome }}</span>
                                             <span class="badge bg-primary rounded-pill">{{ materia.total }}</span>
@@ -199,167 +210,8 @@
         </div>
     </div>
 </div>
-
-<!-- LOADING MODAL -->
-<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-body text-center py-5">
-                <div class="spinner-border text-primary mb-4" style="width: 4rem; height: 4rem;" role="status">
-                    <span class="visually-hidden">Carregando...</span>
-                </div>
-                <h4 class="fw-bold text-dark mb-3">Preparando seu simulado...</h4>
-                <p class="text-muted mb-0">Isso pode levar alguns segundos</p>
-                <div class="progress mt-3" style="height: 6px;">
-                    <div class="progress-bar progress-bar-animated" style="width: 100%"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    let quantidade = 30;
-    const materiasCheckboxes = document.querySelectorAll('.materia-checkbox');
-    
-    // Configurar quantidade
-    document.querySelectorAll('.quantidade-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.quantidade-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            quantidade = parseInt(this.dataset.quantidade);
-            document.getElementById('quantidadeCustom').value = quantidade;
-        });
-    });
-    
-    document.getElementById('quantidadeCustom').addEventListener('input', function() {
-        const valor = parseInt(this.value);
-        if (valor >= 5 && valor <= 100) {
-            quantidade = valor;
-            document.querySelectorAll('.quantidade-btn').forEach(b => b.classList.remove('active'));
-        }
-    });
-    
-    // Botões de seleção rápida
-    document.getElementById('btnSelecionarTodas').addEventListener('click', function() {
-        materiasCheckboxes.forEach(cb => cb.checked = true);
-        atualizarContadorMaterias();
-        atualizarEstadosMaterias();
-    });
-    
-    document.getElementById('btnSelecionarPrincipais').addEventListener('click', function() {
-        const principais = ['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 
-                           'Direito Constitucional', 'Direito Administrativo'];
-        materiasCheckboxes.forEach(cb => {
-            cb.checked = principais.includes(cb.value);
-        });
-        atualizarContadorMaterias();
-        atualizarEstadosMaterias();
-    });
-    
-    // Atualizar contador e estados
-    function atualizarContadorMaterias() {
-        const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
-        document.getElementById('contadorMaterias').textContent = 
-            ${selecionadas} matérias selecionadas;
-    }
-    
-    function atualizarEstadosMaterias() {
-        materiasCheckboxes.forEach(cb => {
-            const label = document.querySelector(label[for=""]);
-            if (cb.checked) {
-                label.classList.add('selected');
-            } else {
-                label.classList.remove('selected');
-            }
-        });
-    }
-    
-    materiasCheckboxes.forEach(cb => {
-        cb.addEventListener('change', function() {
-            atualizarContadorMaterias();
-            atualizarEstadosMaterias();
-        });
-        
-        // Inicializar estados
-        const label = document.querySelector(label[for=""]);
-        if (cb.checked) {
-            label.classList.add('selected');
-        }
-    });
-    
-    // Submissão do formulário
-    document.getElementById('configSimuladoForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const materiasSelecionadas = Array.from(materiasCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-        
-        const configs = {
-            tempoCronometrado: document.getElementById('tempoCronometrado').checked,
-            dicasAutomaticas: document.getElementById('dicasAutomaticas').checked,
-            formulasMatematicas: document.getElementById('formulasMatematicas').checked,
-            feedbackDetalhado: document.getElementById('feedbackDetalhado').checked
-        };
-        
-        // Validações
-        if (materiasSelecionadas.length === 0) {
-            showNotification('Selecione pelo menos uma matéria', 'error');
-            return;
-        }
-        
-        if (!quantidade || quantidade < 5 || quantidade > 100) {
-            showNotification('Selecione uma quantidade entre 5 e 100 questões', 'error');
-            return;
-        }
-        
-        // Mostrar loading
-        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        loadingModal.show();
-        
-        try {
-            const response = await fetch('/api/simulado/iniciar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    quantidade: quantidade,
-                    materias: materiasSelecionadas,
-                    configs: configs
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                showNotification('Simulado configurado com sucesso!', 'success');
-                setTimeout(() => {
-                    window.location.href = data.redirect_url;
-                }, 1000);
-            } else {
-                throw new Error(data.error || 'Erro desconhecido');
-            }
-            
-        } catch (error) {
-            loadingModal.hide();
-            showNotification('Erro ao iniciar simulado: ' + error.message, 'error');
-            console.error('Erro:', error);
-        }
-    });
-    
-    // Inicializar
-    atualizarContadorMaterias();
-    
-    // Sistema de notificações
-    function showNotification(message, type = 'info') {
-        // Implementação do sistema de notificações
-        alert(message); // Placeholder - implementar sistema visual
-    }
-});
-</script>
+<script src="{{ url_for('static', filename='js/simulado.js') }}"></script>
 {% endblock %}
