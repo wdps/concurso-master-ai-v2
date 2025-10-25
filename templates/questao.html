@@ -4,99 +4,152 @@
 
 {% block content %}
 <div class="container py-4">
-    <!-- Cabeçalho e Progresso -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-light">
-                <div class="card-body py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Cabeçalho da Questão -->
+            <div class="premium-card mb-4">
+                <div class="p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0;">
                     <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h5 class="card-title mb-1">
-                                <i class="fas fa-graduation-cap"></i> Questão {{ numero }} de {{ total_questoes }}
-                            </h5>
-                            <p class="card-text text-muted mb-0">
-                                {{ questao.materia }} • {{ questao.dificuldade }}
+                        <div class="col-md-8">
+                            <h2 class="fw-bold mb-2">🎯 Questão {{ numero }} de {{ total_questoes }}</h2>
+                            <p class="mb-0">
+                                <strong>Matéria:</strong> {{ questao.materia }} • 
+                                <strong>Dificuldade:</strong> {{ questao.dificuldade }}
                             </p>
                         </div>
-                        <div class="col-md-6">
-                            <div class="progress" style="height: 20px;">
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                     style="width: {{ (numero / total_questoes * 100) }}%"
-                                     aria-valuenow="{{ (numero / total_questoes * 100) }}" 
-                                     aria-valuemin="0" aria-valuemax="100">
-                                    {{ numero }}/{{ total_questoes }}
+                        <div class="col-md-4 text-end">
+                            <div class="progress bg-white bg-opacity-25" style="height: 8px;">
+                                <div class="progress-bar bg-white" style="width: {{ (numero / total_questoes * 100) }}%"></div>
+                            </div>
+                            <p class="mb-0 mt-2">{{ numero }}/{{ total_questoes }} ({{ "%.0f"|format(numero / total_questoes * 100) }}%)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo da Questão -->
+            <div class="premium-card">
+                <div class="p-5">
+                    {% if not questao_respondida %}
+                        <!-- Dicas e Fórmulas (antes de responder) -->
+                        {% if configs.dicasAutomaticas and questao.dica %}
+                        <div class="dica-container mb-4">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-lightbulb text-warning fs-4 me-3 mt-1"></i>
+                                <div>
+                                    <strong class="d-block mb-2">💡 Dica Inteligente</strong>
+                                    <p class="mb-0">{{ questao.dica }}</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                        {% endif %}
 
-    <div class="row">
-        <div class="col-lg-8">
-            <!-- Questão -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Enunciado</h5>
-                </div>
-                <div class="card-body">
-                    <p class="card-text" style="font-size: 1.1rem; line-height: 1.6; white-space: pre-line;">
-                        {{ questao.enunciado }}
-                    </p>
-                </div>
-            </div>
-
-            <!-- Alternativas -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Alternativas</h5>
-                </div>
-                <div class="card-body">
-                    <div id="alternativasContainer">
-                        {% for letra, texto in questao.alternativas.items() %}
-                        <div class="form-check mb-3 alternativa-item" data-letra="{{ letra }}">
-                            <input class="form-check-input" type="radio" name="alternativa" 
-                                   id="alt{{ letra }}" value="{{ letra }}"
-                                   {% if resposta_usuario == letra %}checked{% endif %}
-                                   {% if questao_respondida %}disabled{% endif %}>
-                            <label class="form-check-label w-100 p-3 rounded border alternativa-label"
-                                   for="alt{{ letra }}" 
-                                   style="cursor: {% if not questao_respondida %}pointer{% else %}default{% endif %};">
-                                <strong class="me-3">{{ letra }}.</strong> {{ texto }}
-                            </label>
+                        {% if configs.formulasMatematicas and questao.formula %}
+                        <div class="formula-container mb-4">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-square-root-alt text-info fs-4 me-3 mt-1"></i>
+                                <div>
+                                    <strong class="d-block mb-2">📐 Fórmula Útil</strong>
+                                    <p class="mb-0 font-monospace">{{ questao.formula }}</p>
+                                </div>
+                            </div>
                         </div>
-                        {% endfor %}
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- Enunciado -->
+                    <div class="mb-5">
+                        <h4 class="fw-bold text-dark mb-4">
+                            <i class="fas fa-question-circle me-2 text-primary"></i>Enunciado
+                        </h4>
+                        <div class="enunciado-content p-4 border rounded-3 bg-light">
+                            <p class="fs-5 lh-base mb-0" style="white-space: pre-line;">{{ questao.enunciado }}</p>
+                        </div>
                     </div>
 
-                    <!-- Botões de Ação -->
-                    <div class="d-flex justify-content-between mt-4">
+                    <!-- Alternativas -->
+                    <div class="mb-5">
+                        <h4 class="fw-bold text-dark mb-4">
+                            <i class="fas fa-list-ul me-2 text-primary"></i>Alternativas
+                        </h4>
+                        <div id="alternativasContainer">
+                            {% for letra, texto in questao.alternativas.items() %}
+                            <div class="alternativa-item" data-letra="{{ letra }}">
+                                <input type="radio" name="alternativa" value="{{ letra }}" id="alt{{ letra }}" 
+                                       class="form-check-input" {% if questao_respondida %}disabled{% endif %}>
+                                <label for="alt{{ letra }}" class="form-check-label w-100 ms-3 cursor-pointer fs-5">
+                                    <strong class="me-3">{{ letra }}.</strong>
+                                    <span>{{ texto }}</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Feedback (após responder) -->
+                    {% if questao_respondida %}
+                    <div class="feedback-container mb-5">
+                        <div class="p-4 rounded-3 {% if resposta_usuario == questao.resposta_correta %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+                            <h4 class="fw-bold mb-3">
+                                {% if resposta_usuario == questao.resposta_correta %}
+                                ✅ Resposta Correta!
+                                {% else %}
+                                ❌ Resposta Incorreta
+                                {% endif %}
+                            </h4>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Sua resposta:</strong></p>
+                                    <div class="p-2 bg-white bg-opacity-25 rounded">
+                                        <strong>{{ resposta_usuario }}</strong> - {{ questao.alternativas[resposta_usuario] }}
+                                    </div>
+                                </div>
+                                {% if resposta_usuario != questao.resposta_correta %}
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Resposta correta:</strong></p>
+                                    <div class="p-2 bg-white bg-opacity-25 rounded">
+                                        <strong>{{ questao.resposta_correta }}</strong> - {{ questao.alternativas[questao.resposta_correta] }}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="explicacao mt-4">
+                                <h5 class="fw-bold mb-3">📚 Explicação Detalhada:</h5>
+                                <p class="mb-0" style="white-space: pre-line;">{{ questao.explicacao }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Navegação -->
+                    <div class="d-flex justify-content-between align-items-center pt-4 border-top">
                         <div>
                             {% if numero > 1 %}
-                            <a href="{{ url_for('questao', numero=numero-1) }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Anterior
+                            <a href="{{ url_for('questao', numero=numero-1) }}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i> Anterior
                             </a>
                             {% else %}
-                            <a href="{{ url_for('simulado') }}" class="btn btn-secondary">
-                                <i class="fas fa-home"></i> Voltar
+                            <a href="{{ url_for('simulado') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-home me-2"></i> Voltar
                             </a>
                             {% endif %}
                         </div>
-                        
+
                         <div>
                             {% if not questao_respondida %}
-                            <button class="btn btn-primary" id="btnResponder" disabled>
-                                <i class="fas fa-paper-plane"></i> Confirmar Resposta
+                            <button class="btn btn-premium btn-lg px-4" id="btnResponder" disabled>
+                                <i class="fas fa-paper-plane me-2"></i> Confirmar Resposta
                             </button>
                             {% else %}
                                 {% if numero < total_questoes %}
-                                <a href="{{ url_for('questao', numero=numero+1) }}" class="btn btn-success">
-                                    Próxima <i class="fas fa-arrow-right"></i>
+                                <a href="{{ url_for('questao', numero=numero+1) }}" class="btn btn-success btn-lg">
+                                    Próxima Questão <i class="fas fa-arrow-right ms-2"></i>
                                 </a>
                                 {% else %}
-                                <a href="{{ url_for('resultado_simulado') }}" class="btn btn-success">
-                                    Finalizar <i class="fas fa-flag-checkered"></i>
+                                <a href="{{ url_for('resultado') }}" class="btn btn-warning btn-lg">
+                                    <i class="fas fa-flag-checkered me-2"></i> Finalizar Simulado
                                 </a>
                                 {% endif %}
                             {% endif %}
@@ -105,165 +158,132 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-4">
-            <!-- Feedback -->
-            {% if questao_respondida %}
-            <div class="card sticky-top" style="top: 20px;">
-                <div class="card-header {% if resposta_usuario == questao.resposta_correta %}bg-success{% else %}bg-danger{% endif %} text-white">
-                    <h5 class="card-title mb-0">
-                        {% if resposta_usuario == questao.resposta_correta %}
-                        <i class="fas fa-check-circle"></i> Resposta Correta!
-                        {% else %}
-                        <i class="fas fa-times-circle"></i> Resposta Incorreta
-                        {% endif %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Sua resposta:</strong> {{ resposta_usuario }}</p>
-                    {% if resposta_usuario != questao.resposta_correta %}
-                    <p><strong>Resposta correta:</strong> {{ questao.resposta_correta }}</p>
-                    {% endif %}
-                    
-                    <hr>
-                    
-                    <h6><i class="fas fa-lightbulb"></i> Explicação:</h6>
-                    <p class="text-muted" style="white-space: pre-line;">{{ questao.explicacao }}</p>
-                </div>
-            </div>
-            {% else %}
-            <!-- Painel de Instruções -->
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-info-circle"></i> Instruções
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <ol class="small">
-                        <li>Leia atentamente o enunciado</li>
-                        <li>Selecione uma das alternativas</li>
-                        <li>Clique em "Confirmar Resposta"</li>
-                        <li>Analise o feedback educativo</li>
-                        <li>Continue para a próxima questão</li>
-                    </ol>
-                    <div class="alert alert-warning small mb-0">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Atenção:</strong> Após confirmar, não será possível alterar a resposta.
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
     </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 Inicializando questão {{ numero }}...');
+    
     const alternativas = document.querySelectorAll('.alternativa-item');
     const btnResponder = document.getElementById('btnResponder');
     let respostaSelecionada = null;
-    
-    // Se já foi respondida, destacar a resposta correta/incorreta
-    {% if questao_respondida %}
-        alternativas.forEach(alt => {
-            const letra = alt.dataset.letra;
-            const label = alt.querySelector('.alternativa-label');
-            const input = alt.querySelector('input');
-            
-            if (letra === '{{ questao.resposta_correta }}') {
-                label.classList.add('bg-success', 'text-white');
-            } else if (letra === '{{ resposta_usuario }}' && letra !== '{{ questao.resposta_correta }}') {
-                label.classList.add('bg-danger', 'text-white');
-            }
-        });
-    {% else %}
-        // Seleção de alternativas
-        alternativas.forEach(alt => {
-            const input = alt.querySelector('input');
-            const label = alt.querySelector('.alternativa-label');
-            
-            input.addEventListener('change', function() {
-                if (this.checked) {
-                    respostaSelecionada = this.value;
-                    btnResponder.disabled = false;
-                    
-                    // Remover destaque de todas
-                    alternativas.forEach(a => {
-                        a.querySelector('.alternativa-label').classList.remove('border-primary', 'bg-primary', 'text-white');
-                    });
-                    
-                    // Destacar selecionada
-                    label.classList.add('border-primary', 'bg-primary', 'text-white');
-                }
-            });
-            
-            // Clique na label também seleciona
-            label.addEventListener('click', function() {
-                input.checked = true;
-                input.dispatchEvent(new Event('change'));
-            });
-        });
-        
-        // Enviar resposta
-        btnResponder.addEventListener('click', async function() {
-            if (!respostaSelecionada) return;
-            
-            this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-            
-            try {
-                const response = await fetch('/api/simulado/responder', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        numero_questao: {{ numero }},
-                        resposta: respostaSelecionada
-                    })
+
+    {% if not questao_respondida %}
+    // Sistema de seleção de alternativas
+    alternativas.forEach(alt => {
+        const input = alt.querySelector('input');
+        const label = alt.querySelector('label');
+
+        input.addEventListener('change', function() {
+            if (this.checked) {
+                respostaSelecionada = this.value;
+                btnResponder.disabled = false;
+                
+                // Remover seleção anterior
+                alternativas.forEach(a => {
+                    a.classList.remove('selected');
+                    a.style.transform = 'translateX(0)';
                 });
                 
-                const data = await response.json();
+                // Selecionar atual
+                alt.classList.add('selected');
+                alt.style.transform = 'translateX(10px)';
                 
-                if (data.success) {
-                    // Recarregar a página para mostrar feedback
-                    window.location.reload();
-                } else {
-                    throw new Error(data.error);
-                }
-                
-            } catch (error) {
-                alert('Erro ao enviar resposta: ' + error.message);
-                this.disabled = false;
-                this.innerHTML = '<i class="fas fa-paper-plane"></i> Confirmar Resposta';
+                console.log('✅ Alternativa selecionada:', respostaSelecionada);
             }
         });
+
+        // Clique na label também seleciona
+        label.addEventListener('click', function() {
+            input.checked = true;
+            input.dispatchEvent(new Event('change'));
+        });
+    });
+
+    // Enviar resposta
+    btnResponder.addEventListener('click', async function() {
+        if (!respostaSelecionada) {
+            showNotification('❌ Selecione uma alternativa antes de confirmar.', 'warning');
+            return;
+        }
+
+        console.log('📤 Enviando resposta:', respostaSelecionada);
+        
+        // Loading state
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Enviando...';
+
+        try {
+            const response = await fetch('/api/questao/responder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    questao_numero: {{ numero }},
+                    resposta: respostaSelecionada
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('✅ Resposta registrada com sucesso!', 'success');
+                // Recarregar para mostrar feedback
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error(data.error || 'Erro ao enviar resposta');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro:', error);
+            showNotification('❌ Erro: ' + error.message, 'danger');
+            
+            // Restaurar botão
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Confirmar Resposta';
+        }
+    });
+    {% else %}
+    // Destacar respostas após responder
+    alternativas.forEach(alt => {
+        const letra = alt.dataset.letra;
+        if (letra === '{{ questao.resposta_correta }}') {
+            alt.classList.add('selected');
+            alt.style.background = 'rgba(40, 167, 69, 0.1)';
+            alt.style.borderColor = '#28a745';
+        } else if (letra === '{{ resposta_usuario }}' && letra !== '{{ questao.resposta_correta }}') {
+            alt.classList.add('selected');
+            alt.style.background = 'rgba(220, 53, 69, 0.1)';
+            alt.style.borderColor = '#dc3545';
+        }
+    });
     {% endif %}
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(e) {
+        if (!{% if questao_respondida %}true{% else %}false{% endif %}) {
+            if (e.key >= '1' && e.key <= '4') {
+                const letras = ['A', 'B', 'C', 'D'];
+                const letra = letras[parseInt(e.key) - 1];
+                const input = document.querySelector(input[value=""]);
+                if (input) {
+                    input.checked = true;
+                    input.dispatchEvent(new Event('change'));
+                }
+            }
+            
+            if (e.key === 'Enter' && respostaSelecionada) {
+                btnResponder.click();
+            }
+        }
+    });
 });
 </script>
-
-<style>
-.alternativa-label {
-    transition: all 0.3s ease;
-    border: 2px solid #dee2e6;
-}
-
-.alternativa-label:hover {
-    border-color: #3498db;
-    background-color: #f8f9fa;
-}
-
-.form-check-input:checked + .alternativa-label {
-    border-color: #3498db;
-    background-color: #e3f2fd;
-}
-
-.sticky-top {
-    position: sticky;
-    z-index: 1000;
-}
-</style>
 {% endblock %}

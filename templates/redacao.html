@@ -5,31 +5,152 @@
 {% block content %}
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-edit"></i> Módulo de Redação
-                    </h3>
+        <div class="col-lg-10">
+            <div class="premium-card p-5">
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold text-dark mb-3">
+                        <i class="fas fa-edit me-2"></i>Corretor de Redação
+                    </h1>
+                    <p class="lead text-muted">Receba feedback detalhado da sua redação com dicas de melhoria</p>
                 </div>
-                <div class="card-body text-center py-5">
-                    <i class="fas fa-tools display-1 text-muted mb-4"></i>
-                    <h4 class="text-muted">Em Desenvolvimento</h4>
-                    <p class="text-muted mb-4">
-                        Estamos trabalhando em um módulo avançado de redação 
-                        com correção por inteligência artificial.
-                    </p>
-                    <div class="d-grid gap-2 d-md-flex justify-content-center">
-                        <a href="{{ url_for('simulado') }}" class="btn btn-primary me-md-2">
-                            <i class="fas fa-play-circle"></i> Fazer Simulado
-                        </a>
-                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
-                            <i class="fas fa-home"></i> Voltar ao Início
-                        </a>
+
+                <form id="formRedacao">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold fs-5">Título da Redação</label>
+                        <input type="text" class="form-control form-control-lg" id="tituloRedacao" 
+                               placeholder="Digite o título da sua redação (opcional)">
                     </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold fs-5">Texto da Redação</label>
+                        <textarea class="form-control" id="textoRedacao" rows="15" 
+                                  placeholder="Digite sua redação aqui...&#10;&#10;Dica: Estruture seu texto em parágrafos, com introdução, desenvolvimento e conclusão."></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Escreva no mínimo 200 caracteres para uma análise mais precisa.
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-premium btn-lg">
+                            <i class="fas fa-check-circle me-2"></i> Corrigir Redação
+                        </button>
+                    </div>
+                </form>
+
+                <div id="resultadoRedacao" class="mt-5" style="display: none;">
+                    <!-- Resultado será inserido aqui via JavaScript -->
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formRedacao = document.getElementById('formRedacao');
+    
+    formRedacao.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const titulo = document.getElementById('tituloRedacao').value;
+        const texto = document.getElementById('textoRedacao').value;
+        
+        if (!texto.trim()) {
+            showNotification('❌ Digite o texto da redação para continuar.', 'warning');
+            return;
+        }
+        
+        if (texto.length < 200) {
+            showNotification('⚠️ Escreva pelo menos 200 caracteres para uma análise mais precisa.', 'info');
+        }
+        
+        showLoading();
+        
+        try {
+            const response = await fetch('/api/redacao/corrigir', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    titulo: titulo,
+                    texto: texto
+                })
+            });
+            
+            const data = await response.json();
+            hideLoading();
+            
+            if (data.success) {
+                mostrarResultadoRedacao(data);
+            } else {
+                throw new Error(data.error || 'Erro ao corrigir redação');
+            }
+            
+        } catch (error) {
+            hideLoading();
+            showNotification('❌ Erro: ' + error.message, 'danger');
+        }
+    });
+    
+    function mostrarResultadoRedacao(data) {
+        const container = document.getElementById('resultadoRedacao');
+        const nota = data.nota;
+        const feedback = data.feedback;
+        const stats = data.estatisticas;
+        
+        let corNota = 'success';
+        if (nota < 600) corNota = 'danger';
+        else if (nota < 800) corNota = 'warning';
+        
+        container.innerHTML = 
+            <div class="premium-card p-4">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-">Nota: /1000</h3>
+                    <div class="row justify-content-center mt-4">
+                        <div class="col-md-3 mb-3">
+                            <div class="border rounded-3 p-3 text-center">
+                                <div class="fw-bold text-primary fs-4"></div>
+                                <small class="text-muted">Palavras</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border rounded-3 p-3 text-center">
+                                <div class="fw-bold text-primary fs-4"></div>
+                                <small class="text-muted">Parágrafos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border rounded-3 p-3 text-center">
+                                <div class="fw-bold text-primary fs-4"></div>
+                                <small class="text-muted">Caracteres</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feedback-content">
+                    <h4 class="fw-bold mb-4">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>Feedback Detalhado
+                    </h4>
+                    <div class="p-4 bg-light rounded-3">
+                        <p style="white-space: pre-line;"></p>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-primary" onclick="document.getElementById('resultadoRedacao').style.display = 'none'">
+                        <i class="fas fa-times me-2"></i> Fechar Resultado
+                    </button>
+                </div>
+            </div>
+        ;
+        
+        container.style.display = 'block';
+    }
+});
+</script>
 {% endblock %}

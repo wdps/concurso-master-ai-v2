@@ -3,58 +3,67 @@
 {% block title %}Início - ConcursoMaster AI{% endblock %}
 
 {% block content %}
-<!-- HERO SECTION -->
+<!-- Hero Section -->
 <section class="hero-section">
     <div class="container">
-        <div class="row align-items-center min-vh-100">
+        <div class="row align-items-center">
             <div class="col-lg-6">
-                <div class="hero-content animate__animated animate__fadeInLeft">
+                <div class="premium-card p-5">
                     <h1 class="display-4 fw-bold text-dark mb-4">
-                        Prepare-se para <span class="text-primary">conquistar</span> sua vaga
+                        Prepare-se para <span class="text-primary">vencer</span> seu concurso
                     </h1>
                     <p class="lead text-muted mb-4">
-                        Sistema inteligente de simulados com <strong>tecnologia AI</strong>, 
-                        <strong>feedback educativo detalhado</strong> e 
+                        Sistema inteligente com <strong>tecnologia avançada</strong>, 
+                        <strong>dicas contextuais</strong> e 
                         <strong>acompanhamento personalizado</strong> do seu desempenho.
                     </p>
                     <div class="d-grid gap-3 d-md-flex">
                         <a href="{{ url_for('simulado') }}" class="btn btn-premium me-md-3">
                             <i class="fas fa-play-circle me-2"></i> Começar Simulado
                         </a>
-                        <a href="{{ url_for('redacao') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-edit me-2"></i> Praticar Redação
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-chart-bar me-2"></i> Ver Estatísticas
                         </a>
                     </div>
                 </div>
             </div>
             
             <div class="col-lg-6">
-                <div class="row text-center animate__animated animate__fadeInRight">
-                    <div class="col-md-4 mb-4">
-                        <div class="premium-card p-4">
-                            <div class="feature-icon bg-primary rounded-circle mx-auto mb-3">
-                                <i class="fas fa-brain text-white"></i>
+                <div class="row text-center">
+                    <div class="col-md-6 mb-4">
+                        <div class="premium-card p-4 h-100">
+                            <div class="feature-icon">
+                                <i class="fas fa-brain"></i>
                             </div>
-                            <h5 class="fw-bold">AI Inteligente</h5>
-                            <p class="text-muted small">Dicas personalizadas baseadas no seu desempenho</p>
+                            <h5 class="fw-bold">IA Inteligente</h5>
+                            <p class="text-muted small">Dicas personalizadas baseadas no seu desempenho e contexto das questões</p>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="premium-card p-4">
-                            <div class="feature-icon bg-success rounded-circle mx-auto mb-3">
-                                <i class="fas fa-chart-line text-white"></i>
+                    <div class="col-md-6 mb-4">
+                        <div class="premium-card p-4 h-100">
+                            <div class="feature-icon">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <h5 class="fw-bold">Fórmulas</h5>
+                            <p class="text-muted small">Acesso rápido a fórmulas matemáticas e dicas de cálculo</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="premium-card p-4 h-100">
+                            <div class="feature-icon">
+                                <i class="fas fa-chart-line"></i>
                             </div>
                             <h5 class="fw-bold">Analytics</h5>
-                            <p class="text-muted small">Acompanhamento detalhado da sua evolução</p>
+                            <p class="text-muted small">Acompanhamento detalhado da sua evolução e métricas de desempenho</p>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="premium-card p-4">
-                            <div class="feature-icon bg-warning rounded-circle mx-auto mb-3">
-                                <i class="fas fa-book text-white"></i>
+                    <div class="col-md-6 mb-4">
+                        <div class="premium-card p-4 h-100">
+                            <div class="feature-icon">
+                                <i class="fas fa-database"></i>
                             </div>
                             <h5 class="fw-bold">+500 Questões</h5>
-                            <p class="text-muted small">Banco atualizado com questões reais</p>
+                            <p class="text-muted small">Banco com questões reais e atualizadas de diversos concursos</p>
                         </div>
                     </div>
                 </div>
@@ -63,75 +72,37 @@
     </div>
 </section>
 
-<!-- FEATURES SECTION -->
-<section class="py-5 bg-light">
+<!-- Features Section -->
+<section class="py-5">
     <div class="container">
         <div class="row mb-5">
             <div class="col-12 text-center">
-                <h2 class="display-5 fw-bold text-dark mb-3">Recursos Exclusivos</h2>
-                <p class="lead text-muted">Tudo que você precisa para sua aprovação</p>
+                <h2 class="display-5 fw-bold text-white mb-3">Recursos Exclusivos</h2>
+                <p class="lead text-white-50">Tudo que você precisa para sua aprovação</p>
             </div>
         </div>
         
         <div class="row g-4">
             <div class="col-md-6 col-lg-4">
-                <div class="premium-card h-100 p-4">
-                    <i class="fas fa-calculator text-primary display-6 mb-3"></i>
-                    <h4 class="fw-bold mb-3">Fórmulas Matemáticas</h4>
-                    <p class="text-muted">Acesso rápido a fórmulas e dicas de matemática durante as questões</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="premium-card h-100 p-4">
+                <div class="premium-card h-100 p-4 text-center">
                     <i class="fas fa-lightbulb text-warning display-6 mb-3"></i>
-                    <h4 class="fw-bold mb-3">Dicas Inteligentes</h4>
-                    <p class="text-muted">Sistema de dicas contextuais que se adapta ao seu aprendizado</p>
+                    <h4 class="fw-bold mb-3">Dicas Contextuais</h4>
+                    <p class="text-muted">Receba dicas inteligentes que se adaptam à matéria e ao enunciado da questão</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="premium-card h-100 p-4">
+                <div class="premium-card h-100 p-4 text-center">
+                    <i class="fas fa-square-root-alt text-info display-6 mb-3"></i>
+                    <h4 class="fw-bold mb-3">Fórmulas Matemáticas</h4>
+                    <p class="text-muted">Acesso rápido a fórmulas relevantes durante as questões de exatas</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="premium-card h-100 p-4 text-center">
                     <i class="fas fa-edit text-success display-6 mb-3"></i>
-                    <h4 class="fw-bold mb-3">Corretor de Redação</h4>
-                    <p class="text-muted">Feedback detalhado com sugestões de melhoria em tempo real</p>
+                    <h4 class="fw-bold mb-3">Sistema de Redação</h4>
+                    <p class="text-muted">Feedback detalhado com sugestões de melhoria para suas redações</p>
                 </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="premium-card h-100 p-4">
-                    <i class="fas fa-chart-pie text-info display-6 mb-3"></i>
-                    <h4 class="fw-bold mb-3">Dashboard Avançado</h4>
-                    <p class="text-muted">Estatísticas detalhadas e métricas de desempenho</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="premium-card h-100 p-4">
-                    <i class="fas fa-clock text-danger display-6 mb-3"></i>
-                    <h4 class="fw-bold mb-3">Simulados Cronometrados</h4>
-                    <p class="text-muted">Treine no ritmo da prova com tempo real</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="premium-card h-100 p-4">
-                    <i class="fas fa-mobile-alt text-secondary display-6 mb-3"></i>
-                    <h4 class="fw-bold mb-3">Totalmente Responsivo</h4>
-                    <p class="text-muted">Estude em qualquer dispositivo, a qualquer hora</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- CTA SECTION -->
-<section class="py-5 bg-primary text-white">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <h3 class="fw-bold mb-3">Pronto para elevar seus estudos?</h3>
-                <p class="mb-0">Junte-se a milhares de aprovados que usam o ConcursoMaster AI</p>
-            </div>
-            <div class="col-lg-4 text-lg-end">
-                <a href="{{ url_for('simulado') }}" class="btn btn-light btn-lg">
-                    <i class="fas fa-rocket me-2"></i> Começar Agora
-                </a>
             </div>
         </div>
     </div>

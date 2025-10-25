@@ -7,83 +7,123 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <!-- Cabeçalho do Resultado -->
-            <div class="card border-0 shadow-lg mb-5">
-                <div class="card-header bg-{{ cor_desempenho }} text-white py-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h1 class="display-4 fw-bold mb-2">{{ "%.1f"|format(porcentagem) }}%</h1>
-                            <h3 class="mb-0">{{ desempenho }}</h3>
-                            <p class="mb-0">Você acertou {{ acertos }} de {{ total_questoes }} questões</p>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <i class="fas fa-trophy display-1 opacity-75"></i>
+            <div class="premium-card mb-5">
+                <div class="p-5 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px;">
+                    <h1 class="display-4 fw-bold mb-3">📊 Resultado do Simulado</h1>
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="display-1 fw-bold mb-3">{{ "%.1f"|format(porcentagem) }}%</div>
+                            <h3 class="mb-4">{{ desempenho }}</h3>
+                            <p class="lead mb-0">Você acertou <strong>{{ acertos }}</strong> de <strong>{{ total_questoes }}</strong> questões</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Estatísticas -->
+            <!-- Estatísticas Principais -->
             <div class="row mb-5">
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center h-100">
-                        <div class="card-body">
-                            <h1 class="display-6 text-primary">{{ total_questoes }}</h1>
-                            <p class="card-text">Total de Questões</p>
+                <div class="col-md-3 mb-4">
+                    <div class="premium-card text-center h-100 p-4">
+                        <div class="feature-icon bg-primary mx-auto mb-3">
+                            <i class="fas fa-list-ol"></i>
                         </div>
+                        <h2 class="display-6 fw-bold text-primary">{{ total_questoes }}</h2>
+                        <h5 class="card-title">Total de Questões</h5>
                     </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center h-100">
-                        <div class="card-body">
-                            <h1 class="display-6 text-success">{{ acertos }}</h1>
-                            <p class="card-text">Acertos</p>
+                <div class="col-md-3 mb-4">
+                    <div class="premium-card text-center h-100 p-4">
+                        <div class="feature-icon bg-success mx-auto mb-3">
+                            <i class="fas fa-check-circle"></i>
                         </div>
+                        <h2 class="display-6 fw-bold text-success">{{ acertos }}</h2>
+                        <h5 class="card-title">Acertos</h5>
                     </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center h-100">
-                        <div class="card-body">
-                            <h1 class="display-6 text-danger">{{ erros }}</h1>
-                            <p class="card-text">Erros</p>
+                <div class="col-md-3 mb-4">
+                    <div class="premium-card text-center h-100 p-4">
+                        <div class="feature-icon bg-danger mx-auto mb-3">
+                            <i class="fas fa-times-circle"></i>
                         </div>
+                        <h2 class="display-6 fw-bold text-danger">{{ erros }}</h2>
+                        <h5 class="card-title">Erros</h5>
                     </div>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card text-center h-100">
-                        <div class="card-body">
-                            <h1 class="display-6 text-info">{{ "%.1f"|format(tempo_minutos) }}</h1>
-                            <p class="card-text">Minutos</p>
+                <div class="col-md-3 mb-4">
+                    <div class="premium-card text-center h-100 p-4">
+                        <div class="feature-icon bg-info mx-auto mb-3">
+                            <i class="fas fa-clock"></i>
                         </div>
+                        <h2 class="display-6 fw-bold text-info">{{ "%.1f"|format(tempo_minutos) }}</h2>
+                        <h5 class="card-title">Minutos</h5>
                     </div>
                 </div>
             </div>
 
-            <!-- Revisão Detalhada -->
-            <div class="card">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="card-title mb-0">
-                        <i class="fas fa-list-ol"></i> Revisão Detalhada das Questões
+            <!-- Desempenho por Matéria -->
+            {% if desempenho_por_materia %}
+            <div class="premium-card mb-5">
+                <div class="p-4" style="border-bottom: 2px solid #e2e8f0;">
+                    <h4 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>Desempenho por Matéria
                     </h4>
                 </div>
-                <div class="card-body">
+                <div class="p-4">
+                    <div class="row g-4">
+                        {% for materia, dados in desempenho_por_materia.items() %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="border rounded-3 p-3 h-100">
+                                <h6 class="fw-bold mb-3">{{ materia }}</h6>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Acertos:</span>
+                                    <strong>{{ dados.acertos }}/{{ dados.total }}</strong>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    {% set porcentagem_materia = (dados.acertos / dados.total * 100) if dados.total > 0 else 0 %}
+                                    <div class="progress-bar 
+                                        {% if porcentagem_materia >= 70 %}bg-success
+                                        {% elif porcentagem_materia >= 50 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                         style="width: {{ porcentagem_materia }}%">
+                                    </div>
+                                </div>
+                                <div class="text-end mt-1">
+                                    <small class="text-muted">{{ "%.1f"|format(porcentagem_materia) }}%</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Revisão Detalhada -->
+            <div class="premium-card mb-5">
+                <div class="p-4" style="border-bottom: 2px solid #e2e8f0;">
+                    <h4 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-list-check me-2 text-primary"></i>Revisão Detalhada das Questões
+                    </h4>
+                </div>
+                <div class="p-4">
                     {% for questao in detalhes_questoes %}
-                    <div class="questao-revisao mb-4 p-3 border rounded {% if questao.acertou %}border-success{% else %}border-danger{% endif %}">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="questao-revisao mb-4 p-4 border rounded-3 {% if questao.acertou %}border-success{% else %}border-danger{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
                             <h5 class="mb-0">
                                 Questão {{ questao.numero }} - {{ questao.materia }}
-                                <span class="badge bg-{% if questao.acertou %}success{% else %}danger{% endif %} ms-2">
+                                <span class="badge {% if questao.acertou %}bg-success{% else %}bg-danger{% endif %} ms-2">
                                     {% if questao.acertou %}✅ Acertou{% else %}❌ Errou{% endif %}
                                 </span>
                             </h5>
                             <small class="text-muted">{{ questao.dificuldade }}</small>
                         </div>
-                        
+
                         <p class="mb-3" style="white-space: pre-line;"><strong>Enunciado:</strong> {{ questao.enunciado }}</p>
-                        
+
                         <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="p-2 rounded {% if questao.acertou %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
-                                    <strong>Sua resposta:</strong> 
+                            <div class="col-md-6 mb-2">
+                                <div class="p-3 rounded {% if questao.acertou %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+                                    <strong>Sua resposta:</strong>
                                     {{ questao.resposta_usuario or 'Não respondida' }}
                                     {% if questao.resposta_usuario %}
                                         - {{ questao.alternativas[questao.resposta_usuario] }}
@@ -91,18 +131,20 @@
                                 </div>
                             </div>
                             {% if not questao.acertou %}
-                            <div class="col-md-6">
-                                <div class="p-2 rounded bg-success text-white">
-                                    <strong>Resposta correta:</strong> 
+                            <div class="col-md-6 mb-2">
+                                <div class="p-3 rounded bg-success text-white">
+                                    <strong>Resposta correta:</strong>
                                     {{ questao.resposta_correta }}
                                     - {{ questao.alternativas[questao.resposta_correta] }}
                                 </div>
                             </div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="p-3 bg-light rounded">
-                            <h6><i class="fas fa-lightbulb text-warning"></i> Explicação:</h6>
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-lightbulb text-warning me-2"></i>Explicação:
+                            </h6>
                             <p class="mb-0" style="white-space: pre-line;">{{ questao.explicacao }}</p>
                         </div>
                     </div>
@@ -111,16 +153,16 @@
             </div>
 
             <!-- Ações Finais -->
-            <div class="text-center mt-5">
-                <div class="d-grid gap-2 d-md-flex justify-content-center">
-                    <a href="{{ url_for('simulado') }}" class="btn btn-primary btn-lg me-md-3">
-                        <i class="fas fa-redo"></i> Fazer Novo Simulado
+            <div class="text-center">
+                <div class="d-grid gap-3 d-md-flex justify-content-center">
+                    <a href="{{ url_for('simulado') }}" class="btn btn-premium btn-lg me-md-3">
+                        <i class="fas fa-redo me-2"></i> Fazer Novo Simulado
                     </a>
                     <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg me-md-3">
-                        <i class="fas fa-chart-bar"></i> Ver Dashboard
+                        <i class="fas fa-chart-bar me-2"></i> Ver Dashboard
                     </a>
-                    <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-home"></i> Página Inicial
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-home me-2"></i> Página Inicial
                     </a>
                 </div>
             </div>
@@ -129,15 +171,21 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_css %}
 <style>
 .questao-revisao {
-    transition: transform 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 .questao-revisao:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
 }
 </style>
 {% endblock %}

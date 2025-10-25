@@ -5,49 +5,41 @@
 {% block content %}
 <div class="container py-5">
     <div class="row mb-5">
-        <div class="col-12">
-            <h1 class="display-4 fw-bold text-white text-center mb-4">
-                <i class="fas fa-chart-line"></i> Dashboard
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold text-white mb-3">
+                <i class="fas fa-chart-line me-2"></i>Dashboard
             </h1>
-            <p class="lead text-white text-center mb-0">
-                Acompanhe seu desempenho e evolução nos simulados
-            </p>
+            <p class="lead text-white-50">Acompanhe seu desempenho e evolução nos simulados</p>
         </div>
     </div>
 
     <!-- Estatísticas Gerais -->
     <div class="row mb-5">
         <div class="col-md-4 mb-4">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <div class="feature-icon bg-primary mx-auto mb-3">
-                        <i class="fas fa-database"></i>
-                    </div>
-                    <h2 class="display-4 fw-bold text-primary">{{ total_questoes }}</h2>
-                    <h5 class="card-title">Questões no Banco</h5>
+            <div class="premium-card text-center h-100 p-4">
+                <div class="feature-icon bg-primary mx-auto mb-3">
+                    <i class="fas fa-database"></i>
                 </div>
+                <h2 class="display-6 fw-bold text-primary">{{ total_questoes }}</h2>
+                <h5 class="card-title">Questões no Banco</h5>
             </div>
         </div>
         <div class="col-md-4 mb-4">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <div class="feature-icon bg-success mx-auto mb-3">
-                        <i class="fas fa-book"></i>
-                    </div>
-                    <h2 class="display-4 fw-bold text-success">{{ total_materias }}</h2>
-                    <h5 class="card-title">Matérias Disponíveis</h5>
+            <div class="premium-card text-center h-100 p-4">
+                <div class="feature-icon bg-success mx-auto mb-3">
+                    <i class="fas fa-book"></i>
                 </div>
+                <h2 class="display-6 fw-bold text-success">{{ total_materias }}</h2>
+                <h5 class="card-title">Matérias Disponíveis</h5>
             </div>
         </div>
         <div class="col-md-4 mb-4">
-            <div class="card text-center h-100">
-                <div class="card-body">
-                    <div class="feature-icon bg-info mx-auto mb-3">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <h2 class="display-4 fw-bold text-info">{{ historico|length }}</h2>
-                    <h5 class="card-title">Simulados Realizados</h5>
+            <div class="premium-card text-center h-100 p-4">
+                <div class="feature-icon bg-info mx-auto mb-3">
+                    <i class="fas fa-chart-bar"></i>
                 </div>
+                <h2 class="display-6 fw-bold text-info">{{ total_simulados }}</h2>
+                <h5 class="card-title">Simulados Realizados</h5>
             </div>
         </div>
     </div>
@@ -55,17 +47,17 @@
     <div class="row">
         <!-- Matérias com Mais Questões -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-trophy"></i> Matérias com Mais Questões
-                    </h5>
+            <div class="premium-card h-100">
+                <div class="p-4 border-bottom">
+                    <h4 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-trophy me-2 text-primary"></i>Matérias com Mais Questões
+                    </h4>
                 </div>
-                <div class="card-body">
+                <div class="p-4">
                     <div class="list-group list-group-flush">
                         {% for materia in top_materias %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>{{ materia.materia }}</span>
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 py-3">
+                            <span class="fw-semibold">{{ materia.materia }}</span>
                             <span class="badge bg-primary rounded-pill">{{ materia.total }} questões</span>
                         </div>
                         {% endfor %}
@@ -76,13 +68,13 @@
 
         <!-- Histórico de Simulados -->
         <div class="col-lg-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-success text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-history"></i> Histórico de Simulados
-                    </h5>
+            <div class="premium-card h-100">
+                <div class="p-4 border-bottom">
+                    <h4 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-history me-2 text-primary"></i>Histórico de Simulados
+                    </h4>
                 </div>
-                <div class="card-body">
+                <div class="p-4">
                     {% if historico %}
                     <div class="table-responsive">
                         <table class="table table-hover">
@@ -101,7 +93,10 @@
                                     <td>{{ simulado.total_questoes }}</td>
                                     <td>{{ simulado.acertos }}</td>
                                     <td>
-                                        <span class="badge {% if simulado.porcentagem >= 70 %}bg-success{% elif simulado.porcentagem >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        <span class="badge 
+                                            {% if simulado.porcentagem >= 70 %}bg-success
+                                            {% elif simulado.porcentagem >= 50 %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
                                             {{ "%.1f"|format(simulado.porcentagem) }}%
                                         </span>
                                     </td>
@@ -115,8 +110,8 @@
                         <i class="fas fa-inbox display-1 text-muted mb-3"></i>
                         <h5 class="text-muted">Nenhum simulado realizado</h5>
                         <p class="text-muted">Comece fazendo seu primeiro simulado!</p>
-                        <a href="{{ url_for('simulado') }}" class="btn btn-primary">
-                            <i class="fas fa-play-circle"></i> Fazer Primeiro Simulado
+                        <a href="{{ url_for('simulado') }}" class="btn btn-premium">
+                            <i class="fas fa-play-circle me-2"></i> Fazer Primeiro Simulado
                         </a>
                     </div>
                     {% endif %}
@@ -128,15 +123,18 @@
     <!-- Ações Rápidas -->
     <div class="row mt-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center py-4">
-                    <h4 class="card-title mb-4">Pronto para o próximo desafio?</h4>
-                    <div class="d-grid gap-2 d-md-flex justify-content-center">
-                        <a href="{{ url_for('simulado') }}" class="btn btn-primary btn-lg me-md-3">
-                            <i class="fas fa-play-circle"></i> Iniciar Novo Simulado
+            <div class="premium-card">
+                <div class="p-5 text-center">
+                    <h3 class="fw-bold mb-4">Pronto para o próximo desafio?</h3>
+                    <div class="d-grid gap-3 d-md-flex justify-content-center">
+                        <a href="{{ url_for('simulado') }}" class="btn btn-premium btn-lg me-md-3">
+                            <i class="fas fa-play-circle me-2"></i> Iniciar Novo Simulado
                         </a>
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">
-                            <i class="fas fa-home"></i> Voltar ao Início
+                        <a href="{{ url_for('redacao') }}" class="btn btn-success btn-lg me-md-3">
+                            <i class="fas fa-edit me-2"></i> Praticar Redação
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-home me-2"></i> Voltar ao Início
                         </a>
                     </div>
                 </div>

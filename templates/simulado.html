@@ -2,111 +2,60 @@
 
 {% block title %}Simulados - ConcursoMaster AI{% endblock %}
 
-{% block extra_css %}
-<style>
-.quantidade-btn {
-    border: 2px solid #e2e8f0;
-    border-radius: 15px;
-    padding: 15px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: white;
-}
-
-.quantidade-btn:hover {
-    border-color: #4361ee;
-    transform: translateY(-3px);
-}
-
-.quantidade-btn.active {
-    border-color: #4361ee;
-    background: #4361ee;
-    color: white;
-    box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
-}
-
-.materia-label {
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.materia-label:hover {
-    border-color: #4361ee;
-}
-
-.materia-label.selected {
-    border-color: #4361ee;
-    background: rgba(67, 97, 238, 0.1);
-}
-
-.config-card {
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-}
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container py-5 mt-5">
+<div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10">
-            <div class="config-card p-5">
+            <div class="premium-card p-5">
                 <div class="text-center mb-5">
                     <h1 class="display-5 fw-bold text-dark mb-3">
                         <i class="fas fa-cogs me-2"></i>Configurar Simulado
                     </h1>
-                    <p class="lead text-muted">Personalize seu simulado conforme suas necessidades</p>
+                    <p class="lead text-muted">Personalize seu simulado conforme suas necessidades de estudo</p>
                 </div>
 
                 <form id="configSimuladoForm">
-                    <!-- QUANTIDADE DE QUESTÕES -->
+                    <!-- Quantidade de Questões -->
                     <div class="mb-5">
                         <label class="form-label fw-bold fs-5 mb-4">
                             <i class="fas fa-list-ol me-2 text-primary"></i>Quantidade de Questões
                         </label>
                         <div class="row g-3 mb-4">
                             <div class="col-6 col-md-3">
-                                <div class="quantidade-btn" data-quantidade="10">
+                                <div class="quantidade-btn active" data-quantidade="10">
                                     <div class="fw-bold fs-5">10</div>
-                                    <small class="text-muted">Iniciante</small>
+                                    <small class="text-muted">Rápido</small>
                                 </div>
                             </div>
                             <div class="col-6 col-md-3">
                                 <div class="quantidade-btn" data-quantidade="20">
                                     <div class="fw-bold fs-5">20</div>
-                                    <small class="text-muted">Intermediário</small>
+                                    <small class="text-muted">Padrão</small>
                                 </div>
                             </div>
                             <div class="col-6 col-md-3">
-                                <div class="quantidade-btn active" data-quantidade="30">
+                                <div class="quantidade-btn" data-quantidade="30">
                                     <div class="fw-bold fs-5">30</div>
-                                    <small class="text-muted">Avançado</small>
+                                    <small class="text-muted">Completo</small>
                                 </div>
                             </div>
                             <div class="col-6 col-md-3">
                                 <div class="quantidade-btn" data-quantidade="50">
                                     <div class="fw-bold fs-5">50</div>
-                                    <small class="text-muted">Completo</small>
+                                    <small class="text-muted">Intensivo</small>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <input type="number" class="form-control form-control-lg" 
-                                       id="quantidadeCustom" min="5" max="100" value="30" 
+                                       id="quantidadeCustom" min="5" max="100" value="10" 
                                        placeholder="Ou digite um número personalizado">
                             </div>
                         </div>
                     </div>
 
-                    <!-- MATÉRIAS -->
+                    <!-- Matérias -->
                     <div class="mb-5">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <label class="form-label fw-bold fs-5 mb-0">
@@ -143,7 +92,7 @@
                         </div>
                     </div>
 
-                    <!-- CONFIGURAÇÕES AVANÇADAS -->
+                    <!-- Configurações Avançadas -->
                     <div class="mb-5">
                         <label class="form-label fw-bold fs-5 mb-3">
                             <i class="fas fa-sliders-h me-2 text-primary"></i>Configurações Avançadas
@@ -196,7 +145,7 @@
                         </div>
                     </div>
 
-                    <!-- BOTÕES DE AÇÃO -->
+                    <!-- Botões de Ação -->
                     <div class="d-grid gap-3 d-md-flex justify-content-md-end">
                         <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg me-md-3">
                             <i class="fas fa-arrow-left me-2"></i> Voltar ao Início
@@ -213,5 +162,163 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/simulado.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando sistema de simulado...');
+    
+    let quantidadeSelecionada = 10;
+    const materiasCheckboxes = document.querySelectorAll('.materia-checkbox');
+    
+    // Sistema de seleção de quantidade
+    const quantidadeBtns = document.querySelectorAll('.quantidade-btn');
+    quantidadeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            console.log('📊 Quantidade selecionada:', this.dataset.quantidade);
+            
+            // Remover active de todos
+            quantidadeBtns.forEach(b => b.classList.remove('active'));
+            
+            // Adicionar active ao clicado
+            this.classList.add('active');
+            
+            // Atualizar quantidade
+            quantidadeSelecionada = parseInt(this.dataset.quantidade);
+            
+            // Atualizar input custom
+            document.getElementById('quantidadeCustom').value = quantidadeSelecionada;
+        });
+    });
+    
+    // Input customizado
+    document.getElementById('quantidadeCustom').addEventListener('input', function() {
+        const valor = parseInt(this.value);
+        if (valor >= 5 && valor <= 100) {
+            quantidadeSelecionada = valor;
+            quantidadeBtns.forEach(b => b.classList.remove('active'));
+        }
+    });
+    
+    // Botões de seleção rápida
+    document.getElementById('btnSelecionarTodas').addEventListener('click', function() {
+        materiasCheckboxes.forEach(cb => {
+            cb.checked = true;
+            atualizarEstadoMateria(cb);
+        });
+        atualizarContadorMaterias();
+    });
+    
+    document.getElementById('btnSelecionarPrincipais').addEventListener('click', function() {
+        const principais = ['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 'Direito Constitucional', 'Direito Administrativo'];
+        materiasCheckboxes.forEach(cb => {
+            cb.checked = principais.includes(cb.value);
+            atualizarEstadoMateria(cb);
+        });
+        atualizarContadorMaterias();
+    });
+    
+    // Atualizar estado visual das matérias
+    function atualizarEstadoMateria(checkbox) {
+        const label = document.querySelector(label[for=\"\"]);
+        if (checkbox.checked) {
+            label.classList.add('selected');
+        } else {
+            label.classList.remove('selected');
+        }
+    }
+    
+    // Atualizar contador de matérias
+    function atualizarContadorMaterias() {
+        const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
+        document.getElementById('contadorMaterias').textContent = selecionadas + ' matérias selecionadas';
+    }
+    
+    // Eventos nas checkboxes
+    materiasCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            atualizarEstadoMateria(this);
+            atualizarContadorMaterias();
+        });
+        
+        // Inicializar estado
+        atualizarEstadoMateria(cb);
+    });
+    
+    // Submissão do formulário
+    document.getElementById('configSimuladoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('📝 Enviando formulário...');
+        
+        // Coletar dados
+        const materiasSelecionadas = Array.from(materiasCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        const configs = {
+            tempoCronometrado: document.getElementById('tempoCronometrado').checked,
+            dicasAutomaticas: document.getElementById('dicasAutomaticas').checked,
+            formulasMatematicas: document.getElementById('formulasMatematicas').checked,
+            feedbackDetalhado: document.getElementById('feedbackDetalhado').checked
+        };
+        
+        console.log('📦 Dados:', { quantidade: quantidadeSelecionada, materias: materiasSelecionadas, configs });
+        
+        // Validações
+        if (materiasSelecionadas.length === 0) {
+            showNotification('❌ Selecione pelo menos uma matéria para continuar.', 'danger');
+            return;
+        }
+        
+        if (!quantidadeSelecionada || quantidadeSelecionada < 5 || quantidadeSelecionada > 100) {
+            showNotification('❌ Selecione uma quantidade entre 5 e 100 questões.', 'danger');
+            return;
+        }
+        
+        // Loading state
+        const btnIniciar = document.getElementById('btnIniciarSimulado');
+        const btnTextoOriginal = btnIniciar.innerHTML;
+        btnIniciar.disabled = true;
+        btnIniciar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Preparando...';
+        
+        try {
+            console.log('📡 Enviando requisição para API...');
+            
+            const response = await fetch('/api/simulado/iniciar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    quantidade: quantidadeSelecionada,
+                    materias: materiasSelecionadas,
+                    configs: configs
+                })
+            });
+            
+            const data = await response.json();
+            console.log('📊 Resposta:', data);
+            
+            if (data.success) {
+                showNotification('✅ Simulado configurado! Redirecionando...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1000);
+            } else {
+                throw new Error(data.error || 'Erro ao iniciar simulado');
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro:', error);
+            showNotification('❌ Erro: ' + error.message, 'danger');
+            
+            // Restaurar botão
+            btnIniciar.disabled = false;
+            btnIniciar.innerHTML = btnTextoOriginal;
+        }
+    });
+    
+    // Inicializar
+    atualizarContadorMaterias();
+    console.log('✅ Sistema de simulado inicializado!');
+});
+</script>
 {% endblock %}
