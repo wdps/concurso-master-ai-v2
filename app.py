@@ -7,11 +7,8 @@ import logging
 import os
 import csv
 
-<<<<<<< HEAD
 # ConfiguraÁ„o do logging
-=======
 # Configura√ß√£o do logging
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -19,19 +16,16 @@ app = Flask(__name__)
 app.secret_key = 'concurso_master_ai_secret_key_2024'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
-<<<<<<< HEAD
 # ConfiguraÁ„o do banco de dados
 DATABASE = 'concurso.db'
 
 def get_db_connection():
     """Cria conex„o com o banco de dados"""
-=======
 # Configura√ß√£o do banco de dados
 DATABASE = 'concurso.db'
 
 def get_db_connection():
     """Cria conex√£o com o banco de dados"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     try:
         conn = sqlite3.connect(DATABASE)
         conn.row_factory = sqlite3.Row
@@ -41,11 +35,8 @@ def get_db_connection():
         return None
 
 def criar_tabelas_se_necessario():
-<<<<<<< HEAD
     """Cria as tabelas necess·rias se n„o existirem"""
-=======
     """Cria as tabelas necess√°rias se n√£o existirem"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     conn = get_db_connection()
     if not conn:
         return False
@@ -53,36 +44,27 @@ def criar_tabelas_se_necessario():
     try:
         cursor = conn.cursor()
         
-<<<<<<< HEAD
         # Tabela de questıes
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS questıes (
-=======
         # Tabela de quest√µes
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS quest√µes (
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 enunciado TEXT NOT NULL,
                 materia TEXT NOT NULL,
                 alternativas TEXT NOT NULL,
                 resposta_correta TEXT NOT NULL,
                 explicacao TEXT,
-<<<<<<< HEAD
                 dificuldade TEXT DEFAULT 'MÈdia',
-=======
                 dificuldade TEXT DEFAULT 'M√©dia',
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                 tempo_estimado INTEGER DEFAULT 60,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         
-<<<<<<< HEAD
         # Tabela de histÛrico de simulados
-=======
         # Tabela de hist√≥rico de simulados
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS historico_simulados (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,11 +77,8 @@ def criar_tabelas_se_necessario():
         ''')
         
         conn.commit()
-<<<<<<< HEAD
         logger.info("? Tabelas verificadas/criadas com sucesso!")
-=======
         logger.info("‚úÖ Tabelas verificadas/criadas com sucesso!")
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         return True
         
     except sqlite3.Error as e:
@@ -109,17 +88,14 @@ def criar_tabelas_se_necessario():
         conn.close()
 
 def carregar_questoes_csv():
-<<<<<<< HEAD
     """Carrega questıes do CSV para o banco de dados usando csv nativo"""
     if not os.path.exists('questoes.csv'):
         logger.warning("? Arquivo questoes.csv n„o encontrado")
         # Criar algumas questıes de exemplo
-=======
     """Carrega quest√µes do CSV para o banco de dados usando csv nativo"""
     if not os.path.exists('questoes.csv'):
         logger.warning("‚ùå Arquivo questoes.csv n√£o encontrado")
         # Criar algumas quest√µes de exemplo
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         criar_questoes_exemplo()
         return True
     
@@ -129,29 +105,23 @@ def carregar_questoes_csv():
         
         with open('questoes.csv', 'r', encoding='utf-8') as file:
             csv_reader = csv.DictReader(file)
-<<<<<<< HEAD
             questıes_carregadas = 0
             
             for row in csv_reader:
                 try:
                     # Criar dicion·rio de alternativas
-=======
             quest√µes_carregadas = 0
             
             for row in csv_reader:
                 try:
                     # Criar dicion√°rio de alternativas
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                     alternativas_dict = {}
                     for letra in ['A', 'B', 'C', 'D', 'E']:
                         if letra in row and row[letra] and row[letra].strip():
                             alternativas_dict[letra] = row[letra].strip()
                     
-<<<<<<< HEAD
                     # Se n„o encontrou alternativas, criar padr„o
-=======
                     # Se n√£o encontrou alternativas, criar padr√£o
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                     if not alternativas_dict:
                         alternativas_dict = {
                             'A': 'Alternativa A',
@@ -160,7 +130,6 @@ def carregar_questoes_csv():
                             'D': 'Alternativa D'
                         }
                     
-<<<<<<< HEAD
                     # Inserir quest„o
                     cursor.execute('''
                         INSERT OR IGNORE INTO questıes 
@@ -176,7 +145,6 @@ def carregar_questoes_csv():
                     
                     if cursor.rowcount > 0:
                         questıes_carregadas += 1
-=======
                     # Inserir quest√£o
                     cursor.execute('''
                         INSERT OR IGNORE INTO quest√µes 
@@ -192,7 +160,6 @@ def carregar_questoes_csv():
                     
                     if cursor.rowcount > 0:
                         quest√µes_carregadas += 1
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                         
                 except Exception as e:
                     logger.error(f"Erro ao processar linha do CSV: {e}")
@@ -200,35 +167,28 @@ def carregar_questoes_csv():
         
         conn.commit()
         conn.close()
-<<<<<<< HEAD
         logger.info(f"? {questıes_carregadas} questıes carregadas com sucesso!")
         return True
         
     except Exception as e:
         logger.error(f"? Erro ao carregar questıes do CSV: {e}")
         # Criar questıes de exemplo em caso de erro
-=======
         logger.info(f"‚úÖ {quest√µes_carregadas} quest√µes carregadas com sucesso!")
         return True
         
     except Exception as e:
         logger.error(f"‚ùå Erro ao carregar quest√µes do CSV: {e}")
         # Criar quest√µes de exemplo em caso de erro
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         criar_questoes_exemplo()
         return True
 
 def criar_questoes_exemplo():
-<<<<<<< HEAD
     """Cria questıes de exemplo se o CSV n„o existir ou falhar"""
-=======
     """Cria quest√µes de exemplo se o CSV n√£o existir ou falhar"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-<<<<<<< HEAD
         questıes_exemplo = [
             {
                 'enunciado': 'Qual È a capital do Brasil?',
@@ -236,7 +196,6 @@ def criar_questoes_exemplo():
                 'alternativas': {'A': 'Rio de Janeiro', 'B': 'BrasÌlia', 'C': 'S„o Paulo', 'D': 'Salvador'},
                 'resposta_correta': 'B',
                 'explicacao': 'BrasÌlia È a capital federal do Brasil desde 1960.'
-=======
         quest√µes_exemplo = [
             {
                 'enunciado': 'Qual √© a capital do Brasil?',
@@ -244,12 +203,10 @@ def criar_questoes_exemplo():
                 'alternativas': {'A': 'Rio de Janeiro', 'B': 'Bras√≠lia', 'C': 'S√£o Paulo', 'D': 'Salvador'},
                 'resposta_correta': 'B',
                 'explicacao': 'Bras√≠lia √© a capital federal do Brasil desde 1960.'
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
             },
             {
                 'enunciado': 'Quem escreveu "Dom Casmurro"?',
                 'materia': 'Literatura', 
-<<<<<<< HEAD
                 'alternativas': {'A': 'Machado de Assis', 'B': 'JosÈ de Alencar', 'C': 'Lima Barreto', 'D': 'Graciliano Ramos'},
                 'resposta_correta': 'A',
                 'explicacao': 'Machado de Assis È o autor de "Dom Casmurro", publicado em 1899.'
@@ -260,7 +217,6 @@ def criar_questoes_exemplo():
                 'alternativas': {'A': '3', 'B': '4', 'C': '5', 'D': '6'},
                 'resposta_correta': 'B',
                 'explicacao': 'A soma de 2 + 2 È igual a 4.'
-=======
                 'alternativas': {'A': 'Machado de Assis', 'B': 'Jos√© de Alencar', 'C': 'Lima Barreto', 'D': 'Graciliano Ramos'},
                 'resposta_correta': 'A',
                 'explicacao': 'Machado de Assis √© o autor de "Dom Casmurro", publicado em 1899.'
@@ -271,12 +227,10 @@ def criar_questoes_exemplo():
                 'alternativas': {'A': '3', 'B': '4', 'C': '5', 'D': '6'},
                 'resposta_correta': 'B',
                 'explicacao': 'A soma de 2 + 2 √© igual a 4.'
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
             },
             {
                 'enunciado': 'Qual oceano banha o litoral brasileiro?',
                 'materia': 'Geografia',
-<<<<<<< HEAD
                 'alternativas': {'A': 'Oceano PacÌfico', 'B': 'Oceano Õndico', 'C': 'Oceano Atl‚ntico', 'D': 'Oceano ¡rtico'},
                 'resposta_correta': 'C',
                 'explicacao': 'O Brasil È banhado pelo Oceano Atl‚ntico.'
@@ -293,7 +247,6 @@ def criar_questoes_exemplo():
         for questao in questıes_exemplo:
             cursor.execute('''
                 INSERT OR IGNORE INTO questıes 
-=======
                 'alternativas': {'A': 'Oceano Pac√≠fico', 'B': 'Oceano √çndico', 'C': 'Oceano Atl√¢ntico', 'D': 'Oceano √Årtico'},
                 'resposta_correta': 'C',
                 'explicacao': 'O Brasil √© banhado pelo Oceano Atl√¢ntico.'
@@ -310,7 +263,6 @@ def criar_questoes_exemplo():
         for questao in quest√µes_exemplo:
             cursor.execute('''
                 INSERT OR IGNORE INTO quest√µes 
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                 (enunciado, materia, alternativas, resposta_correta, explicacao)
                 VALUES (?, ?, ?, ?, ?)
             ''', (
@@ -323,65 +275,47 @@ def criar_questoes_exemplo():
         
         conn.commit()
         conn.close()
-<<<<<<< HEAD
         logger.info("? 5 questıes de exemplo criadas com sucesso!")
         
     except Exception as e:
         logger.error(f"Erro ao criar questıes exemplo: {e}")
-=======
         logger.info("‚úÖ 5 quest√µes de exemplo criadas com sucesso!")
         
     except Exception as e:
         logger.error(f"Erro ao criar quest√µes exemplo: {e}")
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
 
 # Rotas principais
 @app.route('/')
 def index():
-<<<<<<< HEAD
     """P·gina inicial"""
-=======
     """P√°gina inicial"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     return render_template('index.html')
 
 @app.route('/simulado')
 def simulado():
-<<<<<<< HEAD
     """P·gina de configuraÁ„o do simulado"""
-=======
     """P√°gina de configura√ß√£o do simulado"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     conn = get_db_connection()
     if not conn:
         return render_template('simulado.html', materias=[])
     
     try:
         cursor = conn.cursor()
-<<<<<<< HEAD
         cursor.execute("SELECT DISTINCT materia FROM questıes WHERE materia IS NOT NULL AND materia != ''")
-=======
         cursor.execute("SELECT DISTINCT materia FROM quest√µes WHERE materia IS NOT NULL AND materia != ''")
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         materias = [row['materia'] for row in cursor.fetchall()]
         conn.close()
         
         return render_template('simulado.html', materias=materias)
     except Exception as e:
-<<<<<<< HEAD
         logger.error(f"Erro ao carregar matÈrias: {e}")
-=======
         logger.error(f"Erro ao carregar mat√©rias: {e}")
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         return render_template('simulado.html', materias=[])
 
 @app.route('/redacao')
 def redacao():
-<<<<<<< HEAD
     """P·gina de redaÁ„o"""
-=======
     """P√°gina de reda√ß√£o"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     return render_template('redacao.html')
 
 @app.route('/dashboard')
@@ -392,30 +326,24 @@ def dashboard():
 # API Routes
 @app.route('/api/questoes/random')
 def get_questoes_random():
-<<<<<<< HEAD
     """API para obter questıes aleatÛrias"""
-=======
     """API para obter quest√µes aleat√≥rias"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     try:
         quantidade = int(request.args.get('quantidade', 10))
         materias = request.args.getlist('materias') or []
         
         conn = get_db_connection()
         if not conn:
-<<<<<<< HEAD
             return jsonify({'error': 'Erro de conex„o com o banco'}), 500
         
         cursor = conn.cursor()
         
         query = "SELECT * FROM questıes WHERE 1=1"
-=======
             return jsonify({'error': 'Erro de conex√£o com o banco'}), 500
         
         cursor = conn.cursor()
         
         query = "SELECT * FROM quest√µes WHERE 1=1"
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         params = []
         
         if materias:
@@ -427,46 +355,37 @@ def get_questoes_random():
         params.append(quantidade)
         
         cursor.execute(query, params)
-<<<<<<< HEAD
         questıes = cursor.fetchall()
         conn.close()
         
         questıes_formatadas = []
         for questao in questıes:
-=======
         quest√µes = cursor.fetchall()
         conn.close()
         
         quest√µes_formatadas = []
         for questao in quest√µes:
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
             try:
                 alternativas = json.loads(questao['alternativas'])
             except:
                 alternativas = {"A": "Alternativa A", "B": "Alternativa B", "C": "Alternativa C", "D": "Alternativa D"}
             
-<<<<<<< HEAD
             questıes_formatadas.append({
-=======
             quest√µes_formatadas.append({
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                 'id': questao['id'],
                 'enunciado': questao['enunciado'],
                 'materia': questao['materia'],
                 'alternativas': alternativas,
                 'resposta_correta': questao['resposta_correta'],
                 'explicacao': questao['explicacao'],
-<<<<<<< HEAD
                 'dificuldade': questao.get('dificuldade', 'MÈdia')
             })
         
         return jsonify({'questoes': questıes_formatadas})
-=======
                 'dificuldade': questao.get('dificuldade', 'M√©dia')
             })
         
         return jsonify({'questoes': quest√µes_formatadas})
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         
     except Exception as e:
         logger.error(f"Erro em /api/questoes/random: {e}")
@@ -481,7 +400,6 @@ def iniciar_simulado():
         materias = data.get('materias', [])
         tempo_por_questao = data.get('tempo_por_questao', 60)
         
-<<<<<<< HEAD
         # Buscar questıes
         conn = get_db_connection()
         if not conn:
@@ -490,7 +408,6 @@ def iniciar_simulado():
         cursor = conn.cursor()
         
         query = "SELECT * FROM questıes WHERE 1=1"
-=======
         # Buscar quest√µes
         conn = get_db_connection()
         if not conn:
@@ -499,7 +416,6 @@ def iniciar_simulado():
         cursor = conn.cursor()
         
         query = "SELECT * FROM quest√µes WHERE 1=1"
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         params = []
         
         if materias:
@@ -511,7 +427,6 @@ def iniciar_simulado():
         params.append(quantidade)
         
         cursor.execute(query, params)
-<<<<<<< HEAD
         questıes_db = cursor.fetchall()
         conn.close()
         
@@ -521,7 +436,6 @@ def iniciar_simulado():
         # Formatar questıes
         questıes_formatadas = []
         for questao in questıes_db:
-=======
         quest√µes_db = cursor.fetchall()
         conn.close()
         
@@ -531,38 +445,31 @@ def iniciar_simulado():
         # Formatar quest√µes
         quest√µes_formatadas = []
         for questao in quest√µes_db:
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
             try:
                 alternativas = json.loads(questao['alternativas'])
             except:
                 alternativas = {"A": "Alternativa A", "B": "Alternativa B", "C": "Alternativa C", "D": "Alternativa D"}
             
-<<<<<<< HEAD
             questıes_formatadas.append({
-=======
             quest√µes_formatadas.append({
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                 'id': questao['id'],
                 'enunciado': questao['enunciado'],
                 'materia': questao['materia'],
                 'alternativas': alternativas,
                 'resposta_correta': questao['resposta_correta'],
                 'explicacao': questao['explicacao'],
-<<<<<<< HEAD
                 'dificuldade': questao.get('dificuldade', 'MÈdia')
             })
         
         # Iniciar sess„o do simulado
         session['simulado_ativo'] = True
         session['questoes_simulado'] = questıes_formatadas
-=======
                 'dificuldade': questao.get('dificuldade', 'M√©dia')
             })
         
         # Iniciar sess√£o do simulado
         session['simulado_ativo'] = True
         session['questoes_simulado'] = quest√µes_formatadas
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         session['respostas_usuario'] = {}
         session['tempo_inicio'] = datetime.now().isoformat()
         session['config_simulado'] = {
@@ -573,11 +480,8 @@ def iniciar_simulado():
         
         return jsonify({
             'success': True,
-<<<<<<< HEAD
             'total_questoes': len(questıes_formatadas),
-=======
             'total_questoes': len(quest√µes_formatadas),
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
             'tempo_estimado': quantidade * tempo_por_questao
         })
         
@@ -587,7 +491,6 @@ def iniciar_simulado():
 
 @app.route('/api/simulado/questao/<int:questao_id>')
 def get_questao_simulado(questao_id):
-<<<<<<< HEAD
     """ObtÈm uma quest„o especÌfica do simulado atual"""
     if not session.get('simulado_ativo'):
         return jsonify({'error': 'Nenhum simulado ativo'}), 400
@@ -597,7 +500,6 @@ def get_questao_simulado(questao_id):
     
     if not questao:
         return jsonify({'error': 'Quest„o n„o encontrada'}), 404
-=======
     """Obt√©m uma quest√£o espec√≠fica do simulado atual"""
     if not session.get('simulado_ativo'):
         return jsonify({'error': 'Nenhum simulado ativo'}), 400
@@ -607,17 +509,13 @@ def get_questao_simulado(questao_id):
     
     if not questao:
         return jsonify({'error': 'Quest√£o n√£o encontrada'}), 404
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     
     return jsonify({'questao': questao})
 
 @app.route('/api/simulado/responder', methods=['POST'])
 def responder_questao():
-<<<<<<< HEAD
     """Registra resposta do usu·rio"""
-=======
     """Registra resposta do usu√°rio"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     try:
         data = request.get_json()
         questao_id = data.get('questao_id')
@@ -642,25 +540,18 @@ def responder_questao():
 
 @app.route('/api/simulado/finalizar', methods=['POST'])
 def finalizar_simulado():
-<<<<<<< HEAD
     """Finaliza o simulado e gera relatÛrio"""
-=======
     """Finaliza o simulado e gera relat√≥rio"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     try:
         if not session.get('simulado_ativo'):
             return jsonify({'error': 'Nenhum simulado ativo'}), 400
         
-<<<<<<< HEAD
         questıes = session.get('questoes_simulado', [])
-=======
         quest√µes = session.get('questoes_simulado', [])
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         respostas = session.get('respostas_usuario', {})
         tempo_inicio = datetime.fromisoformat(session.get('tempo_inicio', datetime.now().isoformat()))
         tempo_fim = datetime.now()
         
-<<<<<<< HEAD
         # Calcular estatÌsticas
         estatisticas = calcular_estatisticas_simulado(questıes, respostas, tempo_inicio, tempo_fim)
         
@@ -668,7 +559,6 @@ def finalizar_simulado():
         salvar_historico_simulado(estatisticas, session.get('config_simulado', {}))
         
         # Limpar sess„o
-=======
         # Calcular estat√≠sticas
         estatisticas = calcular_estatisticas_simulado(quest√µes, respostas, tempo_inicio, tempo_fim)
         
@@ -676,7 +566,6 @@ def finalizar_simulado():
         salvar_historico_simulado(estatisticas, session.get('config_simulado', {}))
         
         # Limpar sess√£o
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         session.pop('simulado_ativo', None)
         session.pop('questoes_simulado', None)
         session.pop('respostas_usuario', None)
@@ -692,40 +581,31 @@ def finalizar_simulado():
         logger.error(f"Erro em /api/simulado/finalizar: {e}")
         return jsonify({'error': str(e)}), 500
 
-<<<<<<< HEAD
 def calcular_estatisticas_simulado(questıes, respostas, tempo_inicio, tempo_fim):
     """Calcula estatÌsticas detalhadas do simulado"""
     total_questoes = len(questıes)
-=======
 def calcular_estatisticas_simulado(quest√µes, respostas, tempo_inicio, tempo_fim):
     """Calcula estat√≠sticas detalhadas do simulado"""
     total_questoes = len(quest√µes)
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     acertos = 0
     erros = 0
     nao_respondidas = 0
     
-<<<<<<< HEAD
     # EstatÌsticas por matÈria
     stats_por_materia = {}
     
     for questao in questıes:
-=======
     # Estat√≠sticas por mat√©ria
     stats_por_materia = {}
     
     for questao in quest√µes:
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         questao_id = str(questao['id'])
         materia = questao['materia']
         resposta_usuario = respostas.get(questao_id, {}).get('resposta')
         resposta_correta = questao['resposta_correta']
         
-<<<<<<< HEAD
         # Inicializar estatÌsticas da matÈria
-=======
         # Inicializar estat√≠sticas da mat√©ria
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         if materia not in stats_por_materia:
             stats_por_materia[materia] = {'acertos': 0, 'total': 0}
         
@@ -745,11 +625,8 @@ def calcular_estatisticas_simulado(quest√µes, respostas, tempo_inicio, tempo_fim
     tempo_medio = tempo_total / total_questoes if total_questoes > 0 else 0
     percentual_acerto = (acertos * 100 / total_questoes) if total_questoes > 0 else 0
     
-<<<<<<< HEAD
     # Calcular percentuais por matÈria
-=======
     # Calcular percentuais por mat√©ria
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     for materia, stats in stats_por_materia.items():
         stats['percentual'] = (stats['acertos'] * 100 / stats['total']) if stats['total'] > 0 else 0
     
@@ -770,11 +647,8 @@ def calcular_estatisticas_simulado(quest√µes, respostas, tempo_inicio, tempo_fim
     }
 
 def salvar_historico_simulado(estatisticas, config):
-<<<<<<< HEAD
     """Salva o relatÛrio do simulado no histÛrico"""
-=======
     """Salva o relat√≥rio do simulado no hist√≥rico"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     conn = get_db_connection()
     if not conn:
         return False
@@ -797,20 +671,14 @@ def salvar_historico_simulado(estatisticas, config):
         conn.close()
         return True
     except Exception as e:
-<<<<<<< HEAD
         logger.error(f"Erro ao salvar histÛrico: {e}")
-=======
         logger.error(f"Erro ao salvar hist√≥rico: {e}")
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         return False
 
 @app.route('/api/dashboard/estatisticas')
 def get_estatisticas_dashboard():
-<<<<<<< HEAD
     """EstatÌsticas para o dashboard profissional"""
-=======
     """Estat√≠sticas para o dashboard profissional"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     criar_tabelas_se_necessario()
     
     conn = get_db_connection()
@@ -820,19 +688,16 @@ def get_estatisticas_dashboard():
     try:
         cursor = conn.cursor()
         
-<<<<<<< HEAD
         # 1. Total de questıes no banco
         cursor.execute("SELECT COUNT(*) as total FROM questıes")
         total_questoes_banco = cursor.fetchone()['total']
         
         # 2. HistÛrico de simulados
-=======
         # 1. Total de quest√µes no banco
         cursor.execute("SELECT COUNT(*) as total FROM quest√µes")
         total_questoes_banco = cursor.fetchone()['total']
         
         # 2. Hist√≥rico de simulados
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         cursor.execute("SELECT relatorio, data_fim FROM historico_simulados ORDER BY data_fim ASC")
         todos_relatorios = cursor.fetchall()
         
@@ -847,11 +712,8 @@ def get_estatisticas_dashboard():
                 relatorio = json.loads(row['relatorio'])
                 data_fim_str = row['data_fim']
                 
-<<<<<<< HEAD
                 # Para gr·fico de evoluÁ„o
-=======
                 # Para gr√°fico de evolu√ß√£o
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                 try:
                     data_obj = datetime.fromisoformat(data_fim_str.replace('Z', '+00:00'))
                 except:
@@ -866,11 +728,8 @@ def get_estatisticas_dashboard():
                 tempo_total_estudo += relatorio['geral'].get('tempo_total_minutos', 0)
                 total_questoes_respondidas += relatorio['geral'].get('questoes_respondidas', 0)
                 
-<<<<<<< HEAD
                 # Para gr·fico de desempenho por matÈria
-=======
                 # Para gr√°fico de desempenho por mat√©ria
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
                 for materia, stats in relatorio.get('por_materia', {}).items():
                     if materia not in global_stats_materia:
                         global_stats_materia[materia] = {'acertos': 0, 'total': 0}
@@ -880,21 +739,15 @@ def get_estatisticas_dashboard():
             except Exception as e:
                 logger.error(f"Erro ao processar relatorio: {e}")
 
-<<<<<<< HEAD
         # Calcular percentuais globais por matÈria
-=======
         # Calcular percentuais globais por mat√©ria
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         desempenho_global_materia = {}
         for materia, stats in global_stats_materia.items():
             percentual = (stats['acertos'] * 100 / stats['total']) if stats['total'] > 0 else 0
             desempenho_global_materia[materia] = round(percentual, 2)
             
-<<<<<<< HEAD
         # 4. HistÛrico recente
-=======
         # 4. Hist√≥rico recente
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         historico_recente_formatado = []
         for row in reversed(todos_relatorios[-10:]): 
             try:
@@ -912,11 +765,8 @@ def get_estatisticas_dashboard():
             except:
                 pass
 
-<<<<<<< HEAD
         # 5. MÈdia geral
-=======
         # 5. M√©dia geral
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
         media_geral = 0
         if historico_evolucao:
             media_geral = sum(h['percentual'] for h in historico_evolucao) / len(historico_evolucao)
@@ -941,17 +791,14 @@ def get_estatisticas_dashboard():
         conn.close()
         return jsonify({"estatisticas": {}})
 
-<<<<<<< HEAD
 # InicializaÁ„o
 @app.before_request
 def initialize_app():
     """Inicializa a aplicaÁ„o"""
-=======
 # Inicializa√ß√£o
 @app.before_request
 def initialize_app():
     """Inicializa a aplica√ß√£o"""
->>>>>>> 2c20bceafa64cc4055e58c741f726b7d9baa78d8
     criar_tabelas_se_necessario()
     carregar_questoes_csv()
 
