@@ -4,8 +4,8 @@ import json
 import random
 from datetime import datetime, timedelta
 import logging
-import pandas as pd
 import os
+import csv
 
 # Configuração do logging
 logging.basicConfig(level=logging.INFO)
@@ -75,7 +75,7 @@ def criar_tabelas_se_necessario():
         conn.close()
 
 def carregar_questoes_csv():
-    """Carrega questões do CSV para o banco de dados"""
+    """Carrega questões do CSV para o banco de dados usando csv nativo"""
     if not os.path.exists('questoes.csv'):
         logger.warning("❌ Arquivo questoes.csv não encontrado")
         # Criar algumas questões de exemplo
@@ -83,50 +83,49 @@ def carregar_questoes_csv():
         return True
     
     try:
-        df = pd.read_csv('questoes.csv')
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        questões_carregadas = 0
-        for index, row in df.iterrows():
-            try:
-                # Verificar se a linha tem dados válidos
-                if pd.isna(row.get('enunciado')) or pd.isna(row.get('resposta_correta')):
+        with open('questoes.csv', 'r', encoding='utf-8') as file:
+            csv_reader = csv.DictReader(file)
+            questões_carregadas = 0
+            
+            for row in csv_reader:
+                try:
+                    # Criar dicionário de alternativas
+                    alternativas_dict = {}
+                    for letra in ['A', 'B', 'C', 'D', 'E']:
+                        if letra in row and row[letra] and row[letra].strip():
+                            alternativas_dict[letra] = row[letra].strip()
+                    
+                    # Se não encontrou alternativas, criar padrão
+                    if not alternativas_dict:
+                        alternativas_dict = {
+                            'A': 'Alternativa A',
+                            'B': 'Alternativa B', 
+                            'C': 'Alternativa C',
+                            'D': 'Alternativa D'
+                        }
+                    
+                    # Inserir questão
+                    cursor.execute('''
+                        INSERT OR IGNORE INTO questões 
+                        (enunciado, materia, alternativas, resposta_correta, explicacao)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (
+                        row.get('enunciado', 'Enunciado não disponível'),
+                        row.get('materia', 'Geral'),
+                        json.dumps(alternativas_dict),
+                        row.get('resposta_correta', 'A'),
+                        row.get('explicacao', 'Explicação não disponível')
+                    ))
+                    
+                    if cursor.rowcount > 0:
+                        questões_carregadas += 1
+                        
+                except Exception as e:
+                    logger.error(f"Erro ao processar linha do CSV: {e}")
                     continue
-                    
-                # Converter alternativas para JSON
-                alternativas_dict = {}
-                for letra in ['A', 'B', 'C', 'D', 'E']:
-                    if letra in row and not pd.isna(row[letra]):
-                        alternativas_dict[letra] = str(row[letra])
-                
-                # Se não encontrou alternativas, criar padrão
-                if not alternativas_dict:
-                    alternativas_dict = {
-                        'A': 'Alternativa A',
-                        'B': 'Alternativa B', 
-                        'C': 'Alternativa C',
-                        'D': 'Alternativa D'
-                    }
-                
-                cursor.execute('''
-                    INSERT OR IGNORE INTO questões 
-                    (enunciado, materia, alternativas, resposta_correta, explicacao)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (
-                    str(row['enunciado']),
-                    str(row.get('materia', 'Geral')),
-                    json.dumps(alternativas_dict),
-                    str(row['resposta_correta']),
-                    str(row.get('explicacao', 'Explicação não disponível'))
-                ))
-                
-                if cursor.rowcount > 0:
-                    questões_carregadas += 1
-                    
-            except Exception as e:
-                logger.error(f"Erro ao inserir questão {index}: {e}")
-                continue
         
         conn.commit()
         conn.close()
@@ -140,7 +139,7 @@ def carregar_questoes_csv():
         return True
 
 def criar_questoes_exemplo():
-    """Cria questões de exemplo se o CSV não existir"""
+    """Cria questões de exemplo se o CSV não existir ou falhar"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -155,9 +154,9 @@ def criar_questoes_exemplo():
             },
             {
                 'enunciado': 'Quem escreveu "Dom Casmurro"?',
-                'materia': 'Literatura',
+                'materia': 'Literatura', 
                 'alternativas': {'A': 'Machado de Assis', 'B': 'José de Alencar', 'C': 'Lima Barreto', 'D': 'Graciliano Ramos'},
-                'resposta_correta': 'A', 
+                'resposta_correta': 'A',
                 'explicacao': 'Machado de Assis é o autor de "Dom Casmurro", publicado em 1899.'
             },
             {
@@ -166,6 +165,20 @@ def criar_questoes_exemplo():
                 'alternativas': {'A': '3', 'B': '4', 'C': '5', 'D': '6'},
                 'resposta_correta': 'B',
                 'explicacao': 'A soma de 2 + 2 é igual a 4.'
+            },
+            {
+                'enunciado': 'Qual oceano banha o litoral brasileiro?',
+                'materia': 'Geografia',
+                'alternativas': {'A': 'Oceano Pacífico', 'B': 'Oceano Índico', 'C': 'Oceano Atlântico', 'D': 'Oceano Ártico'},
+                'resposta_correta': 'C',
+                'explicacao': 'O Brasil é banhado pelo Oceano Atlântico.'
+            },
+            {
+                'enunciado': 'Em que ano o Brasil foi descoberto?',
+                'materia': 'História',
+                'alternativas': {'A': '1492', 'B': '1500', 'C': '1520', 'D': '1450'},
+                'resposta_correta': 'B', 
+                'explicacao': 'O Brasil foi descoberto em 1500 por Pedro Álvares Cabral.'
             }
         ]
         
@@ -184,7 +197,7 @@ def criar_questoes_exemplo():
         
         conn.commit()
         conn.close()
-        logger.info("✅ Questões de exemplo criadas com sucesso!")
+        logger.info("✅ 5 questões de exemplo criadas com sucesso!")
         
     except Exception as e:
         logger.error(f"Erro ao criar questões exemplo: {e}")
@@ -536,7 +549,11 @@ def get_estatisticas_dashboard():
                 data_fim_str = row['data_fim']
                 
                 # Para gráfico de evolução
-                data_obj = datetime.fromisoformat(data_fim_str.replace('Z', '+00:00'))
+                try:
+                    data_obj = datetime.fromisoformat(data_fim_str.replace('Z', '+00:00'))
+                except:
+                    data_obj = datetime.fromisoformat(data_fim_str)
+                    
                 historico_evolucao.append({
                     'data': data_obj.strftime('%d/%m'),
                     'percentual': relatorio['geral']['percentual_acerto']
@@ -568,7 +585,11 @@ def get_estatisticas_dashboard():
             try:
                 relatorio = json.loads(row['relatorio'])
                 data_fim_str = row['data_fim']
-                data_obj = datetime.fromisoformat(data_fim_str.replace('Z', '+00:00'))
+                try:
+                    data_obj = datetime.fromisoformat(data_fim_str.replace('Z', '+00:00'))
+                except:
+                    data_obj = datetime.fromisoformat(data_fim_str)
+                    
                 historico_recente_formatado.append({
                     'data': data_obj.strftime('%d/%m/%Y %H:%M'),
                     'geral': relatorio['geral']
