@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulado - ConcursoMaster AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulado-simple.css') }}">
+</head>
+<body>
+    <div class="simulado-container">
+        <div class="config-panel">
+            <h2>🎯 Simulado ConcursoMaster</h2>
+            
+            <div class="quick-options">
+                <button class="quick-btn" id="btnTodasMaterias">✅ Todas Matérias</button>
+                <button class="quick-btn" id="btnPrincipais">📚 Principais</button>
+            </div>
+            
+            <div class="config-group">
+                <h3>🔢 Quantidade de Questões</h3>
+                <input type="number" 
+                       id="quantidade" 
+                       class="quantidade-input" 
+                       min="1" 
+                       max="50" 
+                       value="10"
+                       placeholder="Quantidade de questões">
+                <small>Digite quantas questões deseja (1-50)</small>
+            </div>
+
+            <div class="config-group">
+                <h3>📚 Matérias</h3>
+                <div class="materias-simple">
+                    {% for materia in materias %}
+                    <div class="materia-item-simple">
+                        <label>
+                            <input type="checkbox" 
+                                   class="materia-checkbox" 
+                                   value="{{ materia }}"
+                                   checked>
+                            {{ materia }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button class="btn-iniciar-simple" id="btnIniciarSimulado">
+                🚀 Iniciar Simulado
+            </button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/simulado-simple.js') }}"></script>
+</body>
+</html>
