@@ -7,10 +7,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        body {
+            background-color: #f0f2f5;
+        }
         .redacao-container {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 20px 0;
         }
         .redacao-card {
             background: white;
@@ -27,22 +30,37 @@
             font-family: 'Times New Roman', serif;
             font-size: 16px;
             line-height: 1.6;
+            outline: none;
+        }
+        .editor-redacao:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
         }
         .contador-palavras {
             background: #f8f9fa;
             padding: 10px;
             border-radius: 5px;
             text-align: center;
+            font-weight: 500;
         }
         .competencia-card {
             border-left: 4px solid #007bff;
             padding: 15px;
             margin: 10px 0;
             background: #f8f9fa;
+            border-radius: 5px;
         }
         .nota-badge {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
+        }
+        .card-tema {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-tema:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -51,21 +69,17 @@
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-md-10">
-                    <!-- Cabeçalho -->
                     <div class="redacao-card text-center">
-                        <h1><i class="fas fa-edit"></i> Prática de Redação</h1>
+                        <h1><i class="fas fa-edit text-primary"></i> Prática de Redação</h1>
                         <p class="lead">Desenvolva suas habilidades de escrita com temas atuais e correção detalhada</p>
                     </div>
 
-                    <!-- Seleção de Tema -->
-                    <div class="redacao-card">
-                        <h4><i class="fas fa-clipboard-list"></i> Escolha um Tema</h4>
+                    <div id="tela-selecao-tema" class="redacao-card">
+                        <h4 class="mb-4"><i class="fas fa-clipboard-list"></i> Escolha um Tema para Começar</h4>
                         <div class="row" id="lista-temas">
-                            <!-- Temas serão carregados via JavaScript -->
-                        </div>
+                            </div>
                     </div>
 
-                    <!-- Área de Redação (inicialmente oculta) -->
                     <div id="area-redacao" class="redacao-card" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h4 id="titulo-tema">Tema Selecionado</h4>
@@ -74,14 +88,12 @@
                             </button>
                         </div>
                         
-                        <!-- Informações do Tema -->
                         <div class="alert alert-info">
                             <h6><i class="fas fa-info-circle"></i> Tema:</h6>
                             <p id="descricao-tema" class="mb-0"></p>
-                            <div id="dicas-tema" class="mt-2"></div>
+                            <div id="dicas-tema" class="mt-2 small"></div>
                         </div>
 
-                        <!-- Editor de Redação -->
                         <div class="mb-3">
                             <label class="form-label"><strong>Sua Redação:</strong></label>
                             <div 
@@ -92,7 +104,6 @@
                             ></div>
                         </div>
 
-                        <!-- Contadores -->
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <div class="contador-palavras">
@@ -114,7 +125,6 @@
                             </div>
                         </div>
 
-                        <!-- Botões de Ação -->
                         <div class="text-center">
                             <button id="btn-corrigir-redacao" class="btn btn-success btn-lg">
                                 <i class="fas fa-check-circle"></i> Corrigir Redação
@@ -122,46 +132,35 @@
                         </div>
                     </div>
 
-                    <!-- Resultado da Correção (inicialmente oculta) -->
                     <div id="resultado-correcao" class="redacao-card" style="display: none;">
                         <h3 class="text-center text-success mb-4">
                             <i class="fas fa-graduation-cap"></i> Correção da Redação
                         </h3>
                         
-                        <!-- Nota Geral -->
                         <div class="text-center mb-4">
                             <div class="alert alert-success">
                                 <h4>Nota Final: <span id="nota-final" class="nota-badge">0</span> pontos</h4>
                             </div>
                         </div>
 
-                        <!-- Competências -->
                         <h5>Desempenho por Competência:</h5>
                         <div id="competencias-container">
-                            <!-- Competências serão carregadas via JavaScript -->
-                        </div>
+                            </div>
 
-                        <!-- Feedback Geral -->
                         <div class="mt-4">
                             <h5>Feedback Detalhado:</h5>
-                            <div id="feedback-geral" class="alert alert-info"></div>
+                            <div id="feedback-geral" class="alert alert-light"></div>
                         </div>
 
-                        <!-- Sugestões de Melhoria -->
                         <div class="mt-4">
                             <h5>Sugestões de Melhoria:</h5>
                             <ul id="lista-sugestoes" class="list-group">
-                                <!-- Sugestões serão carregadas via JavaScript -->
-                            </ul>
+                                </ul>
                         </div>
 
-                        <!-- Botões de Ação -->
                         <div class="text-center mt-4">
                             <button id="btn-nova-redacao" class="btn btn-primary me-2">
                                 <i class="fas fa-plus"></i> Nova Redação
-                            </button>
-                            <button id="btn-revisar-redacao" class="btn btn-outline-primary me-2">
-                                <i class="fas fa-edit"></i> Revisar Texto
                             </button>
                             <a href="/" class="btn btn-outline-secondary">
                                 <i class="fas fa-home"></i> Página Inicial
@@ -192,33 +191,28 @@
                     const container = document.getElementById('lista-temas');
                     container.innerHTML = '';
                     
+                    if (!data.temas || data.temas.length === 0) {
+                        container.innerHTML = '<p class="text-muted">Nenhum tema de redação encontrado. Adicione temas ao banco de dados.</p>';
+                        return;
+                    }
+                    
                     data.temas.forEach(tema => {
                         const div = document.createElement('div');
                         div.className = 'col-md-6 mb-3';
                         div.innerHTML = `
-                            <div class="card h-100">
+                            <div class="card card-tema h-100" 
+                                 data-tema-id="${tema.id}"
+                                 data-titulo="${tema.titulo}"
+                                 data-descricao="${tema.tema}"
+                                 data-dicas="${tema.dicas || ''}">
                                 <div class="card-body">
                                     <h5 class="card-title">${tema.titulo}</h5>
-                                    <p class="card-text">${tema.tema}</p>
-                                    ${tema.dicas ? `<small class="text-muted"><strong>Dicas:</strong> ${tema.dicas}</small>` : ''}
-                                </div>
-                                <div class="card-footer">
-                                    <button class="btn btn-primary btn-sm btn-selecionar-tema" 
-                                            data-tema-id="${tema.id}"
-                                            data-titulo="${tema.titulo}"
-                                            data-descricao="${tema.tema}"
-                                            data-dicas="${tema.dicas || ''}">
-                                        <i class="fas fa-check"></i> Selecionar
-                                    </button>
+                                    <p class="card-text small">${tema.tema}</p>
                                 </div>
                             </div>
                         `;
+                        div.querySelector('.card-tema').addEventListener('click', selecionarTema);
                         container.appendChild(div);
-                    });
-
-                    // Adicionar event listeners aos botões
-                    document.querySelectorAll('.btn-selecionar-tema').forEach(btn => {
-                        btn.addEventListener('click', selecionarTema);
                     });
                 })
                 .catch(error => console.error('Erro ao carregar temas:', error));
@@ -228,7 +222,6 @@
             document.getElementById('btn-voltar-temas').addEventListener('click', voltarParaTemas);
             document.getElementById('btn-corrigir-redacao').addEventListener('click', corrigirRedacao);
             document.getElementById('btn-nova-redacao').addEventListener('click', novaRedacao);
-            document.getElementById('btn-revisar-redacao').addEventListener('click', revisarRedacao);
         }
 
         function configurarEditor() {
@@ -245,12 +238,12 @@
         }
 
         function selecionarTema(event) {
-            const botao = event.target.closest('.btn-selecionar-tema');
+            const card = event.currentTarget;
             temaSelecionado = {
-                id: botao.dataset.temaId,
-                titulo: botao.dataset.titulo,
-                descricao: botao.dataset.descricao,
-                dicas: botao.dataset.dicas
+                id: card.dataset.temaId,
+                titulo: card.dataset.titulo,
+                descricao: card.dataset.descricao,
+                dicas: card.dataset.dicas
             };
 
             // Atualizar interface
@@ -260,12 +253,13 @@
             const dicasContainer = document.getElementById('dicas-tema');
             if (temaSelecionado.dicas) {
                 dicasContainer.innerHTML = `<strong>Dicas:</strong> ${temaSelecionado.dicas}`;
+                dicasContainer.style.display = 'block';
             } else {
-                dicasContainer.innerHTML = '';
+                dicasContainer.style.display = 'none';
             }
 
-            // Mostrar área de redação
-            document.getElementById('lista-temas').closest('.redacao-card').style.display = 'none';
+            // Mostrar área de redação e ocultar seleção
+            document.getElementById('tela-selecao-tema').style.display = 'none';
             document.getElementById('area-redacao').style.display = 'block';
 
             // Iniciar timer
@@ -273,8 +267,9 @@
         }
 
         function iniciarTimer() {
+            clearInterval(timerInterval);
             tempoDecorrido = 0;
-            timerInterval = setInterval(function() {
+            timerInterval = setInterval(() => {
                 tempoDecorrido++;
                 const minutos = Math.floor(tempoDecorrido / 60);
                 const segundos = tempoDecorrido % 60;
@@ -287,7 +282,7 @@
             clearInterval(timerInterval);
             document.getElementById('area-redacao').style.display = 'none';
             document.getElementById('resultado-correcao').style.display = 'none';
-            document.getElementById('lista-temas').closest('.redacao-card').style.display = 'block';
+            document.getElementById('tela-selecao-tema').style.display = 'block';
             
             // Limpar editor
             document.getElementById('editor-redacao').innerHTML = '';
@@ -307,6 +302,12 @@
                 alert('Sua redação precisa ter pelo menos 50 palavras.');
                 return;
             }
+            
+            // Simular loading
+            const btnCorrigir = document.getElementById('btn-corrigir-redacao');
+            btnCorrigir.disabled = true;
+            btnCorrigir.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Corrigindo...';
+
 
             fetch('/api/redacoes/corrigir', {
                 method: 'POST',
@@ -324,4 +325,62 @@
                     mostrarResultado(data.correcao);
                 } else {
                     alert('Erro ao corrigir redação: ' + data.error);
-               
+                }
+            })
+            .catch(error => {
+                console.error('Erro na API de correção:', error);
+                alert('Ocorreu um erro. Tente novamente.');
+            })
+            .finally(() => {
+                btnCorrigir.disabled = false;
+                btnCorrigir.innerHTML = '<i class="fas fa-check-circle"></i> Corrigir Redação';
+            });
+        }
+
+        function mostrarResultado(correcao) {
+            clearInterval(timerInterval);
+            document.getElementById('area-redacao').style.display = 'none';
+            document.getElementById('resultado-correcao').style.display = 'block';
+
+            // Nota final
+            document.getElementById('nota-final').textContent = correcao.nota;
+            
+            // Competências
+            const competenciasContainer = document.getElementById('competencias-container');
+            competenciasContainer.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const comp = correcao[`competencia_${i}`];
+                if (comp) {
+                    const div = document.createElement('div');
+                    div.className = 'competencia-card';
+                    div.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <strong>Competência ${i}</strong>
+                            <span class="nota-badge text-primary">${comp.nota} / 200</span>
+                        </div>
+                        <p class="mb-0 small text-muted">${comp.comentario}</p>
+                    `;
+                    competenciasContainer.appendChild(div);
+                }
+            }
+
+            // Feedback e sugestões
+            document.getElementById('feedback-geral').textContent = correcao.feedback_geral;
+            
+            const sugestoesContainer = document.getElementById('lista-sugestoes');
+            sugestoesContainer.innerHTML = '';
+            correcao.sugestoes_melhoria.forEach(sugestao => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.innerHTML = `<i class="fas fa-arrow-right text-info me-2"></i> ${sugestao}`;
+                sugestoesContainer.appendChild(li);
+            });
+        }
+        
+        function novaRedacao() {
+            voltarParaTemas();
+        }
+
+    </script>
+</body>
+</html>
