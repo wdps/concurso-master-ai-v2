@@ -71,14 +71,6 @@ def criar_tabelas_se_necessario():
     return True
 
 def carregar_dados_iniciais():
-    # Importar e executar inicialização robusta
-    try:
-        from init_database import init_database
-        init_database()
-    except Exception as e:
-        print(f\"Erro na inicialização: {e}\")
-        criar_tabelas_se_necessario()
-    carregar_questoes_csv()
     criar_tabelas_se_necessario()
     carregar_questoes_csv()
     carregar_temas_redacao()
