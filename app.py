@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 # Chave secreta para gerenciamento de sessão (importante para segurança)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_dev_secret_key_change_this') # Usar variável de ambiente em produção
+# Em produção, use uma variável de ambiente!
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key_placeholder_12345') # Substitua por uma chave forte ou use variável de ambiente
 
 DATABASE = 'concurso.db' # Nome do arquivo do banco de dados
 
@@ -105,18 +106,26 @@ class SistemaSimulado:
 
             questoes = []
             if resultados:
-                colunas_disponiveis = resultados[0].keys() # Pega os nomes das colunas da primeira linha
+                # É importante obter as keys() aqui ANTES do loop se houver possibilidade
+                # de erro dentro do loop que fecharia o cursor prematuramente.
+                colunas_disponiveis = resultados[0].keys()
                 logger.info(f"Colunas disponíveis na tabela 'questoes': {list(colunas_disponiveis)}")
 
                 for row in resultados:
                     try:
-                        # Desserializa o JSON da coluna 'alternativas'
+                        # Desserializa o JSON da coluna 'alternativas' com tratamento robusto
                         alternativas_json = row['alternativas'] if 'alternativas' in colunas_disponiveis else '{}'
-                        alternativas_dict = json.loads(alternativas_json) if alternativas_json else {}
-                        # Validação extra para garantir que é um dicionário
-                        if not isinstance(alternativas_dict, dict):
-                            logger.error(f"Formato inválido para 'alternativas' na questão ID {row['id']}. Esperado dict, recebido {type(alternativas_dict)}. Conteúdo: {alternativas_json}")
-                            alternativas_dict = {} # Usa um dict vazio como fallback
+                        alternativas_dict = {} # Default
+                        if alternativas_json:
+                            try:
+                                alternativas_dict = json.loads(alternativas_json)
+                                # Validação extra para garantir que é um dicionário
+                                if not isinstance(alternativas_dict, dict):
+                                    logger.error(f"Formato inválido para 'alternativas' na questão ID {row['id']}. Esperado dict, recebido {type(alternativas_dict)}. Conteúdo: {alternativas_json}")
+                                    alternativas_dict = {} # Usa um dict vazio como fallback
+                            except json.JSONDecodeError as json_err:
+                                logger.error(f"Erro ao decodificar JSON de alternativas para questão ID {row['id']}: {json_err}. Conteúdo: {alternativas_json}")
+                                alternativas_dict = {} # Usa um dict vazio como fallback
 
                         # Monta o objeto (dicionário) da questão
                         questao = {
@@ -132,12 +141,10 @@ class SistemaSimulado:
                             'formula': row['formula'] if 'formula' in colunas_disponiveis else None
                         }
                         questoes.append(questao)
-                    except json.JSONDecodeError as json_err:
-                         logger.error(f"Erro ao decodificar JSON de alternativas para questão ID {row['id']}: {json_err}. Conteúdo: {alternativas_json}")
-                         continue # Pula esta questão, mas continua com as outras
                     except Exception as parse_err:
+                        # Captura qualquer outro erro inesperado ao processar a linha específica
                         logger.error(f"Erro ao processar linha do DB para questão ID {row['id']}: {parse_err}", exc_info=True)
-                        continue # Pula esta questão
+                        continue # Pula esta questão, mas continua com as outras
 
             else:
                  logger.warning(f"Nenhum resultado encontrado no DB para a query com params: {params}")
@@ -146,7 +153,7 @@ class SistemaSimulado:
             return questoes
 
         except sqlite3.Error as db_err:
-             # Erro específico do SQLite (ex: tabela não existe, coluna errada)
+             # Erro específico do SQLite (ex: tabela não existe, erro de sintaxe na query)
              logger.error(f"Erro de SQLite ao carregar questões: {db_err}", exc_info=True)
              return []
         except Exception as e:
@@ -372,9 +379,6 @@ class SistemaSimulado:
             if conn:
                 conn.close()
 
-
-# --- Instância Global do Gerenciador ---
-sistema_simulado = SistemaSimulado()
 
 # --- Funções de Banco de Dados ---
 
@@ -967,23 +971,58 @@ def get_estatisticas_dashboard():
 # Servir arquivos da pasta /static (CSS, JS, imagens)
 @app.route('/static/<path:filename>')
 def serve_static_files(filename):
+    # Por segurança, validar o caminho pode ser bom em produção real
+    # Mas send_from_directory já faz alguma validação
     return send_from_directory('static', filename)
+
+# --- Tratamento de Erros ---
+@app.errorhandler(404)
+def not_found_error(error):
+    logger.warning(f"Rota não encontrada: {request.url}")
+    return render_template('error.html', mensagem="Página não encontrada (Erro 404)"), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    # Logar o erro completo para debugging
+    logger.error(f"Erro interno do servidor (500): {error}", exc_info=True)
+    # Tentar reverter transações do DB se houver
+    # db_session.rollback() # Exemplo se usar SQLAlchemy
+    return render_template('error.html', mensagem="Ocorreu um erro interno no servidor (Erro 500). Tente novamente mais tarde."), 500
+
 
 # --- Inicialização da Aplicação ---
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080)) # Porta definida pelo ambiente ou padrão 8080
+    # Define a porta usando variável de ambiente ou um padrão
+    port = int(os.environ.get('PORT', 8080))
 
-    # Garante que as tabelas existam ANTES de iniciar o servidor
+    # Garante que as tabelas do banco de dados existam antes de iniciar
     if not criar_tabelas_se_necessario():
          logger.critical("########## FALHA AO INICIALIZAR O BANCO DE DADOS ##########")
-         logger.critical("O aplicativo pode não funcionar corretamente. Verifique os logs de erro.")
-         # Considerar sair se o DB for essencial? Em produção, talvez não.
+         logger.critical("O aplicativo pode não funcionar corretamente. Verifique os logs.")
+         # Considerar sair do aplicativo se o DB for essencial para operação básica
          # import sys
          # sys.exit(1)
 
     logger.info(f"========= INICIANDO ConcursoMaster AI 3.0 NA PORTA {port} =========")
-    # Use 'waitress' ou 'gunicorn' em produção. app.run é para desenvolvimento.
-    # O Railway provavelmente usa Gunicorn por baixo dos panos.
-    # O debug=False é crucial para produção.
-    app.run(host='0.0.0.0', port=port, debug=False)
+
+    # Configuração para desenvolvimento local vs produção
+    # debug=True recarrega automaticamente e mostra erros detalhados no navegador (NÃO USAR EM PRODUÇÃO)
+    # Em produção (como Railway), Gunicorn ou Waitress será usado, e debug=False é essencial.
+    is_production = os.environ.get('RAILWAY_ENVIRONMENT') == 'production' # Exemplo de variável do Railway
+    use_debug = not is_production
+
+    if use_debug:
+        logger.warning("Rodando em modo DEBUG. Não use em produção!")
+        # Roda com o servidor de desenvolvimento do Flask (bom para debug)
+        app.run(host='0.0.0.0', port=port, debug=True)
+    else:
+        # Em produção, um servidor WSGI como Gunicorn ou Waitress deve ser usado.
+        # Se este script for chamado diretamente em produção (não recomendado),
+        # pelo menos roda sem debug. O Railway geralmente usa Gunicorn.
+        # Exemplo com Waitress (instalar com pip install waitress):
+        # from waitress import serve
+        # logger.info("Iniciando com Waitress...")
+        # serve(app, host='0.0.0.0', port=port)
+        # Exemplo se fosse rodar app.run em prod (NÃO IDEAL):
+        app.run(host='0.0.0.0', port=port, debug=False)
 
