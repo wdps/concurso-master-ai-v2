@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulado - ConcursoMaster AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulado-moderno.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="simulado-container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>🎯 Simulado ConcursoMaster</h1>
+            <p>Prepare-se para seus concursos com questões reais e feedback educativo</p>
+        </div>
+
+        <!-- Área de Configuração -->
+        <div class="config-section">
+            <!-- Ações Rápidas -->
+            <div class="quick-actions">
+                <button type="button" class="quick-btn" id="btnTodasMaterias">
+                    <i class="fas fa-check-double"></i> Selecionar Todas
+                </button>
+                <button type="button" class="quick-btn" id="btnPrincipais">
+                    <i class="fas fa-star"></i> Matérias Principais
+                </button>
+            </div>
+
+            <!-- Quantidade de Questões -->
+            <div class="config-group">
+                <h3>
+                    <i class="fas fa-list-ol"></i>
+                    Quantidade de Questões
+                </h3>
+                <div class="quantidade-selector">
+                    <button type="button" class="quantidade-btn active" data-quantidade="5">5</button>
+                    <button type="button" class="quantidade-btn" data-quantidade="10">10</button>
+                    <button type="button" class="quantidade-btn" data-quantidade="15">15</button>
+                    <button type="button" class="quantidade-btn" data-quantidade="20">20</button>
+                    <button type="button" class="quantidade-btn" data-quantidade="25">25</button>
+                    <button type="button" class="quantidade-btn" data-quantidade="30">30</button>
+                </div>
+                <input type="number" 
+                       id="quantidade-custom" 
+                       class="quantidade-input" 
+                       min="1" 
+                       max="50" 
+                       placeholder="Ou digite um número personalizado (1-50)"
+                       value="10">
+            </div>
+
+            <!-- Matérias -->
+            <div class="config-group">
+                <h3>
+                    <i class="fas fa-book"></i>
+                    Matérias do Simulado
+                </h3>
+                <div class="materias-grid" id="materias-grid">
+                    {% for materia in materias %}
+                    <div class="materia-item selected" data-materia="{{ materia }}">
+                        <input type="checkbox" 
+                               class="materia-checkbox" 
+                               id="materia-{{ loop.index }}" 
+                               value="{{ materia }}"
+                               checked>
+                        <label class="materia-label" for="materia-{{ loop.index }}">
+                            {{ materia }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="contador-materias" id="contador-materias">
+                    {{ materias|length }} matérias selecionadas
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Ações -->
+        <div class="actions">
+            <button class="btn-primary" id="btnIniciarSimulado">
+                <i class="fas fa-rocket"></i>
+                Iniciar Simulado
+            </button>
+            
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Iniciando simulado...</p>
+            </div>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alert-container"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/simulado-moderno.js') }}"></script>
+</body>
+</html>
