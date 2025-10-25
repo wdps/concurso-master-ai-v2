@@ -1,8 +1,18 @@
 [phases.setup]
-cmds = ["pip install -r requirements.txt"]
+cmds = [
+    "python -m ensurepip --upgrade",
+    "python -m pip install --upgrade pip",
+    "pip install -r requirements.txt"
+]
 
 [phases.start]
 cmds = ["python app.py"]
 
 [start]
 cmd = "python app.py"
+
+[build]
+baseImage = "ubuntu:22.04"
+
+[install]
+pythonVersion = "3.9"
