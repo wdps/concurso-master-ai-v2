@@ -50,6 +50,16 @@
         .score.regular { color: #f39c12; }
         .score.baixo { color: #e74c3c; }
         
+        .aviso {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
         .content {
             padding: 40px;
         }
@@ -122,12 +132,14 @@
         .questao-enunciado {
             margin-bottom: 15px;
             line-height: 1.5;
+            white-space: pre-line;
         }
         
         .respostas {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
+            margin-bottom: 15px;
         }
         
         .resposta-item {
@@ -138,6 +150,15 @@
         
         .resposta-usuario { background: #fff3cd; border: 1px solid #ffeaa7; }
         .resposta-correta { background: #d1ecf1; border: 1px solid #b8daff; }
+        
+        .explicacao {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e8;
+            border-radius: 6px;
+            font-size: 14px;
+            border-left: 4px solid #27ae60;
+        }
         
         .actions {
             display: flex;
@@ -203,6 +224,11 @@
     <div class="resultado-container">
         <div class="header">
             <h1>📊 Resultado do Simulado</h1>
+            {% if aviso_quantidade %}
+            <div class="aviso">
+                ⚠️ {{ aviso_quantidade }}
+            </div>
+            {% endif %}
             <div class="score {{ 'excelente' if porcentagem >= 80 else 'bom' if porcentagem >= 60 else 'regular' if porcentagem >= 40 else 'baixo' }}">
                 {{ "%.1f"|format(porcentagem) }}%
             </div>
@@ -235,7 +261,7 @@
                 {% for item in revisao %}
                 <div class="questao-item {{ 'correta' if item.correta else 'incorreta' }}">
                     <div class="questao-header">
-                        <div class="questao-materia">{{ item.materia }}</div>
+                        <div class="questao-materia">{{ item.materia }} • {{ item.dificuldade }}</div>
                         <div class="questao-status">
                             {% if item.correta %}
                             ✅ Acertou
@@ -246,7 +272,7 @@
                     </div>
                     
                     <div class="questao-enunciado">
-                        <strong>Questão {{ loop.index }}:</strong> {{ item.enunciado }}
+                        <strong>Questão {{ item.numero }}:</strong> {{ item.enunciado }}
                     </div>
                     
                     <div class="respostas">
@@ -260,8 +286,8 @@
                         {% endif %}
                     </div>
                     
-                    {% if item.explicacao %}
-                    <div style="margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 6px; font-size: 14px;">
+                    {% if item.explicacao and item.explicacao != 'Explicação não disponível' %}
+                    <div class="explicacao">
                         <strong>💡 Explicação:</strong> {{ item.explicacao }}
                     </div>
                     {% endif %}
@@ -277,38 +303,3 @@
     </div>
 </body>
 </html>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultado - ConcursoMaster</title>
-    <style>
-        /* (Manter todo o CSS anterior) */
-        .aviso {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <div class="resultado-container">
-        <div class="header">
-            <h1>📊 Resultado do Simulado</h1>
-            {% if aviso_quantidade %}
-            <div class="aviso">
-                ⚠️ {{ aviso_quantidade }}
-            </div>
-            {% endif %}
-            <div class="score {{ 'excelente' if porcentagem >= 80 else 'bom' if porcentagem >= 60 else 'regular' if porcentagem >= 40 else 'baixo' }}">
-                {{ \"%.1f\"|format(porcentagem) }}%
-            </div>
-            <p>{{ feedback }}</p>
-        </div>
-        
-        <!-- (Manter o resto do template igual) -->

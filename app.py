@@ -58,10 +58,10 @@ def carregar_questoes_csv():
                     resposta_correta = row.get('gabarito', 'A').strip()
                     
                     explicacao_parts = []
-                    if row.get('just_a'): explicacao_parts.append(f\"A: {row['just_a']}\")
-                    if row.get('just_b'): explicacao_parts.append(f\"B: {row['just_b']}\")
-                    if row.get('just_c'): explicacao_parts.append(f\"C: {row['just_c']}\")
-                    if row.get('just_d'): explicacao_parts.append(f\"D: {row['just_d']}\")
+                    if row.get('just_a'): explicacao_parts.append("A: " + row['just_a'])
+                    if row.get('just_b'): explicacao_parts.append("B: " + row['just_b'])
+                    if row.get('just_c'): explicacao_parts.append("C: " + row['just_c'])
+                    if row.get('just_d'): explicacao_parts.append("D: " + row['just_d'])
                     
                     explicacao = ' | '.join(explicacao_parts) if explicacao_parts else 'Explicação não disponível'
                     dificuldade = row.get('dificuldade', 'Média').strip()
@@ -114,7 +114,7 @@ def simulado():
 def questao(numero):
     '''Página REAL da questão com feedback educativo'''
     if 'simulado_ativo' not in session:
-        return render_template('erro.html', mensagem='Simulado não iniciado. <a href=\"/simulado\">Iniciar simulado</a>')
+        return render_template('erro.html', mensagem='Simulado não iniciado. <a href="/simulado">Iniciar simulado</a>')
     
     # Obter questões do banco
     conn = get_db_connection()
@@ -232,7 +232,7 @@ def responder_questao():
         session['respostas'][str(questao_numero)] = resposta
         session.modified = True
         
-        print(f'📝 Questão {questao_numero}: resposta \"{resposta}\" salva')
+        print(f'📝 Questão {questao_numero}: resposta "{resposta}" salva')
         
         return jsonify({'success': True})
         
@@ -295,8 +295,8 @@ def resultado_simulado():
                 'numero': i,
                 'enunciado': questao_db['enunciado'],
                 'materia': questao_db['materia'],
-                'resposta_usuario': f\"{resposta_usuario}: {texto_resposta_usuario}\" if resposta_usuario else 'Não respondida',
-                'resposta_correta': f\"{resposta_correta}: {texto_resposta_correta}\",
+                'resposta_usuario': f"{resposta_usuario}: {texto_resposta_usuario}" if resposta_usuario else 'Não respondida',
+                'resposta_correta': f"{resposta_correta}: {texto_resposta_correta}",
                 'correta': correta,
                 'explicacao': questao_db['explicacao'],
                 'dificuldade': questao_db['dificuldade'] if 'dificuldade' in questao_db.keys() else 'Média'
@@ -328,7 +328,7 @@ def resultado_simulado():
     aviso_quantidade = None
     if config.get('quantidade_solicitada') and config.get('quantidade_obtida'):
         if config['quantidade_solicitada'] > config['quantidade_obtida']:
-            aviso_quantidade = f\"Foram utilizadas {config['quantidade_obtida']} questões (solicitadas: {config['quantidade_solicitada']})\"
+            aviso_quantidade = f"Foram utilizadas {config['quantidade_obtida']} questões (solicitadas: {config['quantidade_solicitada']})"
     
     # Limpar sessão do simulado
     session.pop('simulado_ativo', None)
