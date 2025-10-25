@@ -956,13 +956,7 @@ def initialize_app():
     carregar_questoes_csv()
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+
 if __name__ == '__main__':
-    # Para Railway/Heroku
-    port = os.environ.get('PORT')
-    if port:
-        port = int(port)
-    else:
-        port = 5000
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
