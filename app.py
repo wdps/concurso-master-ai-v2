@@ -6,7 +6,7 @@ import csv
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'concurso_master_ai_2024_simple'
+app.secret_key = 'concurso_master_ai_2024_ultra_fix'
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 
 DATABASE = 'concurso.db'
@@ -17,7 +17,7 @@ def get_db_connection():
     return conn
 
 def carregar_questoes_csv():
-    '''Carrega questões do CSV para o banco - versão simples'''
+    '''Carrega questões do CSV para o banco'''
     if not os.path.exists('questoes.csv'):
         print('❌ Arquivo questoes.csv não encontrado')
         return False
@@ -38,7 +38,6 @@ def carregar_questoes_csv():
             )
         ''')
         
-        # Não limpar a tabela para manter dados existentes
         with open('questoes.csv', 'r', encoding='utf-8') as file:
             csv_reader = csv.DictReader(file, delimiter=';')
             for row in csv_reader:
@@ -55,7 +54,6 @@ def carregar_questoes_csv():
                     
                     resposta_correta = row.get('gabarito', 'A').strip()
                     
-                    # Criar explicação simples
                     explicacao_parts = []
                     if row.get('just_a'): explicacao_parts.append(f"A: {row['just_a']}")
                     if row.get('just_b'): explicacao_parts.append(f"B: {row['just_b']}")
@@ -65,7 +63,6 @@ def carregar_questoes_csv():
                     explicacao = ' | '.join(explicacao_parts) if explicacao_parts else 'Explicação não disponível'
                     dificuldade = row.get('dificuldade', 'Média').strip()
                     
-                    # Inserir apenas se não existir
                     cursor.execute('''
                         INSERT OR IGNORE INTO questoes 
                         (enunciado, materia, alternativas, resposta_correta, explicacao, dificuldade)
@@ -76,8 +73,6 @@ def carregar_questoes_csv():
                     continue
         
         conn.commit()
-        
-        # Verificar quantas questões temos
         cursor.execute('SELECT COUNT(*) FROM questoes')
         count = cursor.fetchone()[0]
         conn.close()
@@ -97,7 +92,6 @@ def index():
 
 @app.route('/simulado')
 def simulado():
-    '''Rota SIMPLES do simulado - APENAS UMA VEZ'''
     try:
         carregar_questoes_csv()
         conn = get_db_connection()
@@ -111,52 +105,21 @@ def simulado():
         
     except Exception as e:
         print(f'❌ Erro no /simulado: {e}')
-        # Fallback para matérias básicas
-        return render_template('simulado-simple.html', materias=[
-            'Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 
-            'Direito Constitucional', 'Direito Administrativo'
-        ])
+        return render_template('simulado-simple.html', materias=['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico'])
 
 @app.route('/questao/<int:numero>')
 def questao(numero):
-    '''Página simples da questão'''
     return f'''
     <!DOCTYPE html>
     <html>
     <head>
         <title>Questão {numero} - ConcursoMaster</title>
         <style>
-            body {{ 
-                font-family: Arial, sans-serif; 
-                padding: 40px; 
-                text-align: center; 
-                background: #f5f6fa;
-            }}
-            .container {{ 
-                max-width: 600px; 
-                margin: 0 auto; 
-                background: white;
-                padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }}
-            .success {{ 
-                color: #27ae60; 
-                font-size: 24px; 
-                margin: 20px 0; 
-            }}
-            .btn {{ 
-                background: #3498db; 
-                color: white; 
-                padding: 12px 24px; 
-                text-decoration: none; 
-                border-radius: 6px; 
-                display: inline-block; 
-                margin: 10px; 
-            }}
-            .btn:hover {{
-                background: #2980b9;
-            }}
+            body {{ font-family: Arial, sans-serif; padding: 40px; text-align: center; background: #f5f6fa; }}
+            .container {{ max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            .success {{ color: #27ae60; font-size: 24px; margin: 20px 0; }}
+            .btn {{ background: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 10px; }}
+            .btn:hover {{ background: #2980b9; }}
         </style>
     </head>
     <body>
@@ -176,7 +139,7 @@ def questao(numero):
 
 @app.route('/api/simulado/iniciar', methods=['POST'])
 def iniciar_simulado():
-    '''API para iniciar simulado - versão simples'''
+    '''API para iniciar simulado - VERSÃO 100% CORRIGIDA - ZERO .get()'''
     try:
         data = request.get_json()
         quantidade = data.get('quantidade', 5)
@@ -187,7 +150,6 @@ def iniciar_simulado():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Se não selecionou matérias, busca de todas
         if not materias:
             cursor.execute('SELECT * FROM questoes ORDER BY RANDOM() LIMIT ?', (quantidade,))
         else:
@@ -199,9 +161,9 @@ def iniciar_simulado():
         conn.close()
         
         if not questoes_db:
-            return jsonify({'success': False, 'error': 'Nenhuma questão encontrada com os filtros selecionados'}), 404
+            return jsonify({'success': False, 'error': 'Nenhuma questão encontrada'}), 404
         
-        # Formatar questões
+        # FORMATAR QUESTÕES - ZERO .get() - 100% CORRETO
         questoes = []
         for q in questoes_db:
             try:
@@ -209,17 +171,24 @@ def iniciar_simulado():
             except:
                 alternativas = {'A': 'Alternativa A', 'B': 'Alternativa B', 'C': 'Alternativa C', 'D': 'Alternativa D'}
             
-            questoes.append({
+            # ACESSO CORRETO às colunas - SEM .get() - USANDO COLCHETES
+            questao_formatada = {
                 'id': q['id'],
                 'enunciado': q['enunciado'],
                 'materia': q['materia'],
                 'alternativas': alternativas,
                 'resposta_correta': q['resposta_correta'],
-                'explicacao': q['explicacao'],
-                'dificuldade': q.get('dificuldade', 'Média')
-            })
+                'explicacao': q['explicacao']
+            }
+            
+            # Adicionar dificuldade se existir - SEM .get()
+            if 'dificuldade' in q.keys():
+                questao_formatada['dificuldade'] = q['dificuldade']
+            else:
+                questao_formatada['dificuldade'] = 'Média'
+                
+            questoes.append(questao_formatada)
         
-        # Configurar sessão
         session['simulado_ativo'] = True
         session['questoes'] = questoes
         session['respostas'] = {}
@@ -248,4 +217,3 @@ def dashboard():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
