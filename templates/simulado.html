@@ -1,65 +1,208 @@
-﻿<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado - ConcursoMaster AI</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/simulado.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <div class="simulado-container">
-        <div class="config-panel">
-            <h2>🎯 Configurar Simulado</h2>
-            
-            <div class="config-group">
-                <h3>📊 Quantidade de Questões</h3>
-                <div class="quantidade-buttons">
-                    <button class="quantidade-btn active" data-quantidade="5">5 Questões</button>
-                    <button class="quantidade-btn" data-quantidade="10">10 Questões</button>
-                    <button class="quantidade-btn" data-quantidade="15">15 Questões</button>
-                    <button class="quantidade-btn" data-quantidade="20">20 Questões</button>
-                </div>
-            </div>
+﻿{% extends "base.html" %}
 
-            <div class="config-group">
-                <div class="select-all-group">
-                    <h3>📚 Matérias</h3>
-                    <button type="button" class="select-all-btn" id="selectAll">
-                        ✅ Selecionar Todas
-                    </button>
+{% block title %}Simulado - ConcursoMaster AI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-cogs"></i> Configurar Simulado
+                    </h3>
                 </div>
-                <div class="materias-container">
-                    <div class="materias-grid">
-                        {% for materia in materias %}
-                        <div class="materia-item">
-                            <input type="checkbox" 
-                                   class="materia-checkbox" 
-                                   id="materia-{{ loop.index }}" 
-                                   value="{{ materia }}"
-                                   checked>
-                            <label for="materia-{{ loop.index }}">{{ materia }}</label>
+                <div class="card-body p-4">
+                    <form id="configSimuladoForm">
+                        <!-- Quantidade de Questões -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">📊 Quantidade de Questões</label>
+                            <div class="row g-2 mb-3">
+                                <div class="col-3">
+                                    <button type="button" class="btn btn-outline-primary w-100 quantidade-btn active" data-quantidade="10">10</button>
+                                </div>
+                                <div class="col-3">
+                                    <button type="button" class="btn btn-outline-primary w-100 quantidade-btn" data-quantidade="20">20</button>
+                                </div>
+                                <div class="col-3">
+                                    <button type="button" class="btn btn-outline-primary w-100 quantidade-btn" data-quantidade="30">30</button>
+                                </div>
+                                <div class="col-3">
+                                    <button type="button" class="btn btn-outline-primary w-100 quantidade-btn" data-quantidade="50">50</button>
+                                </div>
+                            </div>
+                            <input type="number" class="form-control" id="quantidadeCustom" min="5" max="100" value="10" placeholder="Ou digite um número personalizado">
                         </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div style="text-align: center; margin-top: 10px; color: rgba(255,255,255,0.8);">
-                    <small id="contadorMaterias">{{ materias|length }} matérias selecionadas</small>
+
+                        <!-- Matérias -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-label fw-bold">📚 Matérias do Simulado</label>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-success me-2" id="btnSelecionarTodas">
+                                        <i class="fas fa-check-double"></i> Todas
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info" id="btnSelecionarPrincipais">
+                                        <i class="fas fa-star"></i> Principais
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="materias-container border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                <div class="row g-2">
+                                    {% for materia in materias %}
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input materia-checkbox" type="checkbox" 
+                                                   value="{{ materia.nome }}" id="materia{{ loop.index }}" checked>
+                                            <label class="form-check-label w-100" for="materia{{ loop.index }}">
+                                                {{ materia.nome }}
+                                                <span class="badge bg-secondary float-end">{{ materia.total }}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mt-2 text-muted small" id="contadorMaterias">
+                                {{ materias|length }} matérias selecionadas
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Voltar ao Início
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg" id="btnIniciarSimulado">
+                                <i class="fas fa-play-circle"></i> Iniciar Simulado
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-            <button class="btn-iniciar" id="btnIniciarSimulado">
-                🚀 Iniciar Simulado
-            </button>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="{{ url_for('index') }}" style="color: #667eea; text-decoration: none; font-weight: 500;">
-                ← Voltar para a Página Inicial
-            </a>
         </div>
     </div>
+</div>
 
-    <script src="{{ url_for('static', filename='js/simulado.js') }}"></script>
-</body>
-</html>
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <h5>Preparando seu simulado...</h5>
+                <p class="text-muted">Isso pode levar alguns segundos</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let quantidade = 10;
+    const materiasCheckboxes = document.querySelectorAll('.materia-checkbox');
+    
+    // Configurar quantidade
+    document.querySelectorAll('.quantidade-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.quantidade-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            quantidade = parseInt(this.dataset.quantidade);
+            document.getElementById('quantidadeCustom').value = quantidade;
+        });
+    });
+    
+    document.getElementById('quantidadeCustom').addEventListener('input', function() {
+        const valor = parseInt(this.value);
+        if (valor >= 5 && valor <= 100) {
+            quantidade = valor;
+            document.querySelectorAll('.quantidade-btn').forEach(b => b.classList.remove('active'));
+        }
+    });
+    
+    // Botões de seleção rápida
+    document.getElementById('btnSelecionarTodas').addEventListener('click', function() {
+        materiasCheckboxes.forEach(cb => cb.checked = true);
+        atualizarContadorMaterias();
+    });
+    
+    document.getElementById('btnSelecionarPrincipais').addEventListener('click', function() {
+        const principais = ['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 
+                           'Direito Constitucional', 'Direito Administrativo'];
+        materiasCheckboxes.forEach(cb => {
+            cb.checked = principais.includes(cb.value);
+        });
+        atualizarContadorMaterias();
+    });
+    
+    // Atualizar contador de matérias
+    function atualizarContadorMaterias() {
+        const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
+        document.getElementById('contadorMaterias').textContent = 
+            ${selecionadas} matérias selecionadas;
+    }
+    
+    materiasCheckboxes.forEach(cb => {
+        cb.addEventListener('change', atualizarContadorMaterias);
+    });
+    
+    // Submissão do formulário
+    document.getElementById('configSimuladoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const materiasSelecionadas = Array.from(materiasCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        // Validações
+        if (materiasSelecionadas.length === 0) {
+            alert('Por favor, selecione pelo menos uma matéria.');
+            return;
+        }
+        
+        if (!quantidade || quantidade < 5 || quantidade > 100) {
+            alert('Por favor, selecione uma quantidade entre 5 e 100 questões.');
+            return;
+        }
+        
+        // Mostrar loading
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+        
+        try {
+            const response = await fetch('/api/simulado/iniciar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    quantidade: quantidade,
+                    materias: materiasSelecionadas
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                throw new Error(data.error || 'Erro desconhecido');
+            }
+            
+        } catch (error) {
+            loadingModal.hide();
+            alert('Erro ao iniciar simulado: ' + error.message);
+            console.error('Erro:', error);
+        }
+    });
+    
+    // Inicializar contador
+    atualizarContadorMaterias();
+});
+</script>
+{% endblock %}

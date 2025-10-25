@@ -1,305 +1,143 @@
-﻿<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultado - ConcursoMaster</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .resultado-container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            color: white;
-            padding: 40px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 15px;
-        }
-        
-        .score {
-            font-size: 48px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        
-        .score.excelente { color: #27ae60; }
-        .score.bom { color: #3498db; }
-        .score.regular { color: #f39c12; }
-        .score.baixo { color: #e74c3c; }
-        
-        .aviso {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .content {
-            padding: 40px;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        
-        .stat-card {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            text-align: center;
-            border-left: 4px solid #3498db;
-        }
-        
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-        
-        .questoes-revisao {
-            margin-top: 30px;
-        }
-        
-        .questao-item {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border-left: 4px solid;
-        }
-        
-        .questao-item.correta { border-color: #27ae60; }
-        .questao-item.incorreta { border-color: #e74c3c; }
-        
-        .questao-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .questao-materia {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .questao-status {
-            font-weight: 600;
-        }
-        
-        .correta .questao-status { color: #27ae60; }
-        .incorreta .questao-status { color: #e74c3c; }
-        
-        .questao-enunciado {
-            margin-bottom: 15px;
-            line-height: 1.5;
-            white-space: pre-line;
-        }
-        
-        .respostas {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .resposta-item {
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        
-        .resposta-usuario { background: #fff3cd; border: 1px solid #ffeaa7; }
-        .resposta-correta { background: #d1ecf1; border: 1px solid #b8daff; }
-        
-        .explicacao {
-            margin-top: 15px;
-            padding: 15px;
-            background: #e8f5e8;
-            border-radius: 6px;
-            font-size: 14px;
-            border-left: 4px solid #27ae60;
-        }
-        
-        .actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            padding: 30px;
-            background: #f8f9fa;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        .btn {
-            padding: 14px 28px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .btn-primary {
-            background: #3498db;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: #2980b9;
-        }
-        
-        .btn-success {
-            background: #27ae60;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: #219a52;
-        }
-        
-        @media (max-width: 768px) {
-            .content {
-                padding: 25px;
-            }
-            
-            .stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .respostas {
-                grid-template-columns: 1fr;
-            }
-            
-            .actions {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="resultado-container">
-        <div class="header">
-            <h1>📊 Resultado do Simulado</h1>
-            {% if aviso_quantidade %}
-            <div class="aviso">
-                ⚠️ {{ aviso_quantidade }}
-            </div>
-            {% endif %}
-            <div class="score {{ 'excelente' if porcentagem >= 80 else 'bom' if porcentagem >= 60 else 'regular' if porcentagem >= 40 else 'baixo' }}">
-                {{ "%.1f"|format(porcentagem) }}%
-            </div>
-            <p>{{ feedback }}</p>
-        </div>
-        
-        <div class="content">
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-number">{{ total_questoes }}</div>
-                    <div class="stat-label">Total de Questões</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{{ corretas }}</div>
-                    <div class="stat-label">Acertos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{{ erradas }}</div>
-                    <div class="stat-label">Erros</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">{{ "%.1f"|format(tempo_minutos) }}min</div>
-                    <div class="stat-label">Tempo</div>
+﻿{% extends "base.html" %}
+
+{% block title %}Resultado - ConcursoMaster AI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Cabeçalho do Resultado -->
+            <div class="card border-0 shadow-lg mb-5">
+                <div class="card-header bg-{{ cor_desempenho }} text-white py-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h1 class="display-4 fw-bold mb-2">{{ "%.1f"|format(porcentagem) }}%</h1>
+                            <h3 class="mb-0">{{ desempenho }}</h3>
+                            <p class="mb-0">Você acertou {{ acertos }} de {{ total_questoes }} questões</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-trophy display-1 opacity-75"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="questoes-revisao">
-                <h3 style="margin-bottom: 20px; color: #2c3e50;">📝 Revisão das Questões</h3>
-                
-                {% for item in revisao %}
-                <div class="questao-item {{ 'correta' if item.correta else 'incorreta' }}">
-                    <div class="questao-header">
-                        <div class="questao-materia">{{ item.materia }} • {{ item.dificuldade }}</div>
-                        <div class="questao-status">
-                            {% if item.correta %}
-                            ✅ Acertou
-                            {% else %}
-                            ❌ Errou
+
+            <!-- Estatísticas -->
+            <div class="row mb-5">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <h1 class="display-6 text-primary">{{ total_questoes }}</h1>
+                            <p class="card-text">Total de Questões</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <h1 class="display-6 text-success">{{ acertos }}</h1>
+                            <p class="card-text">Acertos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <h1 class="display-6 text-danger">{{ erros }}</h1>
+                            <p class="card-text">Erros</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <h1 class="display-6 text-info">{{ "%.1f"|format(tempo_minutos) }}</h1>
+                            <p class="card-text">Minutos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revisão Detalhada -->
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-list-ol"></i> Revisão Detalhada das Questões
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% for questao in detalhes_questoes %}
+                    <div class="questao-revisao mb-4 p-3 border rounded {% if questao.acertou %}border-success{% else %}border-danger{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="mb-0">
+                                Questão {{ questao.numero }} - {{ questao.materia }}
+                                <span class="badge bg-{% if questao.acertou %}success{% else %}danger{% endif %} ms-2">
+                                    {% if questao.acertou %}✅ Acertou{% else %}❌ Errou{% endif %}
+                                </span>
+                            </h5>
+                            <small class="text-muted">{{ questao.dificuldade }}</small>
+                        </div>
+                        
+                        <p class="mb-3" style="white-space: pre-line;"><strong>Enunciado:</strong> {{ questao.enunciado }}</p>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="p-2 rounded {% if questao.acertou %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+                                    <strong>Sua resposta:</strong> 
+                                    {{ questao.resposta_usuario or 'Não respondida' }}
+                                    {% if questao.resposta_usuario %}
+                                        - {{ questao.alternativas[questao.resposta_usuario] }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if not questao.acertou %}
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-success text-white">
+                                    <strong>Resposta correta:</strong> 
+                                    {{ questao.resposta_correta }}
+                                    - {{ questao.alternativas[questao.resposta_correta] }}
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
-                    </div>
-                    
-                    <div class="questao-enunciado">
-                        <strong>Questão {{ item.numero }}:</strong> {{ item.enunciado }}
-                    </div>
-                    
-                    <div class="respostas">
-                        <div class="resposta-item resposta-usuario">
-                            <strong>Sua resposta:</strong> {{ item.resposta_usuario }}
+                        
+                        <div class="p-3 bg-light rounded">
+                            <h6><i class="fas fa-lightbulb text-warning"></i> Explicação:</h6>
+                            <p class="mb-0" style="white-space: pre-line;">{{ questao.explicacao }}</p>
                         </div>
-                        {% if not item.correta %}
-                        <div class="resposta-item resposta-correta">
-                            <strong>Resposta correta:</strong> {{ item.resposta_correta }}
-                        </div>
-                        {% endif %}
                     </div>
-                    
-                    {% if item.explicacao and item.explicacao != 'Explicação não disponível' %}
-                    <div class="explicacao">
-                        <strong>💡 Explicação:</strong> {{ item.explicacao }}
-                    </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% endfor %}
+            </div>
+
+            <!-- Ações Finais -->
+            <div class="text-center mt-5">
+                <div class="d-grid gap-2 d-md-flex justify-content-center">
+                    <a href="{{ url_for('simulado') }}" class="btn btn-primary btn-lg me-md-3">
+                        <i class="fas fa-redo"></i> Fazer Novo Simulado
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg me-md-3">
+                        <i class="fas fa-chart-bar"></i> Ver Dashboard
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-home"></i> Página Inicial
+                    </a>
+                </div>
             </div>
         </div>
-        
-        <div class="actions">
-            <a href="/simulado" class="btn btn-primary">🔄 Fazer Novo Simulado</a>
-            <a href="/" class="btn btn-success">🏠 Página Inicial</a>
-        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.questao-revisao {
+    transition: transform 0.2s ease;
+}
+
+.questao-revisao:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
