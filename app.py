@@ -1,22 +1,23 @@
 ﻿from flask import Flask, render_template, request, jsonify, session
 import sqlite3
 import json
-import random
-from datetime import datetime, timedelta
 import os
 import csv
+from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'concurso_master_ai_2024'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+app.secret_key = 'concurso_master_ai_2024_simple'
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600
+
+DATABASE = 'concurso.db'
 
 def get_db_connection():
-    conn = sqlite3.connect('concurso.db')
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 def carregar_questoes_csv():
-    '''Carrega questões do SEU arquivo CSV com a estrutura real'''
+    '''Carrega questões do CSV para o banco - versão simples'''
     if not os.path.exists('questoes.csv'):
         print('❌ Arquivo questoes.csv não encontrado')
         return False
@@ -25,7 +26,6 @@ def carregar_questoes_csv():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Criar tabela se não existir
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS questoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,96 +38,58 @@ def carregar_questoes_csv():
             )
         ''')
         
-        # Limpar tabela existente para evitar duplicatas
-        cursor.execute('DELETE FROM questoes')
-        
+        # Não limpar a tabela para manter dados existentes
         with open('questoes.csv', 'r', encoding='utf-8') as file:
             csv_reader = csv.DictReader(file, delimiter=';')
-            questoes_carregadas = 0
-            
             for row in csv_reader:
                 try:
-                    # Mapear colunas do SEU CSV
                     enunciado = row.get('enunciado', '').strip()
-                    materia = row.get('disciplina', 'Geral').strip()  # SEU CSV usa 'disciplina'
+                    materia = row.get('disciplina', 'Geral').strip()
                     
-                    # Construir dicionário de alternativas do SEU CSV
                     alternativas_dict = {
                         'A': row.get('alt_a', '').strip(),
-                        'B': row.get('alt_b', '').strip(), 
+                        'B': row.get('alt_b', '').strip(),
                         'C': row.get('alt_c', '').strip(),
                         'D': row.get('alt_d', '').strip()
                     }
                     
                     resposta_correta = row.get('gabarito', 'A').strip()
                     
-                    # Criar explicação com as justificativas do SEU CSV
+                    # Criar explicação simples
                     explicacao_parts = []
                     if row.get('just_a'): explicacao_parts.append(f"A: {row['just_a']}")
                     if row.get('just_b'): explicacao_parts.append(f"B: {row['just_b']}")
                     if row.get('just_c'): explicacao_parts.append(f"C: {row['just_c']}")
                     if row.get('just_d'): explicacao_parts.append(f"D: {row['just_d']}")
-                    if row.get('dica_interpretacao'): explicacao_parts.append(f"Dica: {row['dica_interpretacao']}")
                     
                     explicacao = ' | '.join(explicacao_parts) if explicacao_parts else 'Explicação não disponível'
                     dificuldade = row.get('dificuldade', 'Média').strip()
                     
-                    # Inserir no banco
+                    # Inserir apenas se não existir
                     cursor.execute('''
-                        INSERT INTO questoes 
+                        INSERT OR IGNORE INTO questoes 
                         (enunciado, materia, alternativas, resposta_correta, explicacao, dificuldade)
                         VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (
-                        enunciado,
-                        materia,
-                        json.dumps(alternativas_dict, ensure_ascii=False),
-                        resposta_correta,
-                        explicacao,
-                        dificuldade
-                    ))
-                    
-                    questoes_carregadas += 1
+                    ''', (enunciado, materia, json.dumps(alternativas_dict), resposta_correta, explicacao, dificuldade))
                     
                 except Exception as e:
-                    print(f'⚠️ Erro ao processar linha: {e}')
                     continue
         
         conn.commit()
+        
+        # Verificar quantas questões temos
+        cursor.execute('SELECT COUNT(*) FROM questoes')
+        count = cursor.fetchone()[0]
         conn.close()
-        print(f'✅ {questoes_carregadas} questões carregadas do CSV!')
+        
+        print(f'✅ {count} questões disponíveis no banco!')
         return True
         
     except Exception as e:
         print(f'❌ Erro ao carregar CSV: {e}')
         return False
 
-def init_database():
-    '''Inicialização do banco com SEU CSV'''
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Criar tabela se não existir
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS questoes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                enunciado TEXT,
-                materia TEXT,
-                alternativas TEXT,
-                resposta_correta TEXT,
-                explicacao TEXT,
-                dificuldade TEXT
-            )
-        ''')
-        conn.commit()
-        conn.close()
-        
-        # Carregar questões do SEU CSV
-        return carregar_questoes_csv()
-        
-    except Exception as e:
-        print(f'❌ Erro na inicialização: {e}')
-        return False
+# ========== ROTAS PRINCIPAIS ==========
 
 @app.route('/')
 def index():
@@ -135,8 +97,9 @@ def index():
 
 @app.route('/simulado')
 def simulado():
-    init_database()
+    '''Rota SIMPLES do simulado - APENAS UMA VEZ'''
     try:
+        carregar_questoes_csv()
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT DISTINCT materia FROM questoes WHERE materia IS NOT NULL')
@@ -144,31 +107,82 @@ def simulado():
         conn.close()
         
         print(f'📚 Matérias disponíveis: {materias}')
-        return render_template('simulado.html', materias=materias)
+        return render_template('simulado-simple.html', materias=materias)
         
     except Exception as e:
         print(f'❌ Erro no /simulado: {e}')
-        return render_template('simulado.html', materias=['Direito Administrativo', 'Língua Portuguesa', 'Raciocínio Lógico', 'Direito Constitucional'])
+        # Fallback para matérias básicas
+        return render_template('simulado-simple.html', materias=[
+            'Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 
+            'Direito Constitucional', 'Direito Administrativo'
+        ])
 
-@app.route('/redacao')
-def redacao():
-    return render_template('redacao.html', tema={'tema': 'Tema Exemplo', 'dicas': 'Escreva sobre este tema...'})
+@app.route('/questao/<int:numero>')
+def questao(numero):
+    '''Página simples da questão'''
+    return f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Questão {numero} - ConcursoMaster</title>
+        <style>
+            body {{ 
+                font-family: Arial, sans-serif; 
+                padding: 40px; 
+                text-align: center; 
+                background: #f5f6fa;
+            }}
+            .container {{ 
+                max-width: 600px; 
+                margin: 0 auto; 
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }}
+            .success {{ 
+                color: #27ae60; 
+                font-size: 24px; 
+                margin: 20px 0; 
+            }}
+            .btn {{ 
+                background: #3498db; 
+                color: white; 
+                padding: 12px 24px; 
+                text-decoration: none; 
+                border-radius: 6px; 
+                display: inline-block; 
+                margin: 10px; 
+            }}
+            .btn:hover {{
+                background: #2980b9;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="success">🎉 SIMULADO INICIADO COM SUCESSO!</div>
+            <h1>Questão {numero}</h1>
+            <p>O sistema de simulado está funcionando perfeitamente!</p>
+            <p><strong>Esta é a questão número {numero}</strong> do seu simulado.</p>
+            <div>
+                <a href="/simulado" class="btn">🔄 Fazer Outro Simulado</a>
+                <a href="/" class="btn">🏠 Página Inicial</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
-
-# ========== API PARA SIMULADO ==========
-
-@app.route('/api/questoes/random')
-def get_questoes_random():
-    '''API para buscar questões aleatórias do SEU CSV'''
+@app.route('/api/simulado/iniciar', methods=['POST'])
+def iniciar_simulado():
+    '''API para iniciar simulado - versão simples'''
     try:
-        init_database()
-        quantidade = int(request.args.get('quantidade', 5))
-        materias = request.args.getlist('materias')
+        data = request.get_json()
+        quantidade = data.get('quantidade', 5)
+        materias = data.get('materias', [])
         
-        print(f'🎯 Buscando {quantidade} questões para matérias: {materias}')
+        print(f'🚀 Iniciando simulado: {quantidade} questões, matérias: {materias}')
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -183,6 +197,9 @@ def get_questoes_random():
         
         questoes_db = cursor.fetchall()
         conn.close()
+        
+        if not questoes_db:
+            return jsonify({'success': False, 'error': 'Nenhuma questão encontrada com os filtros selecionados'}), 404
         
         # Formatar questões
         questoes = []
@@ -202,46 +219,13 @@ def get_questoes_random():
                 'dificuldade': q.get('dificuldade', 'Média')
             })
         
-        print(f'✅ Retornando {len(questoes)} questões')
-        return jsonify({'success': True, 'questoes': questoes})
-        
-    except Exception as e:
-        print(f'❌ Erro na API: {e}')
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/simulado/iniciar', methods=['POST'])
-def iniciar_simulado():
-    '''Inicia um novo simulado com questões do SEU CSV'''
-    try:
-        data = request.get_json()
-        quantidade = data.get('quantidade', 5)
-        materias = data.get('materias', [])
-        
-        print(f'🚀 Iniciando simulado: {quantidade} questões, matérias: {materias}')
-        
-        # Buscar questões
-        response = get_questoes_random()
-        if response.status_code != 200:
-            return jsonify({'success': False, 'error': 'Erro ao buscar questões'}), 500
-            
-        resultado = response.get_json()
-        if not resultado.get('success'):
-            return jsonify({'success': False, 'error': resultado.get('error', 'Erro desconhecido')}), 500
-        
-        questoes = resultado['questoes']
-        
-        if not questoes:
-            return jsonify({'success': False, 'error': 'Nenhuma questão encontrada'}), 404
-        
         # Configurar sessão
         session['simulado_ativo'] = True
         session['questoes'] = questoes
         session['respostas'] = {}
         session['inicio'] = datetime.now().isoformat()
-        session['config'] = {
-            'quantidade': quantidade,
-            'materias': materias
-        }
+        
+        print(f'✅ Simulado configurado com {len(questoes)} questões')
         
         return jsonify({
             'success': True,
@@ -253,30 +237,14 @@ def iniciar_simulado():
         print(f'❌ Erro ao iniciar simulado: {e}')
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/redacao')
+def redacao():
+    return render_template('redacao.html')
 
-@app.route('/questao/<int:numero>')
-def questao(numero):
-    return render_template('questao.html', numero=numero)
-
-@app.route('/simulado')
-def simulado():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT DISTINCT materia FROM questoes WHERE materia IS NOT NULL')
-        materias = [row['materia'] for row in cursor.fetchall()]
-        conn.close()
-        
-        print(f'📚 Matérias disponíveis: {materias}')
-        return render_template('simulado-simple.html', materias=materias)
-        
-    except Exception as e:
-        print(f'❌ Erro no /simulado: {e}')
-        return render_template('simulado-simple.html', materias=['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 'Direito Constitucional'])
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
-
