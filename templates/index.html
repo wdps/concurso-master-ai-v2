@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConcursoMaster AI 3.0 - Sua Plataforma de Estudos</title>
+    <title>ConcursoMaster AI - Plataforma Inteligente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI 3.0
+                <i class="fas fa-brain"></i> ConcursoMaster AI 3.0
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -21,10 +20,10 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/">Início</a>
+                        <a class="nav-link active" href="/">Início</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/simulado">Simulado</a>
+                        <a class="nav-link" href="/simulado">Simulados</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/redacao">Redação</a>
@@ -37,58 +36,132 @@
         </div>
     </nav>
 
-    <section class="hero-section text-center">
-        <div class="container">
-            <h1 class="display-4 fw-bold">Sua Plataforma Completa de Estudos</h1>
-            <p class="lead">Simulados inteligentes, redações com correção e dashboard de desempenho.</p>
-            <a href="/simulado" class="btn btn-light btn-lg mt-3">
-                <i class="fas fa-play-circle"></i> Começar um novo simulado
-            </a>
-        </div>
-    </section>
-
-    <section class="container my-5">
-        <h2 class="text-center mb-4">Ferramentas de Aprovação</h2>
-        <div class="row g-4">
-            <div class="col-lg-4 d-flex align-items-stretch">
-                <div class="feature-card">
-                    <div class="feature-icon icon-simulado">
-                        <i class="fas fa-brain"></i>
+    <div class="main-container">
+        <!-- Hero Section -->
+        <section class="hero-section text-center text-white">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h1 class="display-3 fw-bold mb-4">
+                            Domine os <span class="text-warning">Concursos Públicos</span>
+                        </h1>
+                        <p class="lead mb-5 fs-4">
+                            Plataforma inteligente com IA para seu sucesso em concursos públicos. 
+                            <span class="d-block mt-2">295 questões disponíveis e análise detalhada do seu desempenho.</span>
+                        </p>
+                        <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                            <a href="/simulado" class="btn btn-primary btn-lg px-5 py-3">
+                                <i class="fas fa-play-circle me-2"></i>Iniciar Simulado
+                            </a>
+                            <a href="/dashboard" class="btn btn-outline-light btn-lg px-5 py-3">
+                                <i class="fas fa-chart-line me-2"></i>Ver Desempenho
+                            </a>
+                        </div>
                     </div>
-                    <h4>Simulados Inteligentes</h4>
-                    <p class="text-muted">Crie simulados personalizados por matéria, quantidade de questões e tempo. Receba feedback instantâneo.</p>
-                    <a href="/simulado" class="btn btn-primary mt-auto">Iniciar Simulado</a>
                 </div>
             </div>
+        </section>
 
-            <div class="col-lg-4 d-flex align-items-stretch">
-                <div class="feature-card">
-                    <div class="feature-icon icon-redacao">
-                        <i class="fas fa-edit"></i>
+        <!-- Features Section -->
+        <section class="features-section py-5">
+            <div class="container">
+                <div class="row g-4">
+                    <div class="col-lg-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body p-4">
+                                <div class="kpi-icon icon-primary mx-auto mb-4">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <h4 class="fw-bold mb-3">Simulados Personalizados</h4>
+                                <p class="text-muted">
+                                    Crie simulados com filtros por matéria, dificuldade e tempo. 
+                                    Total controle sobre sua preparação.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <h4>Prática de Redação</h4>
-                    <p class="text-muted">Escolha entre diversos temas, escreva sua redação e receba uma correção detalhada por competências.</p>
-                    <a href="/redacao" class="btn btn-success mt-auto">Praticar Redação</a>
+                    <div class="col-lg-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body p-4">
+                                <div class="kpi-icon icon-success mx-auto mb-4">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h4 class="fw-bold mb-3">Dashboard Inteligente</h4>
+                                <p class="text-muted">
+                                    Acompanhe sua evolução com gráficos interativos e 
+                                    análises detalhadas do seu desempenho.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body p-4">
+                                <div class="kpi-icon icon-info mx-auto mb-4">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <h4 class="fw-bold mb-3">295 Questões</h4>
+                                <p class="text-muted">
+                                    Banco com questões diversificadas de múltiplas matérias. 
+                                    Conteúdo constantemente atualizado.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <div class="col-lg-4 d-flex align-items-stretch">
-                <div class="feature-card">
-                    <div class="feature-icon icon-dashboard">
-                        <i class="fas fa-chart-pie"></i>
+        <!-- Stats Section -->
+        <section class="stats-section py-5">
+            <div class="container">
+                <div class="row g-4 text-center">
+                    <div class="col-md-3 col-6">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="stats-questoes">295</div>
+                            <div class="kpi-label">Questões</div>
+                        </div>
                     </div>
-                    <h4>Dashboard de Desempenho</h4>
-                    <p class="text-muted">Acompanhe sua evolução com gráficos, média geral, tempo de estudo e desempenho por matéria.</p>
-                    <a href="/dashboard" class="btn btn-warning text-dark mt-auto">Ver Desempenho</a>
+                    <div class="col-md-3 col-6">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="stats-materias">15+</div>
+                            <div class="kpi-label">Matérias</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="stats-simulados">0</div>
+                            <div class="kpi-label">Simulados Realizados</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="stats-tempo">0h</div>
+                            <div class="kpi-label">Tempo de Estudo</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <footer class="text-center text-muted py-4 mt-5 bg-light">
-        <p class="mb-0">&copy; 2025 ConcursoMaster AI. Todos os direitos reservados.</p>
-    </footer>
+        </section>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Carregar estatísticas rápidas
+        async function loadQuickStats() {
+            try {
+                const response = await fetch('/api/dashboard/estatisticas');
+                const data = await response.json();
+                const stats = data.estatisticas;
+                
+                document.getElementById('stats-simulados').textContent = stats.total_simulados_realizados;
+                document.getElementById('stats-tempo').textContent = `${Math.round(stats.tempo_total_estudo_min)}min`;
+            } catch (error) {
+                console.error('Erro ao carregar stats:', error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadQuickStats);
+    </script>
 </body>
 </html>
