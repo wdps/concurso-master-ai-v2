@@ -321,6 +321,8 @@ otification alert alert- alert-dismissible fade show;
             console.log('🔍 DEBUG:', data);
         }
     </script>
-    {% block extra_js %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/diagnostico.js') }}"></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>
+
