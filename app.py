@@ -6,8 +6,11 @@ import csv
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'concurso_master_ai_2024_completo'
+app.secret_key = 'concurso_master_ai_2024_otimizado'
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = True  # Para HTTPS no Railway
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 DATABASE = 'concurso.db'
 
@@ -113,22 +116,49 @@ def questao(numero):
     if 'simulado_ativo' not in session:
         return render_template('erro.html', mensagem='Simulado não iniciado. <a href=\"/simulado\">Iniciar simulado</a>')
     
-    if numero < 1 or numero > len(session['questoes']):
-        return render_template('erro.html', mensagem='Questão não encontrada.')
+    # Obter questões do banco em vez da sessão (para evitar cookie grande)
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
-    questao_atual = session['questoes'][numero - 1]
+    if 'questoes_ids' in session:
+        # Buscar questões específicas do simulado atual
+        questao_ids = session['questoes_ids']
+        if numero <= len(questao_ids):
+            cursor.execute('SELECT * FROM questoes WHERE id = ?', (questao_ids[numero-1],))
+            questao_db = cursor.fetchone()
+            
+            if questao_db:
+                # Formatar questão
+                try:
+                    alternativas = json.loads(questao_db['alternativas'])
+                except:
+                    alternativas = {'A': 'Alternativa A', 'B': 'Alternativa B', 'C': 'Alternativa C', 'D': 'Alternativa D'}
+                
+                questao_atual = {
+                    'id': questao_db['id'],
+                    'enunciado': questao_db['enunciado'],
+                    'materia': questao_db['materia'],
+                    'alternativas': alternativas,
+                    'resposta_correta': questao_db['resposta_correta'],
+                    'explicacao': questao_db['explicacao'],
+                    'dificuldade': questao_db['dificuldade'] if 'dificuldade' in questao_db.keys() else 'Média'
+                }
+                
+                conn.close()
+                return render_template('questao.html',
+                                     numero=numero,
+                                     total_questoes=len(questao_ids),
+                                     questao=questao_atual)
     
-    return render_template('questao.html',
-                         numero=numero,
-                         total_questoes=len(session['questoes']),
-                         questao=questao_atual)
+    conn.close()
+    return render_template('erro.html', mensagem='Questão não encontrada.')
 
 @app.route('/api/simulado/iniciar', methods=['POST'])
 def iniciar_simulado():
-    '''API para iniciar simulado - VERSÃO COMPLETA'''
+    '''API para iniciar simulado - VERSÃO OTIMIZADA'''
     try:
         data = request.get_json()
-        quantidade = data.get('quantidade', 5)
+        quantidade = min(data.get('quantidade', 5), 20)  # Limitar para evitar cookie grande
         materias = data.get('materias', [])
         
         print(f'🚀 Iniciando simulado: {quantidade} questões, matérias: {materias}')
@@ -137,50 +167,35 @@ def iniciar_simulado():
         cursor = conn.cursor()
         
         if not materias:
-            cursor.execute('SELECT * FROM questoes ORDER BY RANDOM() LIMIT ?', (quantidade,))
+            cursor.execute('SELECT id FROM questoes ORDER BY RANDOM() LIMIT ?', (quantidade,))
         else:
             placeholders = ','.join(['?'] * len(materias))
-            query = f'SELECT * FROM questoes WHERE materia IN ({placeholders}) ORDER BY RANDOM() LIMIT ?'
+            query = f'SELECT id FROM questoes WHERE materia IN ({placeholders}) ORDER BY RANDOM() LIMIT ?'
             cursor.execute(query, materias + [quantidade])
         
-        questoes_db = cursor.fetchall()
+        # Armazenar apenas IDs na sessão (muito menor)
+        questao_ids = [row['id'] for row in cursor.fetchall()]
         conn.close()
         
-        if not questoes_db:
+        if not questao_ids:
             return jsonify({'success': False, 'error': 'Nenhuma questão encontrada'}), 404
         
-        # Formatar questões - CORRETO
-        questoes = []
-        for q in questoes_db:
-            try:
-                alternativas = json.loads(q['alternativas'])
-            except:
-                alternativas = {'A': 'Alternativa A', 'B': 'Alternativa B', 'C': 'Alternativa C', 'D': 'Alternativa D'}
-            
-            questao_formatada = {
-                'id': q['id'],
-                'enunciado': q['enunciado'],
-                'materia': q['materia'],
-                'alternativas': alternativas,
-                'resposta_correta': q['resposta_correta'],
-                'explicacao': q['explicacao'],
-                'dificuldade': q['dificuldade'] if 'dificuldade' in q.keys() else 'Média'
-            }
-                
-            questoes.append(questao_formatada)
-        
-        # Configurar sessão COMPLETA
+        # Configurar sessão OTIMIZADA
         session['simulado_ativo'] = True
-        session['questoes'] = questoes
+        session['questoes_ids'] = questao_ids
         session['respostas'] = {}
         session['inicio'] = datetime.now().isoformat()
+        session['config'] = {
+            'quantidade': quantidade,
+            'materias': materias
+        }
         
-        print(f'✅ Simulado configurado com {len(questoes)} questões')
+        print(f'✅ Simulado configurado com {len(questao_ids)} questões (sessão otimizada)')
         
         return jsonify({
             'success': True,
-            'total': len(questoes),
-            'questoes_ids': [q['id'] for q in questoes]
+            'total': len(questao_ids),
+            'questoes_ids': questao_ids
         })
         
     except Exception as e:
@@ -227,32 +242,50 @@ def resultado_simulado():
     if 'simulado_ativo' not in session:
         return render_template('erro.html', mensagem='Nenhum simulado em andamento.')
     
-    # Calcular resultados
+    # Buscar questões do banco
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    questao_ids = session.get('questoes_ids', [])
     respostas = session.get('respostas', {})
-    questoes = session['questoes']
     
     corretas = 0
     revisao = []
     
-    for i, questao in enumerate(questoes, 1):
-        resposta_usuario = respostas.get(str(i))
-        resposta_correta = questao['resposta_correta']
-        correta = resposta_usuario == resposta_correta
+    for i, questao_id in enumerate(questao_ids, 1):
+        cursor.execute('SELECT * FROM questoes WHERE id = ?', (questao_id,))
+        questao_db = cursor.fetchone()
         
-        if correta:
-            corretas += 1
-        
-        revisao.append({
-            'numero': i,
-            'enunciado': questao['enunciado'],
-            'materia': questao['materia'],
-            'resposta_usuario': resposta_usuario or 'Não respondida',
-            'resposta_correta': resposta_correta,
-            'correta': correta,
-            'explicacao': questao['explicacao']
-        })
+        if questao_db:
+            resposta_usuario = respostas.get(str(i))
+            resposta_correta = questao_db['resposta_correta']
+            correta = resposta_usuario == resposta_correta
+            
+            if correta:
+                corretas += 1
+            
+            # Formatar alternativas para exibição
+            try:
+                alternativas = json.loads(questao_db['alternativas'])
+            except:
+                alternativas = {'A': 'Alt A', 'B': 'Alt B', 'C': 'Alt C', 'D': 'Alt D'}
+            
+            texto_resposta_usuario = alternativas.get(resposta_usuario, 'Não respondida') if resposta_usuario else 'Não respondida'
+            texto_resposta_correta = alternativas.get(resposta_correta, 'N/A')
+            
+            revisao.append({
+                'numero': i,
+                'enunciado': questao_db['enunciado'],
+                'materia': questao_db['materia'],
+                'resposta_usuario': f"{resposta_usuario}: {texto_resposta_usuario}" if resposta_usuario else 'Não respondida',
+                'resposta_correta': f"{resposta_correta}: {texto_resposta_correta}",
+                'correta': correta,
+                'explicacao': questao_db['explicacao']
+            })
     
-    total_questoes = len(questoes)
+    conn.close()
+    
+    total_questoes = len(questao_ids)
     porcentagem = (corretas / total_questoes) * 100 if total_questoes > 0 else 0
     erradas = total_questoes - corretas
     
@@ -274,9 +307,10 @@ def resultado_simulado():
     
     # Limpar sessão do simulado
     session.pop('simulado_ativo', None)
-    session.pop('questoes', None)
+    session.pop('questoes_ids', None)
     session.pop('respostas', None)
     session.pop('inicio', None)
+    session.pop('config', None)
     
     return render_template('resultado.html',
                          total_questoes=total_questoes,
@@ -299,26 +333,7 @@ def dashboard():
 @app.route('/erro')
 def erro():
     mensagem = request.args.get('mensagem', 'Ocorreu um erro.')
-    return f'''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Erro - ConcursoMaster</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; padding: 40px; text-align: center; background: #f5f6fa; }}
-            .container {{ max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-            .erro {{ color: #e74c3c; font-size: 24px; margin: 20px 0; }}
-            .btn {{ background: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 10px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="erro">❌ {mensagem}</div>
-            <a href="/" class="btn">🏠 Página Inicial</a>
-        </div>
-    </body>
-    </html>
-    '''
+    return render_template('erro.html', mensagem=mensagem)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
