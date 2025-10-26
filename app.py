@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import logging
+import traceback # Para logar a pilha de erro completa
 
 # Configurações
 # Formato de log mais detalhado
@@ -13,158 +14,177 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(name
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# Chave secreta para gerenciamento de sessão (importante para segurança)
-# Em produção, use uma variável de ambiente!
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key_placeholder_12345_67890') # Chave mais segura
+# Chave secreta (MUITO IMPORTANTE: Trocar em produção real ou usar variável de ambiente)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'a_secret_key_that_is_very_secure_and_long_enough_12345')
 
 DATABASE = 'concurso.db' # Nome do arquivo do banco de dados
 
 class SistemaSimulado:
     '''Gerencia a lógica de simulados ativos em memória.'''
     def __init__(self):
-        # Dicionário para armazenar os dados dos simulados ativos {simulado_id: simulado_data}
         self.simulados_ativos = {}
 
     def iniciar_simulado(self, user_id, config):
         '''
         Cria um novo registro de simulado em memória com base na configuração.
-        Retorna o ID do simulado ou None se não encontrar questões.
+        Retorna o ID do simulado ou None se não encontrar questões ou ocorrer erro.
         '''
         simulado_id = f"{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        logger.info(f"Tentando iniciar simulado {simulado_id} para user {user_id} com config: {config}")
 
         simulado_data = {
-            'id': simulado_id,
-            'config': config,
-            'questoes': [], # Lista de objetos questão
-            'respostas': {}, # Dicionário {indice_questao: objeto_resposta}
-            'inicio': datetime.now(),
-            'tempo_limite_min': config.get('tempo_minutos', 180),
-            'status': 'ativo',
-            'questao_atual': 0 # Índice da questão atual sendo visualizada (não usado ativamente no backend)
+            'id': simulado_id, 'config': config, 'questoes': [], 'respostas': {},
+            'inicio': datetime.now(), 'tempo_limite_min': config.get('tempo_minutos', 180),
+            'status': 'ativo', 'questao_atual': 0
         }
 
         # Carrega as questões do banco de dados com base na configuração
-        questoes = self._carregar_questoes_simulado(config)
+        # ** Ponto Crítico: Envolver em try-except aqui também **
+        try:
+            questoes = self._carregar_questoes_simulado(config)
+        except ConnectionError as conn_err: # Erro específico de conexão
+             logger.error(f"Erro de conexão ao carregar questões para simulado {simulado_id}: {conn_err}")
+             return None # Falha ao carregar questões devido à conexão
+        except sqlite3.Error as db_err_load: # Erro específico do SQLite no carregamento
+            logger.error(f"Erro SQLite durante _carregar_questoes_simulado para simulado {simulado_id}: {db_err_load}", exc_info=True)
+            return None # Falha ao carregar questões devido a erro DB
+        except Exception as e_load: # Qualquer outro erro no carregamento
+            logger.error(f"Erro CRÍTICO durante _carregar_questoes_simulado para simulado {simulador_id}: {e_load}", exc_info=True)
+            return None # Falha ao carregar questões
 
-        # Se nenhuma questão for encontrada, retorna None para indicar falha
+        # Se nenhuma questão for encontrada, retorna None
         if not questoes:
              logger.warning(f"Nenhuma questão encontrada para a config: {config}. Simulado {simulado_id} não iniciado.")
              return None
 
         simulado_data['questoes'] = questoes
-        self.simulados_ativos[simulado_id] = simulado_data # Armazena o simulado ativo
-        logger.info(f"Simulado {simulado_id} iniciado para user {user_id} com {len(questoes)} questões.")
+        self.simulados_ativos[simulado_id] = simulado_data
+        logger.info(f"Simulado {simulado_id} iniciado com {len(questoes)} questões.")
         return simulado_id
 
     def _carregar_questoes_simulado(self, config):
         '''
         Busca questões no banco de dados SQLite com base nos filtros da configuração.
         Retorna uma lista de dicionários representando as questões.
+        *** VERSÃO MAIS ROBUSTA contra erros de dados e com mais LOGS ***
         '''
         conn = get_db_connection()
         if not conn:
             logger.error("Falha ao carregar questões: Sem conexão com DB.")
-            return [] # Retorna lista vazia em caso de falha de conexão
+            raise ConnectionError("Não foi possível conectar ao banco de dados.") # Lança exceção
 
+        cursor = None
         try:
             cursor = conn.cursor()
+            logger.debug("Cursor DB obtido.")
 
             materias = config.get('materias', [])
             try:
                  quantidade = int(config.get('quantidade_total', 50))
+                 if quantidade <= 0: raise ValueError("Quantidade deve ser > 0")
             except (ValueError, TypeError):
-                 logger.error(f"Quantidade total inválida recebida: {config.get('quantidade_total')}. Usando 50.")
+                 logger.warning(f"Quantidade inválida: {config.get('quantidade_total')}. Usando 50.")
                  quantidade = 50
             aleatorio = config.get('aleatorio', True)
 
-            # Validações essenciais
             if not materias or not isinstance(materias, list):
-                logger.warning("Nenhuma matéria válida selecionada. Retornando lista vazia.")
-                return []
-            if quantidade <= 0:
-                logger.warning(f"Quantidade de questões inválida ({quantidade}). Retornando lista vazia.")
+                logger.warning("Seleção de matérias inválida. Retornando vazio.")
                 return []
 
-            # Monta a query SQL dinamicamente
-            placeholders = ','.join(['?'] * len(materias)) # Cria ?,?,? para o IN clause
+            placeholders = ','.join(['?'] * len(materias))
             query = f"SELECT * FROM questoes WHERE disciplina IN ({placeholders})"
-            params = list(materias) # Cria uma lista com as matérias para os placeholders
+            params = list(materias)
 
-            # Adiciona ordenação (aleatória ou por ID)
-            if aleatorio:
-                query += " ORDER BY RANDOM()"
-            else:
-                query += " ORDER BY id" # Assume que existe uma coluna 'id'
-
-            # Adiciona limite de quantidade
+            if aleatorio: query += " ORDER BY RANDOM()"
+            else: query += " ORDER BY id"
             query += " LIMIT ?"
             params.append(quantidade)
 
-            logger.info(f"Executando query para carregar questões: {query} com params: {params}")
+            logger.info(f"Executando query: {query} com params: {params}")
             cursor.execute(query, params)
-            resultados = cursor.fetchall() # Busca todas as linhas que correspondem
+            resultados = cursor.fetchall()
+            logger.info(f"Query retornou {len(resultados)} resultados.")
 
             questoes = []
             if resultados:
-                # É importante obter as keys() aqui ANTES do loop se houver possibilidade
-                # de erro dentro do loop que fecharia o cursor prematuramente.
                 colunas_disponiveis = resultados[0].keys()
                 logger.info(f"Colunas disponíveis na tabela 'questoes': {list(colunas_disponiveis)}")
 
-                for row in resultados:
+                # ** LOG DETALHADO POR LINHA **
+                for row_num, row in enumerate(resultados):
+                    row_id_log = f"linha_{row_num}" # Default
                     try:
-                        # Desserializa o JSON da coluna 'alternativas' com tratamento robusto
-                        alternativas_json = row['alternativas'] if 'alternativas' in colunas_disponiveis else '{}'
-                        alternativas_dict = {} # Default
-                        if alternativas_json:
+                        # Tenta pegar o ID real para o log, se existir
+                        if 'id' in colunas_disponiveis:
+                             row_id_log = f"ID_{row['id']}"
+
+                        logger.debug(f"Processando questão {row_id_log}...")
+                        # ** Tratamento robusto de JSON **
+                        alternativas_dict = {}
+                        alternativas_json = row['alternativas'] if 'alternativas' in colunas_disponiveis else None
+                        if alternativas_json and isinstance(alternativas_json, str):
                             try:
                                 alternativas_dict = json.loads(alternativas_json)
-                                # Validação extra para garantir que é um dicionário
                                 if not isinstance(alternativas_dict, dict):
-                                    logger.error(f"Formato inválido para 'alternativas' na questão ID {row['id']}. Esperado dict, recebido {type(alternativas_dict)}. Conteúdo: {alternativas_json}")
-                                    alternativas_dict = {} # Usa um dict vazio como fallback
+                                    logger.error(f"JSON 'alternativas' não é dict na Q {row_id_log}. Conteúdo: {alternativas_json}")
+                                    alternativas_dict = {"ERRO": "Formato"}
                             except json.JSONDecodeError as json_err:
-                                logger.error(f"Erro ao decodificar JSON de alternativas para questão ID {row['id']}: {json_err}. Conteúdo: {alternativas_json}")
-                                alternativas_dict = {} # Usa um dict vazio como fallback
+                                logger.error(f"Erro JSONDecode em 'alternativas' na Q {row_id_log}: {json_err}. Conteúdo: {alternativas_json}")
+                                alternativas_dict = {"ERRO": "JSON inválido"}
+                        elif alternativas_json is not None:
+                             logger.warning(f"'alternativas' não é string na Q {row_id_log}. Tipo: {type(alternativas_json)}. Conteúdo: {alternativas_json}")
 
-                        # Monta o objeto (dicionário) da questão
+                        # ** Tratamento de dados ausentes ou None **
+                        disciplina_val = row['disciplina'] if 'disciplina' in colunas_disponiveis and row['disciplina'] else 'Sem Disciplina'
+                        enunciado_val = row['enunciado'] if 'enunciado' in colunas_disponiveis and row['enunciado'] else '[Enunciado Ausente]'
+                        resposta_val = row['resposta_correta'] if 'resposta_correta' in colunas_disponiveis and row['resposta_correta'] else None # ** Default None é mais seguro **
+
+                        # ** Verifica se a resposta é válida ANTES de criar o objeto **
+                        if not resposta_val:
+                            logger.error(f"Resposta correta (gabarito) está VAZIA ou NULA na Q {row_id_log}. Pulando questão.")
+                            continue # Pula esta questão
+
                         questao = {
-                            'id': row['id'],
-                            'enunciado': row['enunciado'],
-                            'materia': row['disciplina'], # Nome da coluna correto
+                            'id': row['id'] if 'id' in colunas_disponiveis else row_num + 1, # Usa ID ou número da linha
+                            'enunciado': enunciado_val,
+                            'materia': disciplina_val,
                             'alternativas': alternativas_dict,
-                            'resposta_correta': row['resposta_correta'],
-                            # Acessa colunas opcionais verificando se existem
-                            'dificuldade': row['dificuldade'] if 'dificuldade' in colunas_disponiveis else 'Médio',
+                            'resposta_correta': resposta_val,
+                            'dificuldade': row['dificuldade'] if 'dificuldade' in colunas_disponiveis and row['dificuldade'] else 'Médio',
                             'justificativa': row['justificativa'] if 'justificativa' in colunas_disponiveis else None,
                             'dica': row['dica'] if 'dica' in colunas_disponiveis else None,
                             'formula': row['formula'] if 'formula' in colunas_disponiveis else None
                         }
                         questoes.append(questao)
+                        logger.debug(f"Questão {row_id_log} processada com sucesso.")
+
+                    except KeyError as key_err:
+                        logger.error(f"Erro de Chave ao processar Q {row_id_log}: {key_err}. Colunas: {list(colunas_disponiveis)}")
+                        continue # Pula
                     except Exception as parse_err:
-                        # Captura qualquer outro erro inesperado ao processar a linha específica
-                        logger.error(f"Erro ao processar linha do DB para questão ID {row['id']}: {parse_err}", exc_info=True)
-                        continue # Pula esta questão, mas continua com as outras
+                        logger.error(f"Erro inesperado ao processar Q {row_id_log}: {parse_err}", exc_info=True)
+                        continue # Pula
 
             else:
-                 logger.warning(f"Nenhum resultado encontrado no DB para a query com params: {params}")
+                 logger.warning(f"Nenhum resultado DB para query com params: {params}")
 
-            logger.info(f"Carregadas {len(questoes)} questões para o simulado.")
+            logger.info(f"Carregadas {len(questoes)} questões válidas.")
             return questoes
 
         except sqlite3.Error as db_err:
-             # Erro específico do SQLite (ex: tabela não existe, erro de sintaxe na query)
-             logger.error(f"Erro de SQLite ao carregar questões: {db_err}", exc_info=True)
-             return []
+             logger.error(f"Erro SQLite crítico ao carregar questões: {db_err}", exc_info=True)
+             raise db_err # Relança para ser pego acima
         except Exception as e:
-            # Captura qualquer outro erro inesperado
-            logger.error(f"Erro geral detalhado ao carregar questões: {e}", exc_info=True)
-            return []
+            logger.error(f"Erro geral crítico ao carregar questões: {e}", exc_info=True)
+            raise e # Relança
         finally:
-            # Garante que a conexão com o banco seja fechada
-            if conn:
-                conn.close()
+            if conn: conn.close()
+            logger.debug("Conexão DB fechada em _carregar_questoes_simulado.")
 
+    # --- Funções registrar_resposta, finalizar_simulado, _gerar_relatorio, etc. (sem mudanças significativas) ---
+    # ... (O restante da classe SistemaSimulado permanece o mesmo da V3.1) ...
+    # (Cole aqui o restante das funções da classe SistemaSimulado da sua versão V3.1)
+    # ... (exemplo: registrar_resposta, finalizar_simulado, _gerar_relatorio, _gerar_recomendacoes, _preparar_questoes_detalhadas, _salvar_historico) ...
     def registrar_resposta(self, simulado_id, questao_index, alternativa, tempo_gasto_na_questao):
         '''
         Registra a resposta do usuário para uma questão específica no simulado ativo.
@@ -176,8 +196,8 @@ class SistemaSimulado:
             return False
 
         # Validação do índice da questão
-        if not isinstance(questao_index, int) or questao_index < 0 or questao_index >= len(simulado['questoes']):
-            logger.warning(f"Índice de questão inválido ({questao_index}) para simulado {simulado_id} com {len(simulado['questoes'])} questões.")
+        if not isinstance(questao_index, int) or questao_index < 0 or questao_index >= len(simulado.get('questoes', [])): # Checa se 'questoes' existe
+            logger.warning(f"Índice de questão inválido ({questao_index}) para simulado {simulado_id}.")
             return False
 
         questao = simulado['questoes'][questao_index]
@@ -207,18 +227,23 @@ class SistemaSimulado:
              logger.warning(f"Tentativa de finalizar simulado {simulado_id} inexistente.")
              return None
 
-        # Evita finalizar duas vezes (idempotência)
+        # Evita finalizar duas vezes
         if simulado.get('status') == 'finalizado':
-             logger.warning(f"Simulado {simulado_id} já está finalizado. Retornando relatório existente.")
-             return simulado.get('relatorio') # Retorna o relatório já calculado
+             logger.warning(f"Simulado {simulado_id} já está finalizado. Retornando relatório.")
+             return simulado.get('relatorio')
 
         simulado['fim'] = datetime.now()
         simulado['status'] = 'finalizado'
 
-        relatorio = self._gerar_relatorio(simulado)
-        simulado['relatorio'] = relatorio # Guarda o relatório no objeto em memória
+        try:
+            relatorio = self._gerar_relatorio(simulado)
+            simulado['relatorio'] = relatorio # Guarda o relatório
+        except Exception as e_report:
+            logger.error(f"Erro ao gerar relatório para simulado {simulado_id}: {e_report}", exc_info=True)
+            # Mesmo com erro no relatório, tenta salvar o histórico e remover da memória
+            relatorio = {"error": "Falha ao gerar relatório detalhado."} # Relatório de erro
 
-        # Salva o resultado no banco de dados
+        # Salva o resultado no banco de dados (mesmo se relatório falhar)
         self._salvar_historico(simulado)
 
         # Remove o simulado da lista de ativos para liberar memória
@@ -226,14 +251,17 @@ class SistemaSimulado:
              del self.simulados_ativos[simulado_id]
              logger.info(f"Simulado {simulado_id} removido da memória ativa.")
 
-        logger.info(f"Simulado {simulado_id} finalizado e salvo no histórico.")
+        logger.info(f"Simulado {simulado_id} finalizado.")
+        # Retorna o relatório (ou o objeto de erro se a geração falhou)
         return relatorio
+
 
     def _gerar_relatorio(self, simulado):
         '''
         Calcula as estatísticas do simulado (geral e por matéria)
         e gera recomendações com base nas respostas registradas.
         Retorna um dicionário com o relatório completo.
+        *** VERSÃO MAIS ROBUSTA ***
         '''
         respostas = simulado.get('respostas', {}) # Dict {index: resposta}
         questoes = simulado.get('questoes', [])
@@ -243,26 +271,39 @@ class SistemaSimulado:
 
         acertos = sum(1 for r in questoes_respondidas_obj if r.get('acertou', False))
         percentual_acerto = (acertos / questoes_respondidas_count * 100) if questoes_respondidas_count > 0 else 0.0
-        tempo_total_gasto_seg = sum(float(r.get('tempo_gasto', 0.0)) for r in questoes_respondidas_obj)
+        # Somar apenas se tempo_gasto for número
+        tempo_total_gasto_seg = sum(float(r.get('tempo_gasto', 0.0)) for r in questoes_respondidas_obj if isinstance(r.get('tempo_gasto'), (int, float)))
 
         estatisticas_materia = {}
         for questao_index, resposta in respostas.items():
-            # Acessa a questão correspondente com segurança
-            if questao_index < len(questoes):
-                questao = questoes[questao_index]
-                materia = questao.get('materia', 'Desconhecida') # Fallback para matéria
-                if materia not in estatisticas_materia:
-                    estatisticas_materia[materia] = {'total': 0, 'acertos': 0, 'tempo': 0.0}
+            try:
+                # Acessa a questão correspondente com segurança
+                if questao_index < len(questoes):
+                    questao = questoes[questao_index]
+                    materia = questao.get('materia', 'Desconhecida') # Fallback
+                    if not materia: materia = 'Desconhecida' # Trata string vazia
 
-                estatisticas_materia[materia]['total'] += 1
-                estatisticas_materia[materia]['tempo'] += float(resposta.get('tempo_gasto', 0.0))
-                if resposta.get('acertou', False):
-                    estatisticas_materia[materia]['acertos'] += 1
+                    if materia not in estatisticas_materia:
+                        estatisticas_materia[materia] = {'total': 0, 'acertos': 0, 'tempo': 0.0}
+
+                    estatisticas_materia[materia]['total'] += 1
+                    tempo_gasto_resp = float(resposta.get('tempo_gasto', 0.0)) # Garante float
+                    estatisticas_materia[materia]['tempo'] += tempo_gasto_resp
+                    if resposta.get('acertou', False):
+                        estatisticas_materia[materia]['acertos'] += 1
+                else:
+                     logger.warning(f"Índice de resposta {questao_index} inválido ao gerar relatório.")
+            except Exception as e_stat:
+                logger.error(f"Erro ao processar estatística para Q index {questao_index}: {e_stat}", exc_info=True)
+
 
         # Calcula percentuais e médias por matéria com arredondamento
         for materia, stats in estatisticas_materia.items():
-            stats['percentual'] = round((stats['acertos'] / stats['total'] * 100), 1) if stats['total'] > 0 else 0.0
-            stats['tempo_medio'] = round(stats['tempo'] / stats['total'], 1) if stats['total'] > 0 else 0.0
+            total_materia = stats.get('total', 0)
+            acertos_materia = stats.get('acertos', 0)
+            tempo_materia = stats.get('tempo', 0.0)
+            stats['percentual'] = round((acertos_materia / total_materia * 100), 1) if total_materia > 0 else 0.0
+            stats['tempo_medio'] = round(tempo_materia / total_materia, 1) if total_materia > 0 else 0.0
 
         recomendacoes = self._gerar_recomendacoes(estatisticas_materia)
 
@@ -273,17 +314,16 @@ class SistemaSimulado:
                 'questoes_respondidas': questoes_respondidas_count,
                 'acertos': acertos,
                 'erros': questoes_respondidas_count - acertos,
-                'percentual_acerto': round(percentual_acerto, 1), # Arredonda para 1 casa decimal
+                'percentual_acerto': round(percentual_acerto, 1),
                 'tempo_total_minutos': round(tempo_total_gasto_seg / 60, 1),
                 'tempo_medio_questao': round(tempo_total_gasto_seg / questoes_respondidas_count, 1) if questoes_respondidas_count > 0 else 0.0
             },
             'por_materia': estatisticas_materia,
             'recomendacoes': recomendacoes,
-            'questoes_com_detalhes': self._preparar_questoes_detalhadas(simulado) # Prepara detalhes para revisão
+            'questoes_com_detalhes': self._preparar_questoes_detalhadas(simulado)
         }
         logger.info(f"Relatório gerado para simulado {simulado['id']}. Acertos: {acertos}/{questoes_respondidas_count}")
         return relatorio_final
-
 
     def _gerar_recomendacoes(self, estatisticas_materia):
         '''
@@ -296,7 +336,6 @@ class SistemaSimulado:
 
         for materia, stats in materias_ordenadas:
             percentual = stats.get('percentual', 0.0)
-            # Define a mensagem e o ícone com base na faixa de percentual
             if percentual < 50:
                 recomendacoes.append(f"<li class='list-group-item border-start-0 border-end-0 border-top-0 border-danger border-3'><i class='fas fa-exclamation-triangle text-danger me-2'></i> <strong>Foco Urgente:</strong> {materia} ({percentual:.1f}%)</li>")
             elif percentual < 70:
@@ -530,7 +569,7 @@ def health():
     return jsonify({
         "status": "online",
         "message": "ConcursoMaster AI 3.0",
-        "version": "3.1", # Atualizar versão se fizer mudanças significativas
+        "version": "3.3", # Atualizar versão
         "database_status": "connected" if db_ok else "error",
         "timestamp": datetime.now().isoformat()
     }), status_code
@@ -539,7 +578,6 @@ def health():
 def materias():
     '''Retorna a lista de matérias disponíveis com a contagem de questões.'''
     logger.debug("Acessando API /api/materias")
-    # Garante que a tabela 'questoes' existe antes de consultar
     if not criar_tabelas_se_necessario():
          logger.error("Falha ao verificar/criar tabelas na API /api/materias.")
          return jsonify({"error": "Erro ao inicializar o banco de dados."}), 500
@@ -550,7 +588,6 @@ def materias():
 
     try:
         cursor = conn.cursor()
-        # Consulta que agrupa por disciplina e conta apenas as que têm questões > 0
         cursor.execute("""
             SELECT disciplina, COUNT(*) as total
             FROM questoes
@@ -568,7 +605,7 @@ def materias():
             materia = row['disciplina']
             total = row['total']
             materias_lista.append(materia)
-            estatisticas_dict[materia] = {'total': total} # Guarda a contagem
+            estatisticas_dict[materia] = {'total': total}
             total_geral += total
 
         logger.info(f"API /api/materias retornou {len(materias_lista)} matérias com questões.")
@@ -579,11 +616,10 @@ def materias():
         })
 
     except sqlite3.OperationalError as op_err:
-        logger.error(f"Erro Operacional SQLite em /api/materias (tabela 'questoes' existe?): {op_err}", exc_info=True)
-        # Tenta recriar tabelas uma vez em caso de erro de schema
+        logger.error(f"Erro Operacional SQLite em /api/materias: {op_err}", exc_info=True)
         logger.info("Tentando recriar tabelas devido a erro operacional...")
-        criar_tabelas_se_necessario() # Pode resolver se a tabela foi deletada
-        return jsonify({"error": "Erro operacional no banco ao consultar matérias. Tente novamente."}), 500
+        criar_tabelas_se_necessario()
+        return jsonify({"error": "Erro operacional no banco. Tente novamente."}), 500
     except sqlite3.Error as db_err:
         logger.error(f"Erro SQLite em /api/materias: {db_err}", exc_info=True)
         return jsonify({"error": "Erro ao consultar matérias no banco."}), 500
@@ -591,8 +627,7 @@ def materias():
         logger.error(f"Erro geral em /api/materias: {e}", exc_info=True)
         return jsonify({"error": "Erro interno do servidor."}), 500
     finally:
-         if conn:
-            conn.close()
+         if conn: conn.close()
 
 
 # --- API do Sistema de Simulado ---
@@ -600,76 +635,79 @@ def materias():
 @app.route('/api/simulado/iniciar', methods=['POST'])
 def iniciar_simulado_api():
     '''
-    Recebe a configuração do simulado (matérias, quantidade, tempo, aleatório),
-    inicia o simulado usando a classe SistemaSimulado e retorna o ID,
-    o total de questões e a primeira questão (sem gabarito).
+    Recebe a config, inicia o simulado e retorna dados iniciais.
+    *** VERSÃO COM TRATAMENTO DE ERRO REFORÇADO ***
     '''
     logger.debug("Acessando API POST /api/simulado/iniciar")
+    # ** Bloco try-except principal para capturar QUALQUER erro na rota **
     try:
         data = request.get_json()
         if not data:
             logger.warning("Tentativa de iniciar simulado sem dados JSON.")
-            return jsonify({"success": False, "error": "Requisição inválida (sem dados JSON)"}), 400
+            return jsonify({"success": False, "error": "Requisição inválida (sem JSON)"}), 400
 
-        # Validação mais robusta dos dados de entrada
+        # Validação robusta dos dados de entrada
         materias_req = data.get('materias')
         quantidade_req = data.get('quantidade_total')
         tempo_req = data.get('tempo_minutos')
-        aleatorio_req = data.get('aleatorio', True) # Default True se não fornecido
+        aleatorio_req = data.get('aleatorio', True)
 
+        # Validar Matérias
         if not materias_req or not isinstance(materias_req, list) or len(materias_req) == 0:
-             logger.warning(f"Tentativa de iniciar com matérias inválidas: {materias_req}")
-             return jsonify({"success": False, "error": "Selecione ao menos uma matéria válida."}), 400
+             logger.warning(f"Matérias inválidas: {materias_req}")
+             return jsonify({"success": False, "error": "Seleção de matérias inválida."}), 400
+        # Validar Quantidade
         try:
             quantidade_int = int(quantidade_req)
-            if quantidade_int <= 0: raise ValueError("Quantidade deve ser positiva")
+            if quantidade_int <= 0: raise ValueError("Quantidade <= 0")
         except (ValueError, TypeError, AttributeError):
-             logger.warning(f"Quantidade de questões inválida recebida: {quantidade_req}")
-             return jsonify({"success": False, "error": f"Quantidade de questões inválida: '{quantidade_req}'."}), 400
+             logger.warning(f"Quantidade inválida: {quantidade_req}")
+             return jsonify({"success": False, "error": f"Quantidade inválida: '{quantidade_req}'."}), 400
+        # Validar Tempo
         try:
             tempo_int = int(tempo_req)
-            if tempo_int <= 0: raise ValueError("Tempo deve ser positivo")
+            if tempo_int <= 0: raise ValueError("Tempo <= 0")
         except (ValueError, TypeError, AttributeError):
-             logger.warning(f"Tempo de simulado inválido recebido: {tempo_req}")
-             return jsonify({"success": False, "error": f"Tempo de simulado inválido: '{tempo_req}'."}), 400
+             logger.warning(f"Tempo inválido: {tempo_req}")
+             return jsonify({"success": False, "error": f"Tempo inválido: '{tempo_req}'."}), 400
 
         config = {
             'materias': materias_req,
             'quantidade_total': quantidade_int,
             'tempo_minutos': tempo_int,
-            'aleatorio': bool(aleatorio_req) # Garante booleano
+            'aleatorio': bool(aleatorio_req)
         }
-        logger.info(f"Recebida requisição para iniciar simulado com config: {config}")
+        logger.info(f"Requisição para iniciar simulado com config: {config}")
 
-        # Usar um ID de usuário temporário/anônimo simples
         user_id = session.get('user_id', 'anon_' + str(random.randint(10000, 99999)))
+
+        # Chama o método que pode retornar None ou lançar exceção
         simulado_id = sistema_simulado.iniciar_simulado(user_id, config)
 
-        # Verifica se o simulado foi realmente iniciado (pode falhar se não achar questões)
+        # Se iniciar_simulado retornou None (nenhuma questão ou erro interno no carregamento)
         if not simulado_id:
-             # O log de erro/warning já ocorreu dentro de iniciar_simulado
+             # O log específico já ocorreu dentro de iniciar_simulado ou _carregar_questoes
              return jsonify({
                 "success": False,
-                "error": "Não foi possível iniciar o simulado. Verifique se há questões disponíveis para as matérias e quantidade selecionadas."
-             }), 404 # 404 Not Found é razoável aqui
+                "error": "Não foi possível iniciar o simulado. Verifique se há questões para os filtros selecionados ou se ocorreu um erro no servidor (consulte os logs)."
+             }), 500 # Usar 500 aqui indica falha do servidor em preparar o simulado
 
+        # Se chegou aqui, simulado_id é válido, busca os dados na memória
         simulado_ativo = sistema_simulado.simulados_ativos.get(simulado_id)
-        # Verificação de segurança adicional
         if not simulado_ativo or not simulado_ativo.get('questoes'):
-             logger.error(f"Inconsistência: Simulado {simulado_id} registrado, mas sem dados ou questões na memória.")
-             # Tenta remover o simulado inconsistente se ele existir na memória
+             logger.critical(f"INCONSISTÊNCIA GRAVE: Simulado {simulado_id} registrado, mas dados ausentes na memória.")
+             # Tenta remover o registro inconsistente
              if simulado_id in sistema_simulado.simulados_ativos: del sistema_simulado.simulados_ativos[simulado_id]
-             return jsonify({"success": False, "error": "Erro interno crítico ao recuperar dados do simulado iniciado."}), 500
+             return jsonify({"success": False, "error": "Erro interno crítico após iniciar o simulado."}), 500
 
+        # Prepara a resposta de sucesso
         primeira_questao = simulado_ativo['questoes'][0]
         total_questoes = len(simulado_ativo['questoes'])
-
-        # Prepara a primeira questão para enviar ao frontend (sem gabarito/justificativa)
         primeira_questao_frontend = primeira_questao.copy()
         primeira_questao_frontend.pop('resposta_correta', None)
         primeira_questao_frontend.pop('justificativa', None)
 
-        logger.info(f"Simulado {simulado_id} iniciado com sucesso ({total_questoes} questões). Enviando primeira questão.")
+        logger.info(f"Simulado {simulado_id} iniciado. Enviando dados iniciais.")
         return jsonify({
             "success": True,
             "simulado_id": simulado_id,
@@ -678,10 +716,12 @@ def iniciar_simulado_api():
             "tempo_limite_seg": config['tempo_minutos'] * 60
         })
 
-    except Exception as e:
-        # Captura erros inesperados durante o processamento da requisição
-        logger.error(f"Erro EXCEPCIONAL na API /iniciar: {e}", exc_info=True)
-        return jsonify({"success": False, "error": "Erro interno inesperado no servidor ao processar sua solicitação."}), 500
+    # ** Captura QUALQUER exceção não prevista que possa ocorrer na rota **
+    except Exception as e_api:
+        error_trace = traceback.format_exc() # Pega a pilha de erro completa
+        logger.error(f"Erro 500 NÃO TRATADO na API /iniciar: {e_api}\n{error_trace}")
+        # Retorna um JSON de erro genérico para o frontend
+        return jsonify({"success": False, "error": "Erro interno inesperado no servidor. O administrador foi notificado."}), 500
 
 
 @app.route('/api/simulado/<simulado_id>/questao/<int:questao_index>')
@@ -697,11 +737,12 @@ def get_questao_simulado(simulado_id, questao_index):
         return jsonify({"error": "Simulado não encontrado ou já foi finalizado."}), 404
 
     # Validação do índice
-    if not isinstance(questao_index, int) or questao_index < 0 or questao_index >= len(simulado.get('questoes', [])):
+    questoes_list = simulado.get('questoes', []) # Acesso seguro
+    if not isinstance(questao_index, int) or questao_index < 0 or questao_index >= len(questoes_list):
         logger.warning(f"Índice de questão inválido ({questao_index}) solicitado para simulado {simulado_id}.")
         return jsonify({"error": "Número da questão inválido."}), 404
 
-    questao = simulado['questoes'][questao_index]
+    questao = questoes_list[questao_index]
 
     # Cria uma cópia e remove campos sensíveis antes de enviar
     questao_para_frontend = questao.copy()
@@ -711,7 +752,7 @@ def get_questao_simulado(simulado_id, questao_index):
     return jsonify({
         "questao": questao_para_frontend,
         "numero_questao": questao_index + 1, # Número 1-based para exibição
-        "total_questoes": len(simulado['questoes'])
+        "total_questoes": len(questoes_list)
     })
 
 
@@ -740,26 +781,25 @@ def responder_questao_api(simulado_id):
              logger.warning(f"Alternativa inválida recebida: {alternativa} (simulado {simulado_id}, questão {questao_index}).")
              return jsonify({"success": False, "error": "Alternativa inválida."}), 400
         try:
-             # Converte e valida o tempo gasto
              tempo_gasto_float = float(tempo_gasto)
-             if tempo_gasto_float < 0: tempo_gasto_float = 0.0 # Não permite tempo negativo
+             if tempo_gasto_float < 0: tempo_gasto_float = 0.0
         except (ValueError, TypeError):
-             logger.warning(f"Tempo gasto inválido recebido: {tempo_gasto}. Usando 0. (simulado {simulado_id}, questão {questao_index})")
+             logger.warning(f"Tempo gasto inválido: {tempo_gasto}. Usando 0. (simulado {simulado_id}, Q {questao_index})")
              tempo_gasto_float = 0.0
 
         simulado = sistema_simulado.simulados_ativos.get(simulado_id)
         if not simulado:
-            logger.warning(f"Tentativa de responder questão para simulado inexistente ou finalizado: {simulado_id}")
-            return jsonify({"success": False, "error": "Simulado não encontrado ou já foi finalizado."}), 404
+            logger.warning(f"Tentativa de responder simulado inexistente/finalizado: {simulado_id}")
+            return jsonify({"success": False, "error": "Simulado não ativo."}), 404
 
-        # Verifica se o índice está dentro dos limites das questões carregadas
-        if questao_index >= len(simulado.get('questoes', [])):
-             logger.warning(f"Índice de questão {questao_index} fora do limite para simulado {simulado_id}.")
+        questoes_list = simulado.get('questoes', [])
+        if questao_index >= len(questoes_list):
+             logger.warning(f"Índice {questao_index} fora do limite para simulado {simulado_id}.")
              return jsonify({"success": False, "error": "Índice da questão fora do limite."}), 400
 
-        # Pega a questão original completa (com resposta) do cache do servidor
-        questao_original = simulado['questoes'][questao_index]
-        resposta_correta = str(questao_original.get('resposta_correta', '')).upper() # Padrão vazio se não existir
+        # Pega a questão original completa do cache do servidor
+        questao_original = questoes_list[questao_index]
+        resposta_correta = str(questao_original.get('resposta_correta', '')).upper()
         acertou = alternativa.upper() == resposta_correta
 
         # Chama o método da classe para registrar a resposta
@@ -768,10 +808,9 @@ def responder_questao_api(simulado_id):
         )
 
         if not success_registro:
-            # O erro específico já deve ter sido logado dentro de registrar_resposta
-            return jsonify({"success": False, "error": "Falha interna ao tentar registrar a resposta."}), 500
+            return jsonify({"success": False, "error": "Falha ao registrar a resposta."}), 500
 
-        # Retorna o feedback completo para o frontend poder exibir
+        # Retorna o feedback completo
         return jsonify({
             "success": True,
             "acertou": acertou,
@@ -782,35 +821,30 @@ def responder_questao_api(simulado_id):
         })
 
     except Exception as e:
-        logger.error(f"Erro EXCEPCIONAL na API /responder (simulado {simulado_id}): {e}", exc_info=True)
-        return jsonify({"success": False, "error": "Erro interno inesperado no servidor ao processar sua resposta."}), 500
+        logger.error(f"Erro EXCEPCIONAL API /responder (simulado {simulado_id}): {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Erro interno inesperado no servidor."}), 500
 
 
 @app.route('/api/simulado/<simulado_id>/finalizar', methods=['POST'])
 def finalizar_simulado_api(simulado_id):
     '''
-    Endpoint para finalizar manually um simulado ativo e obter o relatório final.
+    Endpoint para finalizar manualmente um simulado ativo e obter o relatório final.
     '''
     logger.debug(f"Acessando API POST /api/simulado/{simulado_id}/finalizar")
     try:
-        # Chama o método da classe que faz a lógica de finalização
         relatorio = sistema_simulado.finalizar_simulado(simulado_id)
-
         if relatorio:
-            logger.info(f"Simulado {simulado_id} finalizado com sucesso via API.")
+            logger.info(f"Simulado {simulado_id} finalizado via API.")
             return jsonify({"success": True, "relatorio": relatorio})
         else:
-            # Se finalizar_simulado retorna None, o ID não existia ou já estava finalizado
-            logger.warning(f"Tentativa de finalizar simulado {simulado_id} via API falhou (não ativo?).")
-            # É um erro do cliente (tentar finalizar algo que não existe) ou do servidor?
-            # 404 parece apropriado se o ID não corresponde a um simulado ativo.
-            return jsonify({"success": False, "error": "Simulado não encontrado ou já foi finalizado."}), 404
+            logger.warning(f"Tentativa finalizar simulado {simulado_id} falhou (não ativo?).")
+            return jsonify({"success": False, "error": "Simulado não encontrado ou já finalizado."}), 404
     except Exception as e:
-        logger.error(f"Erro EXCEPCIONAL na API /finalizar (simulado {simulado_id}): {e}", exc_info=True)
-        return jsonify({"success": False, "error": "Erro interno inesperado ao finalizar o simulado."}), 500
-
+        logger.error(f"Erro EXCEPCIONAL API /finalizar (simulado {simulado_id}): {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Erro interno ao finalizar simulado."}), 500
 
 # --- API do Sistema de Redação ---
+# ... (manter o código das rotas /api/redacoes/temas e /api/redacoes/corrigir da V3.1) ...
 @app.route('/api/redacoes/temas')
 def get_temas_redacao():
     '''Retorna a lista de temas de redação disponíveis.'''
@@ -906,39 +940,36 @@ def get_estatisticas_dashboard():
         total_questoes_banco = res['total'] if res else 0
 
         # Usar índice para buscar histórico
-        cursor.execute("SELECT relatorio, data_fim FROM historico_simulados ORDER BY data_fim ASC")
+        cursor.execute("SELECT id, relatorio, data_fim FROM historico_simulados ORDER BY data_fim ASC") # Adiciona ID para logs
         todos_relatorios = cursor.fetchall()
 
         historico_evolucao, global_stats_materia, tempo_total_estudo, total_questoes_respondidas = [], {}, 0.0, 0
         for row in todos_relatorios:
+            row_id = row['id'] if 'id' in row.keys() else 'N/A' # Acesso seguro ao ID
             try:
-                # Tratamento mais seguro de dados potencialmente ausentes ou malformados
+                # Tratamento mais seguro de dados
                 relatorio = json.loads(row['relatorio']) if row['relatorio'] else {}
                 data_fim_str = row['data_fim']
-                if not data_fim_str: continue # Pula se data_fim for nula
+                if not data_fim_str: continue
 
                 data_fim_dt = datetime.fromisoformat(data_fim_str)
                 geral = relatorio.get('geral', {})
 
                 historico_evolucao.append({'data': data_fim_dt.strftime('%d/%m'),
-                                           'percentual': float(geral.get('percentual_acerto', 0.0))}) # Converte para float
+                                           'percentual': float(geral.get('percentual_acerto', 0.0))})
 
                 tempo_total_estudo += float(geral.get('tempo_total_minutos', 0.0))
                 total_questoes_respondidas += int(geral.get('questoes_respondidas', 0))
 
                 for materia, stats in relatorio.get('por_materia', {}).items():
                     if materia not in global_stats_materia: global_stats_materia[materia] = {'acertos': 0, 'total': 0}
-                    # Garantir que acertos/total sejam números
                     global_stats_materia[materia]['acertos'] += int(stats.get('acertos', 0))
                     global_stats_materia[materia]['total'] += int(stats.get('total', 0))
 
             except json.JSONDecodeError as json_err:
-                 # Acesso seguro ao ID da linha, se existir
-                 row_id = row['id'] if 'id' in row.keys() else 'N/A'
-                 logger.error(f"Erro ao decodificar JSON do relatório histórico ID {row_id}: {json_err}")
+                 logger.error(f"Erro JSONDecode relatório histórico ID {row_id}: {json_err}")
             except Exception as e_proc:
-                 row_id = row['id'] if 'id' in row.keys() else 'N/A'
-                 logger.error(f"Erro ao processar relatório histórico ID {row_id}: {e_proc}", exc_info=True)
+                 logger.error(f"Erro processar relatório histórico ID {row_id}: {e_proc}", exc_info=True)
 
 
         desempenho_global_materia = {
@@ -960,7 +991,7 @@ def get_estatisticas_dashboard():
 
         media_geral = round(sum(h['percentual'] for h in historico_evolucao) / len(historico_evolucao), 1) if historico_evolucao else 0.0
 
-        logger.info("Estatísticas do dashboard calculadas com sucesso.")
+        logger.info("Estatísticas do dashboard calculadas.")
         return jsonify({"estatisticas": {
             "total_questoes_banco": total_questoes_banco,
             "total_simulados_realizados": len(todos_relatorios),
@@ -972,87 +1003,64 @@ def get_estatisticas_dashboard():
             "historico_recente": historico_recente_formatado
         }})
     except sqlite3.Error as db_err:
-        logger.error(f"Erro SQLite na API de estatísticas: {db_err}", exc_info=True)
-        return jsonify({"estatisticas": {}, "error": "Erro no banco ao buscar estatísticas."}), 500
+        logger.error(f"Erro SQLite API estatísticas: {db_err}", exc_info=True)
+        return jsonify({"estatisticas": {}, "error": "Erro DB estatísticas."}), 500
     except Exception as e:
-        logger.error(f"Erro geral na API de estatísticas: {e}", exc_info=True)
-        return jsonify({"estatisticas": {}, "error": "Erro interno inesperado no servidor."}), 500
+        logger.error(f"Erro geral API estatísticas: {e}", exc_info=True)
+        return jsonify({"estatisticas": {}, "error": "Erro interno servidor."}), 500
     finally:
         if conn: conn.close()
 
 
 # --- Rotas Estáticas ---
-# Servir arquivos da pasta /static (CSS, JS, imagens)
 @app.route('/static/<path:filename>')
 def serve_static_files(filename):
-    # Por segurança, validar o caminho pode ser bom em produção real
-    # Mas send_from_directory já faz alguma validação
     return send_from_directory('static', filename)
 
 # --- Tratamento de Erros ---
 @app.errorhandler(404)
 def not_found_error(error):
-    # Loga o acesso a uma rota inexistente
-    logger.warning(f"Rota não encontrada (404): {request.url}")
-    # Renderiza uma página de erro 404 amigável (se existir error.html)
-    # ou retorna um JSON se for uma API
+    logger.warning(f"Rota 404: {request.url}")
     if request.path.startswith('/api/'):
         return jsonify({"error": "Endpoint não encontrado"}), 404
-    # Tenta renderizar 'error.html', se não existir, retorna texto simples
     try:
-        return render_template('error.html', mensagem="Página não encontrada (Erro 404). Verifique o endereço digitado."), 404
+        return render_template('error.html', mensagem="Página não encontrada (404)."), 404
     except:
-        return "<h1>Erro 404: Página não encontrada</h1>", 404
-
+        return "<h1>Erro 404</h1>", 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    # Loga o erro completo para debugging interno
-    logger.error(f"Erro interno do servidor (500) na rota {request.url}: {error}", exc_info=True)
-    # Tentar reverter transações do DB se houver (depende da sua arquitetura)
-    # db_session.rollback() # Exemplo se usar SQLAlchemy
-    # Renderiza uma página de erro 500 genérica para o usuário
+    error_trace = traceback.format_exc()
+    logger.error(f"Erro 500 na rota {request.url}:\n{error_trace}")
     if request.path.startswith('/api/'):
-         return jsonify({"error": "Erro interno do servidor"}), 500
-     # Tenta renderizar 'error.html', se não existir, retorna texto simples
+         # Em APIs, retornar o traceback em DEV pode ser útil, mas NUNCA em PROD
+         # return jsonify({"error": "Erro interno servidor", "trace": error_trace}), 500 # DEV ONLY
+         return jsonify({"error": "Erro interno servidor."}), 500 # PROD
     try:
-        return render_template('error.html', mensagem="Ocorreu um erro interno inesperado no servidor (Erro 500). Nossa equipe foi notificada. Por favor, tente novamente mais tarde."), 500
+        return render_template('error.html', mensagem="Erro interno do servidor (500)."), 500
     except:
-        return "<h1>Erro 500: Erro interno do servidor</h1>", 500
+        return "<h1>Erro 500</h1>", 500
 
 
 # --- Inicialização da Aplicação ---
 if __name__ == '__main__':
-    # Define a porta usando variável de ambiente ou um padrão
     port = int(os.environ.get('PORT', 8080))
 
-    # Garante que as tabelas do banco de dados existam ANTES de iniciar o servidor
     if not criar_tabelas_se_necessario():
-         logger.critical("########## FALHA AO INICIALIZAR O BANCO DE DADOS ##########")
-         logger.critical("O aplicativo pode não funcionar corretamente. Verifique os logs.")
-         # Considerar sair do aplicativo se o DB for essencial para operação básica?
-         # import sys
-         # sys.exit(1) # Descomente para sair se o DB falhar na inicialização
+         logger.critical("########## FALHA AO INICIALIZAR DB - APP PODE FALHAR ##########")
 
     logger.info(f"========= INICIANDO ConcursoMaster AI 3.0 NA PORTA {port} =========")
 
-    # Configuração para desenvolvimento local vs produção
-    # debug=True recarrega automaticamente e mostra erros detalhados no navegador (NÃO USAR EM PRODUÇÃO)
-    # Em produção (como Railway), Gunicorn ou Waitress será usado, e debug=False é essencial.
-    is_production = os.environ.get('RAILWAY_ENVIRONMENT') == 'production' # Exemplo de variável do Railway
-    # Forçar debug=False se estiver em produção, caso contrário, respeitar FLASK_DEBUG
+    is_production = os.environ.get('RAILWAY_ENVIRONMENT') == 'production'
     use_debug = not is_production and os.environ.get('FLASK_DEBUG') == '1'
 
     if use_debug:
         logger.warning("############## Rodando em modo DEBUG ##############")
-        logger.warning("NÃO USE ESTE MODO EM PRODUÇÃO!")
-        # Roda com o servidor de desenvolvimento do Flask (bom para debug local)
         app.run(host='0.0.0.0', port=port, debug=True)
     else:
-        # Em produção, um servidor WSGI como Gunicorn ou Waitress deve ser usado.
-        # O Railway geralmente usa Gunicorn configurado externamente (Procfile).
-        # Se este script for chamado diretamente em produção (não ideal),
-        # pelo menos roda sem debug.
         logger.info("Rodando em modo PRODUÇÃO (debug=False)")
-        app.run(host='0.0.0.0', port=port, debug=False)
+        # Em produção real, é melhor usar um servidor WSGI como Waitress ou Gunicorn
+        # from waitress import serve
+        # serve(app, host='0.0.0.0', port=port)
+        app.run(host='0.0.0.0', port=port, debug=False) # Fallback para o servidor Flask (não ideal para prod)
 
