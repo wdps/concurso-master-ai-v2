@@ -271,7 +271,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Lógica do Simulado (V3.3 - Correção Início + UI) -->
+    <!-- Lógica do Simulado (V3.4 - Correção Erros JS + Debug Logs) -->
     <script>
         // --- Variáveis Globais de Estado ---
         let simuladoId = null;
@@ -314,20 +314,33 @@
         const graficoPlaceholder = document.getElementById('grafico-placeholder'); // Placeholder no gráfico
 
 
+        // --- Funções Auxiliares ---
+        function log(level, message, data = null) {
+            const prefix = `[SimuladoJS ${level.toUpperCase()}]`;
+            if (data) {
+                console[level](prefix, message, data);
+            } else {
+                console[level](prefix, message);
+            }
+        }
+
         // --- Inicialização ---
         document.addEventListener('DOMContentLoaded', function() {
+            log('info','DOM carregado. Iniciando script.');
             carregarMaterias(); // Carrega as matérias ao iniciar
             configurarEventListeners();
             try {
                 // Tenta inicializar o modal do Bootstrap
                 resultadoModal = new bootstrap.Modal(modalResultadoEl);
+                 log('info','Modal Bootstrap inicializado.');
             } catch (e) {
-                console.error("Erro ao inicializar o modal do Bootstrap:", e);
+                log('error',"Erro ao inicializar o modal do Bootstrap:", e);
                 // Adicionar fallback ou mensagem de erro se necessário
             }
 
             // Listener para limpar revisão quando modal fecha
             modalResultadoEl.addEventListener('hidden.bs.modal', function () {
+                log('debug','Modal fechado. Limpando revisão.');
                 // Esconde a área de revisão e limpa o conteúdo
                 const collapseElement = document.getElementById('revisao-questoes-container');
                  const bsCollapseInstance = bootstrap.Collapse.getInstance(collapseElement);
@@ -342,6 +355,7 @@
         });
 
         async function carregarMaterias() {
+             log('info','Carregando matérias...');
              btnIniciarSimulado.disabled = true; // Desabilita enquanto carrega
              listaMateriasContainer.innerHTML = `
                  <div class="col-12 text-center p-5">
@@ -350,8 +364,10 @@
                  </div>`; // Mostra spinner
             try {
                 const response = await fetch('/api/materias');
+                 log('debug','Resposta API /materias:', response.status);
                 if (!response.ok) throw new Error(`Erro HTTP! ${response.status} - ${response.statusText}`);
                 const data = await response.json();
+                 log('debug','Dados API /materias:', data);
 
                 listaMateriasContainer.innerHTML = ''; // Limpa o "Carregando..."
 
@@ -360,6 +376,7 @@
                 }
 
                 if (!data.materias || data.materias.length === 0) {
+                     log('warn','Nenhuma matéria encontrada na API.');
                      listaMateriasContainer.innerHTML = '<p class="text-warning col-12 fw-bold">Nenhuma matéria com questões foi encontrada no banco de dados. Adicione questões antes de criar um simulado.</p>';
                      return; // Mantém o botão Iniciar desabilitado
                 }
@@ -382,9 +399,10 @@
                 });
                 // Habilita o botão iniciar APENAS se houver matérias carregadas com sucesso
                 btnIniciarSimulado.disabled = false;
+                 log('info','Matérias carregadas e exibidas.');
 
             } catch (error) {
-                console.error('Erro ao carregar matérias:', error);
+                log('error','Erro ao carregar matérias:', error);
                 listaMateriasContainer.innerHTML =
                     `<p class="text-danger col-12 fw-bold">Falha ao carregar matérias: ${error.message}. Verifique a conexão ou o console.</p>`;
                  btnIniciarSimulado.disabled = true; // Mantém desabilitado em caso de erro
@@ -392,6 +410,7 @@
         }
 
         function configurarEventListeners() {
+             log('debug','Configurando event listeners...');
             // Sliders
             document.getElementById('quantidade-questoes').addEventListener('input', e => {
                 document.getElementById('quantidade-value').textContent = e.target.value;
@@ -409,6 +428,7 @@
 
             // Checkbox "Selecionar Todas"
             btnSelecionarTodas.addEventListener('change', (e) => {
+                 log('debug',`Checkbox 'Selecionar Todas' mudou para: ${e.target.checked}`);
                  document.querySelectorAll('.materia-checkbox-input:not(:disabled)').forEach(checkbox => {
                      checkbox.checked = e.target.checked;
                  });
@@ -418,21 +438,25 @@
              const collapseElement = document.getElementById('revisao-questoes-container');
              if (collapseElement) {
                  collapseElement.addEventListener('show.bs.collapse', () => {
+                     log('debug','Collapse 'revisão' mostrando.');
                      btnRevisarQuestoes.querySelector('i.fa-chevron-down').className = 'fas fa-chevron-up ms-1 small';
                  });
                  collapseElement.addEventListener('hide.bs.collapse', () => {
+                     log('debug','Collapse 'revisão' escondendo.');
                      btnRevisarQuestoes.querySelector('i.fa-chevron-up').className = 'fas fa-chevron-down ms-1 small';
                  });
                  // Carrega o conteúdo da revisão QUANDO o collapse é mostrado
                  collapseElement.addEventListener('shown.bs.collapse', mostrarRevisaoDetalhada); // Carrega toda vez que abre
              } else {
-                 console.error("Elemento 'revisao-questoes-container' não encontrado.");
+                 log('error',"Elemento 'revisao-questoes-container' não encontrado.");
              }
+             log('debug','Event listeners configurados.');
         }
 
         // --- Lógica Principal do Simulado ---
 
         async function iniciarSimulado() {
+            log('info',"[iniciarSimulado] Botão clicado!");
             const materiasCheckboxes = document.querySelectorAll('.materia-checkbox-input:checked');
             const materiasSelecionadas = Array.from(materiasCheckboxes).map(cb => cb.value);
 
@@ -440,6 +464,7 @@
             if (materiasSelecionadas.length === 0) {
                  errorMessage.textContent = 'Erro: Selecione pelo menos uma matéria para iniciar o simulado!';
                  errorMessage.style.display = 'block';
+                 log('warn',"[iniciarSimulado] Nenhuma matéria selecionada.");
                  return;
             }
 
@@ -450,32 +475,42 @@
                 aleatorio: document.getElementById('modo-aleatorio').checked
             };
 
-            // Feedback visual de carregamento no botão
+            // Feedback visual de carregamento
             btnIniciarSimulado.disabled = true;
             btnIniciarText.style.display = 'none';
             loadingSpinner.style.display = 'inline-block';
             loadingText.style.display = 'inline';
-            btnIniciarSimulado.classList.add('loading'); // Adiciona classe para estado de loading
+            btnIniciarSimulado.classList.add('loading');
+            log('debug',"[iniciarSimulado] Mostrando loading e desabilitando botão.");
 
             try {
-                console.log("[iniciarSimulado] Enviando config:", config); // Log detalhado
+                log('info',"[iniciarSimulado] Enviando configuração para API:", config);
                 const response = await fetch('/api/simulado/iniciar', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(config)
                 });
 
-                 console.log("[iniciarSimulado] Resposta recebida:", response.status); // Log
+                 log('info',`[iniciarSimulado] Resposta API recebida: ${response.status}`);
+                 if (!response.ok) {
+                    let errorBodyText = await response.text();
+                    let errorMsg = `Erro ${response.status} ao iniciar simulado.`;
+                    try {
+                        const errorJson = JSON.parse(errorBodyText);
+                        errorMsg = errorJson.error || errorMsg;
+                    } catch(e) { /* Não era JSON, usa texto */ errorMsg += ` Detalhe: ${errorBodyText}`;}
+                    throw new Error(errorMsg);
+                 }
                  const data = await response.json();
-                 console.log("[iniciarSimulado] Dados da resposta:", data); // Log
+                 log('debug',"[iniciarSimulado] Dados da resposta JSON:", data);
 
-                // Tratamento de erro robusto
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || `Erro ${response.status} ao iniciar simulado.`);
+                // Tratamento de erro e validação
+                if (!data.success) {
+                     throw new Error(data.error || "Erro desconhecido retornado pela API.");
                 }
-                if (!data.simulado_id || data.total_questoes <= 0 || !data.primeira_questao) {
-                     console.error("[iniciarSimulado] Resposta da API inválida:", data);
-                     throw new Error("Resposta inesperada do servidor.");
+                if (!data.simulado_id || !data.total_questoes || data.total_questoes <= 0 || !data.primeira_questao) {
+                     log('error',"[iniciarSimulado] Resposta da API inválida (dados faltando):", data);
+                     throw new Error("Resposta inesperada do servidor após iniciar o simulado.");
                 }
 
                 // --- Sucesso ---
@@ -483,29 +518,34 @@
                 totalQuestoes = data.total_questoes;
                 tempoRestanteSeg = data.tempo_limite_seg;
                 questoesCache = new Array(totalQuestoes);
-                questoesCache[0] = data.primeira_questao; // Guarda a primeira questão
+                questoesCache[0] = data.primeira_questao;
                 respostasUsuario = {};
                 questaoAtualIndex = 0;
                 relatorioFinalCache = null;
 
-                console.log(`[iniciarSimulado] Sucesso! ID: ${simuladoId}, Total Q: ${totalQuestoes}`); // Log
+                log('info',`[iniciarSimulado] Sucesso! ID: ${simuladoId}, Total Q: ${totalQuestoes}`);
 
                 // Mudar para tela do simulado
                 telaConfiguracao.style.display = 'none';
                 telaSimulado.style.display = 'block';
 
                  // Ajusta margem superior do progresso
-                 const headerElement = document.querySelector('.questao-header');
-                 if(headerElement) {
-                     const headerHeight = headerElement.offsetHeight;
-                     progressoBarEl.parentElement.style.marginTop = `${headerHeight + 15}px`;
-                 }
+                 requestAnimationFrame(() => {
+                     const headerElement = document.querySelector('.questao-header');
+                     if(headerElement) {
+                         const headerHeight = headerElement.offsetHeight;
+                         progressoBarEl.parentElement.style.marginTop = `${headerHeight + 15}px`;
+                         log('debug',`[iniciarSimulado] Margem do progresso ajustada para ${headerHeight + 15}px.`);
+                     } else {
+                          log('warn',"[iniciarSimulado] Elemento .questao-header não encontrado para ajuste de margem.");
+                     }
+                 });
 
                 iniciarTimer();
                 carregarQuestao(0); // Carrega a primeira questão (cache)
 
             } catch (error) {
-                console.error('[iniciarSimulado] Erro:', error);
+                log('error','[iniciarSimulado] Erro durante a inicialização:', error);
                 errorMessage.textContent = `Erro ao iniciar: ${error.message}`;
                 errorMessage.style.display = 'block';
                 // Restaura o botão
@@ -520,18 +560,18 @@
         async function carregarQuestao(index) {
             // Validação
             if (index < 0 || index >= totalQuestoes || !simuladoId) {
-                console.error(`[carregarQuestao] Tentativa inválida: index=${index}, total=${totalQuestoes}, id=${simuladoId}`);
-                finalizarSimulado(); // Finaliza se índice for inválido
+                log('error',`[carregarQuestao] Tentativa inválida: index=${index}, total=${totalQuestoes}, id=${simuladoId}`);
+                finalizarSimulado();
                 return;
             }
 
-            console.log(`[carregarQuestao] Carregando questão ${index}`); // Log
+            log('info',`[carregarQuestao] Carregando questão ${index}`);
             questaoAtualIndex = index;
             tempoInicioQuestao = Date.now();
 
             // Reset UI
             feedbackContainerEl.style.display = 'none';
-            alternativasContainerEl.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></div>'; // Spinner
+            alternativasContainerEl.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></div>';
             btnProxima.disabled = true;
 
             // Update progress
@@ -553,23 +593,25 @@
             // Fetch question (cache or API)
             let questao;
             if (questoesCache[index]) {
-                console.log(`[carregarQuestao] Questão ${index} do cache.`); // Log
+                log('debug',`[carregarQuestao] Questão ${index} do cache.`);
                 questao = questoesCache[index];
                 renderizarQuestao(questao);
             } else {
-                 questaoEnunciadoEl.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div></div>'; // Spinner
+                 questaoEnunciadoEl.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div></div>';
                 try {
-                    console.log(`[carregarQuestao] Buscando questão ${index} da API...`); // Log
+                    log('info',`[carregarQuestao] Buscando questão ${index} da API...`);
                     const response = await fetch(`/api/simulado/${simuladoId}/questao/${index}`);
+                     log('debug',`[carregarQuestao] Resposta API questao ${index}: ${response.status}`);
                     if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
-                     if (!data.questao) throw new Error("Resposta da API sem dados da questão.");
+                     if (!data.questao) throw new Error("API não retornou a questão.");
 
+                     log('debug',`[carregarQuestao] Questão ${index} recebida da API:`, data.questao);
                     questoesCache[index] = data.questao; // Save to cache
                     renderizarQuestao(data.questao);
                 } catch (error) {
-                    console.error('[carregarQuestao] Erro API:', error);
+                    log('error','[carregarQuestao] Erro API:', error);
                     questaoEnunciadoEl.innerHTML = `<div class="alert alert-danger">Erro ao carregar: ${error.message}</div>`;
                     alternativasContainerEl.innerHTML = '';
                      btnFinalizar.disabled = false; // Allow manual finish
@@ -578,19 +620,19 @@
         }
 
         function renderizarQuestao(questao) {
-             console.log(`[renderizarQuestao] Renderizando questão ID ${questao?.id}`); // Log
+             log('info',`[renderizarQuestao] Renderizando questão ID ${questao?.id}`);
             // Validate question data
             if (!questao || !questao.enunciado || !questao.alternativas || typeof questao.alternativas !== 'object') {
-                 console.error("[renderizarQuestao] Dados inválidos:", questao);
+                 log('error',"[renderizarQuestao] Dados inválidos:", questao);
                  questaoEnunciadoEl.innerHTML = '<div class="alert alert-warning">Erro: Dados da questão inválidos.</div>';
                  alternativasContainerEl.innerHTML = '';
                  return;
             }
 
             materiaAtualEl.textContent = questao.materia || 'N/A';
-            // Use textContent for security
+            // Use innerHTML com replace para permitir <br>, assumindo segurança do DB
             const enunciadoP = document.createElement('p');
-            enunciadoP.textContent = questao.enunciado;
+            enunciadoP.innerHTML = questao.enunciado.replace(/\n/g, '<br>');
             questaoEnunciadoEl.innerHTML = ''; // Clear previous
             questaoEnunciadoEl.className = 'mb-4 fs-5 alert alert-light'; // Reset class
             questaoEnunciadoEl.appendChild(enunciadoP);
@@ -616,21 +658,16 @@
                     button.onclick = () => selecionarAlternativa(letra, button);
                     alternativasContainerEl.appendChild(button);
                 } else {
-                     console.warn(`[renderizarQuestao] Alternativa ${letra} vazia para Q ${questao.id}.`);
+                     log('warn',`[renderizarQuestao] Alternativa ${letra} vazia para Q ${questao.id}.`);
                 }
             });
-             // Ajusta a margem do progresso DEPOIS que a questão renderiza
-             const headerElement = document.querySelector('.questao-header');
-             if(headerElement) {
-                 const headerHeight = headerElement.offsetHeight;
-                 progressoBarEl.parentElement.style.marginTop = `${headerHeight + 15}px`;
-             }
-
+             log('debug',`[renderizarQuestao] Questão ID ${questao.id} renderizada.`);
         }
 
         async function selecionarAlternativa(letra, botaoSelecionado) {
             const tempoFimQuestao = Date.now();
             const tempoGastoSeg = Math.max(0, Math.round((tempoFimQuestao - tempoInicioQuestao) / 1000));
+            log('info',`[selecionarAlternativa] Selecionada: ${letra}, Tempo: ${tempoGastoSeg}s`);
 
             // Disable all alternatives immediately
             const alternativas = alternativasContainerEl.querySelectorAll('.alternativa');
@@ -643,7 +680,7 @@
             feedbackContainerEl.style.display = 'block';
 
             try {
-                 console.log(`[selecionarAlternativa] Enviando: Q${questaoAtualIndex}, Alt ${letra}, Tempo ${tempoGastoSeg}s`); // Log
+                 log('debug',`[selecionarAlternativa] Enviando POST para /responder`);
                  const response = await fetch(`/api/simulado/${simuladoId}/responder`, {
                      method: 'POST',
                      headers: {'Content-Type': 'application/json'},
@@ -654,7 +691,7 @@
                      })
                  });
                  const data = await response.json();
-                 console.log("[selecionarAlternativa] Resposta API:", data); // Log
+                 log('debug',"[selecionarAlternativa] Resposta API /responder:", data);
 
                  if (!response.ok || !data.success) {
                      throw new Error(data.error || `Erro HTTP ${response.status}`);
@@ -662,14 +699,14 @@
 
                  // Save user's answer locally ONLY after API success
                  respostasUsuario[questaoAtualIndex] = letra;
-                 console.log("[selecionarAlternativa] Resposta registrada."); // Log
+                 log('info',"[selecionarAlternativa] Resposta registrada.");
 
                  // Display visual feedback based on API response
                  mostrarFeedback(letra, botaoSelecionado, data);
                  btnProxima.disabled = false; // Enable Next/Finish button
 
             } catch (error) {
-                 console.error("[selecionarAlternativa] Erro:", error);
+                 log('error',"[selecionarAlternativa] Erro:", error);
                  feedbackContainerEl.innerHTML = `<div class="alert alert-danger mb-0">Erro: ${error.message}. Clique em Próxima Questão.</div>`;
                  feedbackContainerEl.style.display = 'block';
                  // Allow user to proceed even if API fails
@@ -678,10 +715,11 @@
         }
 
         function mostrarFeedback(letraEscolhida, botaoSelecionado, feedbackData) {
+            log('info',`[mostrarFeedback] Exibindo feedback para ${letraEscolhida}. Acertou: ${feedbackData?.acertou}`);
             const { acertou, resposta_correta, justificativa, dica, formula } = feedbackData;
 
             if (typeof acertou !== 'boolean' || !resposta_correta) {
-                 console.error("[mostrarFeedback] Dados de feedback inválidos:", feedbackData);
+                 log('error',"[mostrarFeedback] Dados inválidos:", feedbackData);
                  feedbackContainerEl.innerHTML = '<div class="alert alert-warning">Erro ao receber feedback.</div>';
                  return;
             }
@@ -735,6 +773,7 @@
         }
 
         function proximaQuestao() {
+             log('info',"[proximaQuestao] Clicado.");
              errorMessage.style.display = 'none'; // Clear general errors
             // If it's the last question, the button acts as "Finish"
             if (questaoAtualIndex === totalQuestoes - 1) {
@@ -745,6 +784,7 @@
         }
 
         function confirmarFinalizarSimulado() {
+            log('info',"[confirmarFinalizarSimulado] Clicado.");
             const respondidasCount = Object.keys(respostasUsuario).length;
             const naoRespondidasCount = totalQuestoes - respondidasCount;
             let msg = "Tem certeza que deseja finalizar o simulado agora?";
@@ -753,13 +793,16 @@
             }
 
             if (confirm(msg)) {
+                 log('info',"[confirmarFinalizarSimulado] Confirmado pelo usuário.");
                 finalizarSimulado();
+            } else {
+                 log('info',"[confirmarFinalizarSimulado] Cancelado pelo usuário.");
             }
         }
 
         async function finalizarSimulado() {
             clearInterval(timerInterval); // Stop timer immediately
-            console.log("[finalizarSimulado] Iniciando finalização..."); // Log
+            log('info',"[finalizarSimulado] Iniciando finalização...");
 
             // Loading feedback
             telaSimulado.innerHTML = `
@@ -769,12 +812,12 @@
                 </div>`;
 
             try {
-                console.log(`[finalizarSimulado] Enviando POST para /api/simulado/${simuladoId}/finalizar`); // Log
+                log('info',`[finalizarSimulado] Enviando POST para /api/simulado/${simuladoId}/finalizar`);
                 const response = await fetch(`/api/simulado/${simuladoId}/finalizar`, { method: 'POST' });
-                 console.log("[finalizarSimulado] Resposta API:", response.status); // Log
+                 log('info',"[finalizarSimulado] Resposta API:", response.status);
                  if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
                 const data = await response.json();
-                console.log("[finalizarSimulado] Dados resposta:", data); // Log
+                log('debug',"[finalizarSimulado] Dados resposta:", data);
 
                 if (data.success && data.relatorio) {
                     relatorioFinalCache = data.relatorio; // Save for review
@@ -783,7 +826,7 @@
                     throw new Error(data.error || 'Erro desconhecido ao finalizar.');
                 }
             } catch (error) {
-                console.error('[finalizarSimulado] Erro:', error);
+                log('error','[finalizarSimulado] Erro:', error);
                 telaSimulado.innerHTML = `
                      <div class="alert alert-danger text-center">
                          <h4>Erro ao Finalizar</h4><p>${error.message}</p>
@@ -798,7 +841,7 @@
         // --- Timer ---
         function iniciarTimer() {
             clearInterval(timerInterval);
-            console.log(`[iniciarTimer] Iniciando com ${tempoRestanteSeg} segundos.`); // Log
+            log('info',`[iniciarTimer] Iniciando com ${tempoRestanteSeg} segundos.`);
 
             function atualizarDisplay() {
                  const minutos = Math.floor(tempoRestanteSeg / 60);
@@ -820,7 +863,7 @@
                 }
                 if (tempoRestanteSeg <= 0) {
                     clearInterval(timerInterval);
-                    console.log("[iniciarTimer] Tempo acabou!"); // Log
+                    log('warn',"[iniciarTimer] Tempo acabou!");
                     alert("O tempo do simulado acabou!");
                     finalizarSimulado();
                 }
@@ -829,7 +872,7 @@
 
         // --- Resultado, Revisão e Reinício ---
         function mostrarResultado(relatorio) {
-            console.log("[mostrarResultado] Exibindo modal com:", relatorio); // Log
+            log('info',"[mostrarResultado] Exibindo modal com:", relatorio);
             telaSimulado.style.display = 'none';
 
             // Fill KPIs
@@ -856,7 +899,7 @@
             if(resultadoModal) {
                 resultadoModal.show();
             } else {
-                console.error("[mostrarResultado] Modal não inicializado.");
+                log('error',"[mostrarResultado] Modal não inicializado.");
                 alert("Erro ao exibir o modal de resultado.");
             }
         }
@@ -872,11 +915,13 @@
             const percentuais = materias.map(materia => dadosMateria[materia]?.percentual ?? 0);
 
              if (materias.length === 0) {
+                 log('warn',"[renderGraficoModal] Sem dados para o gráfico.");
                  graficoPlaceholder.style.display = 'block';
                  canvas.style.display = 'none';
                  return;
              }
              canvas.style.display = 'block';
+             log('debug',"[renderGraficoModal] Renderizando gráfico com dados:", dadosMateria);
 
             graficoModalInstance = new Chart(ctx, {
                 type: 'bar',
@@ -890,9 +935,9 @@
         }
 
         function mostrarRevisaoDetalhada() {
-             console.log("[mostrarRevisaoDetalhada] Carregando revisão..."); // Log
+             log('info',"[mostrarRevisaoDetalhada] Carregando revisão...");
              if (!relatorioFinalCache || !relatorioFinalCache.questoes_com_detalhes) {
-                 console.warn("[mostrarRevisaoDetalhada] Dados não encontrados."); // Log
+                 log('warn',"[mostrarRevisaoDetalhada] Dados não encontrados.");
                  revisaoQuestoesContent.innerHTML = '<p class="text-danger">Erro ao carregar revisão.</p>';
                  return;
              }
@@ -903,6 +948,7 @@
                  revisaoQuestoesContent.innerHTML = '<p class="text-muted">Nenhuma questão para revisar.</p>';
                  return;
              }
+             log('debug',`[mostrarRevisaoDetalhada] Renderizando ${relatorioFinalCache.questoes_com_detalhes.length} itens.`);
 
              relatorioFinalCache.questoes_com_detalhes.forEach(q => {
                  const divQuestao = document.createElement('div');
@@ -950,7 +996,7 @@
 
 
         function reiniciarInterface() {
-            console.log("[reiniciarInterface] Reiniciando..."); // Log
+            log('info',"[reiniciarInterface] Reiniciando...");
             // Forma mais segura: Recarregar a página para garantir estado limpo
             window.location.reload();
         }
@@ -958,5 +1004,3 @@
     </script>
 </body>
 </html>
-
-
