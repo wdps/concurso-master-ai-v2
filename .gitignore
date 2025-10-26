@@ -1,23 +1,23 @@
-# Environment variables
-.env
-*.env
-
-# Database
-*.db
-*.sqlite3
-
-# Python
-__pycache__/
+﻿__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 env/
 venv/
-
-# Logs
-*.log
-
-# OS
+.venv/
+*.sqlite3
 .DS_Store
-Thumbs.db
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache/
+.pytest_cache/
+.ropeproject/
+.vscode/
+.idea/

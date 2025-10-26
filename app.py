@@ -4,40 +4,127 @@ import json
 import random
 import time
 from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.secret_key = 'concurso_master_secret_key_v4'
+app.secret_key = os.environ.get('SECRET_KEY', 'concurso_master_secret_key_v4_production')
 app.config['SESSION_TYPE'] = 'filesystem'
 
+# Configuração do banco de dados para produção
 def get_db_connection():
-    conn = sqlite3.connect('concurso.db', check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
+    # No Railway, use a variável de ambiente DATABASE_URL se disponível
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url and database_url.startswith('postgres://'):
+        # Se for PostgreSQL (Railway), vamos usar SQLite local como fallback
+        print("⚠️  PostgreSQL detectado, usando SQLite local")
+        return sqlite3.connect('concurso.db', check_same_thread=False)
+    else:
+        # SQLite local para desenvolvimento
+        return sqlite3.connect('concurso.db', check_same_thread=False)
 
-# Verificar se o banco está ok
-def verificar_banco():
+def init_db():
     try:
         conn = get_db_connection()
+        cursor = conn.cursor()
         
-        # Verificar tabelas
-        tabelas = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-        print("📊 Tabelas no banco:")
-        for tabela in tabelas:
-            print(f"   - {tabela['name']}")
+        # Criar tabelas se não existirem
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS questoes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                disciplina TEXT NOT NULL,
+                materia TEXT NOT NULL,
+                enunciado TEXT NOT NULL,
+                alternativas TEXT NOT NULL,
+                resposta_correta TEXT NOT NULL,
+                dificuldade TEXT CHECK(dificuldade IN ('Fácil', 'Médio', 'Difícil')) DEFAULT 'Médio',
+                justificativa TEXT,
+                dica TEXT,
+                formula TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         
-        # Verificar questões
-        count_questoes = conn.execute("SELECT COUNT(*) FROM questoes").fetchone()[0]
-        count_temas = conn.execute("SELECT COUNT(*) FROM temas_redacao").fetchone()[0]
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS temas_redacao (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                titulo TEXT NOT NULL,
+                descricao TEXT NOT NULL,
+                tipo TEXT NOT NULL,
+                dificuldade TEXT CHECK(dificuldade IN ('Fácil', 'Médio', 'Difícil')) DEFAULT 'Médio',
+                palavras_chave TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         
-        print(f"📚 Estatísticas:")
-        print(f"   - Questões: {count_questoes}")
-        print(f"   - Temas de redação: {count_temas}")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS historico_simulados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                simulado_id TEXT NOT NULL UNIQUE,
+                config TEXT NOT NULL,
+                respostas TEXT NOT NULL,
+                relatorio TEXT NOT NULL,
+                data_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                data_fim TIMESTAMP,
+                tempo_total_minutos REAL DEFAULT 0
+            )
+        ''')
         
+        # Inserir dados de exemplo se a tabela estiver vazia
+        cursor.execute("SELECT COUNT(*) FROM questoes")
+        if cursor.fetchone()[0] == 0:
+            print("📝 Inserindo dados de exemplo...")
+            
+            # Questões exemplo
+            questões = [
+                {
+                    'disciplina': 'Matemática', 'materia': 'Álgebra',
+                    'enunciado': 'Qual é o valor de x na equação 2x + 5 = 15?',
+                    'alternativas': '{"A": "5", "B": "10", "C": "7", "D": "8"}',
+                    'resposta_correta': 'A', 'dificuldade': 'Fácil',
+                    'justificativa': 'Para resolver a equação 2x + 5 = 15, subtraímos 5 de ambos os lados: 2x = 10. Depois dividimos por 2: x = 5.',
+                    'dica': 'Lembre-se de isolar a variável x realizando as operações inversas.',
+                    'formula': '2x + 5 = 15 → 2x = 15 - 5 → 2x = 10 → x = 10/2 → x = 5'
+                },
+                {
+                    'disciplina': 'Português', 'materia': 'Gramática',
+                    'enunciado': 'Assinale a alternativa em que todas as palavras são acentuadas pela mesma regra:',
+                    'alternativas': '{"A": "café, você, índio", "B": "saúde, herói, dói", "C": "árvore, lâmpada, pêssego", "D": "cidade, útil, fábrica"}',
+                    'resposta_correta': 'B', 'dificuldade': 'Médio',
+                    'justificativa': 'Todas as palavras da alternativa B são oxítonas terminadas em ditongo aberto, recebendo acento gráfico.',
+                    'dica': 'Lembre-se das regras de acentuação para oxítonas, paroxítonas e proparoxítonas.',
+                    'formula': 'Oxítonas: terminadas em a/as, e/es, o/os, em/ens → acento'
+                }
+            ]
+            
+            for q in questões:
+                cursor.execute('''
+                    INSERT INTO questoes (disciplina, materia, enunciado, alternativas, resposta_correta, dificuldade, justificativa, dica, formula)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (q['disciplina'], q['materia'], q['enunciado'], q['alternativas'], q['resposta_correta'], q['dificuldade'], q['justificativa'], q['dica'], q['formula']))
+            
+            # Temas de redação exemplo
+            temas = [
+                {
+                    'titulo': 'Os desafios da educação digital no Brasil',
+                    'descricao': 'Redija uma dissertação sobre os principais desafios para implementação da educação digital no Brasil.',
+                    'tipo': 'Dissertação', 'dificuldade': 'Médio',
+                    'palavras_chave': 'educação digital, tecnologia, desigualdade'
+                }
+            ]
+            
+            for tema in temas:
+                cursor.execute('''
+                    INSERT INTO temas_redacao (titulo, descricao, tipo, dificuldade, palavras_chave)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (tema['titulo'], tema['descricao'], tema['tipo'], tema['dificuldade'], tema['palavras_chave']))
+        
+        conn.commit()
         conn.close()
-        return True
+        print("✅ Banco de dados inicializado com sucesso!")
+        
     except Exception as e:
-        print(f"❌ Erro ao verificar banco: {e}")
-        return False
+        print(f"❌ Erro ao inicializar banco: {e}")
 
 # Rotas principais
 @app.route('/')
@@ -61,6 +148,7 @@ def dashboard():
 def api_materias():
     try:
         conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
         materias_data = conn.execute('''
             SELECT materia, disciplina, COUNT(*) as total
             FROM questoes 
@@ -104,6 +192,7 @@ def iniciar_simulado():
         simulado_id = f"simulado_{int(time.time())}_{random.randint(1000, 9999)}"
         
         conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
         placeholders = ','.join(['?'] * len(materias))
         query = f'SELECT * FROM questoes WHERE materia IN ({placeholders})'
         
@@ -169,6 +258,7 @@ def get_questao(simulado_id, questao_index):
         questao_id = config['questoes_ids'][questao_index]
         
         conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
         questao = conn.execute('SELECT * FROM questoes WHERE id = ?', (questao_id,)).fetchone()
         
         if not questao:
@@ -206,6 +296,7 @@ def responder_questao(simulado_id):
         questao_id = config['questoes_ids'][questao_index]
         
         conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
         questao = conn.execute('SELECT * FROM questoes WHERE id = ?', (questao_id,)).fetchone()
         
         if not questao:
@@ -244,6 +335,7 @@ def responder_questao(simulado_id):
 def get_temas_redacao():
     try:
         conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
         temas = conn.execute('SELECT * FROM temas_redacao ORDER BY dificuldade, titulo').fetchall()
         
         temas_list = []
@@ -309,14 +401,15 @@ def corrigir_redacao():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    print("🚀 Iniciando ConcursoMaster AI...")
-    if verificar_banco():
-        print("✅ Banco de dados verificado e pronto!")
-        print("🌐 Servidor rodando em: http://localhost:5000")
-        print("📚 Funcionalidades disponíveis:")
-        print("   - Simulados com 3 questões exemplo")
-        print("   - Sistema de redação com 2 temas")
-        print("   - Dashboard de estatísticas")
-        app.run(debug=True, host='0.0.0.0', port=5000)
-    else:
-        print("❌ Falha na verificação do banco de dados!")
+    # Inicializar banco de dados
+    init_db()
+    
+    # Configurações de produção
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+    
+    print(f"🚀 ConcursoMaster AI - Modo {'Desenvolvimento' if debug else 'Produção'}")
+    print(f"🌐 Servidor rodando na porta: {port}")
+    print("📚 Aplicação pronta para uso!")
+    
+    app.run(host='0.0.0.0', port=port, debug=debug)
