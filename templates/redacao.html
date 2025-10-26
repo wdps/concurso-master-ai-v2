@@ -5,234 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redação - ConcursoMaster AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<body>
+    <nav class="navbar navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-brain me-2"></i>ConcursoMaster AI
-            </a>
+            <a class="navbar-brand" href="/">ConcursoMaster AI</a>
         </div>
     </nav>
-
-    <div class="container my-4">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Temas de Redação</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="temas-lista">
-                            <div class="text-center p-4">
-                                <div class="spinner-border text-primary"></div>
-                                <p class="mt-2">Carregando temas...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0" id="tema-selecionado-titulo">Selecione um tema</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="tema-descricao" class="alert alert-info" style="display: none;"></div>
-                        
-                        <textarea id="editor" class="form-control" rows="15" placeholder="Comece a escrever sua redação aqui..." disabled></textarea>
-                        
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">
-                                    <span id="contador-palavras">0</span> palavras | 
-                                    <span id="contador-paragrafos">0</span> parágrafos
-                                </small>
-                            </div>
-                            <button id="btn-corrigir" class="btn btn-primary" disabled>
-                                <i class="fas fa-check-circle me-1"></i>Corrigir Redação
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="correcao-container" class="card mt-4" style="display: none;">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Resultado da Correção</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="text-center mb-4">
-                            <h1 id="nota-final" class="display-4 text-primary">0.0</h1>
-                            <p class="text-muted">Nota Final</p>
-                        </div>
-                        
-                        <div id="competencias-list"></div>
-                        
-                        <div class="mt-4">
-                            <h6>Sugestões de Melhoria</h6>
-                            <div id="sugestoes-list"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    
+    <div class="container mt-4">
+        <h2>Prática de Redação</h2>
+        <div id="temas" class="mb-3">
+            <div class="spinner-border"></div> Carregando temas...
+        </div>
+        <textarea id="texto-redacao" class="form-control" rows="10" placeholder="Selecione um tema para começar..." disabled></textarea>
+        <button id="btn-corrigir" class="btn btn-primary mt-3" onclick="corrigirRedacao()" disabled>Corrigir Redação</button>
+        
+        <div id="resultado" class="mt-4" style="display: none;">
+            <h4>Resultado:</h4>
+            <div id="correcao"></div>
         </div>
     </div>
 
     <script>
         let temaSelecionado = null;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarTemas();
-            configurarEventListeners();
-        });
-
-        async function carregarTemas() {
-            try {
-                const response = await fetch('/api/redacao/temas');
-                const data = await response.json();
-
-                if (data.success) {
-                    const lista = document.getElementById('temas-lista');
-                    lista.innerHTML = '';
-                    
+        
+        // Carregar temas
+        fetch('/api/redacao/temas')
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    const div = document.getElementById('temas');
+                    div.innerHTML = '';
                     data.temas.forEach(tema => {
-                        const div = document.createElement('div');
-                        div.className = 'card mb-2';
-                        div.innerHTML = `
-                            <div class="card-body">
-                                <h6>${tema.titulo}</h6>
-                                <p class="small text-muted">${tema.descricao.substring(0, 100)}...</p>
-                                <button class="btn btn-sm btn-outline-primary selecionar-tema" data-tema='${JSON.stringify(tema).replace(/'/g, "&#39;")}'>
-                                    Selecionar
-                                </button>
-                            </div>
-                        `;
-                        lista.appendChild(div);
-                    });
-
-                    document.querySelectorAll('.selecionar-tema').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const tema = JSON.parse(this.getAttribute('data-tema').replace(/&#39;/g, "'"));
-                            selecionarTema(tema);
-                        });
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-outline-primary me-2 mb-2';
+                        btn.textContent = tema.titulo;
+                        btn.onclick = () => selecionarTema(tema);
+                        div.appendChild(btn);
                     });
                 }
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
+            });
+        
         function selecionarTema(tema) {
             temaSelecionado = tema;
-            
-            document.getElementById('tema-selecionado-titulo').textContent = tema.titulo;
-            document.getElementById('tema-descricao').innerHTML = `
-                <strong>Descrição:</strong> ${tema.descricao}
-                <br><small class="text-muted">Tipo: ${tema.tipo} | Dificuldade: ${tema.dificuldade}</small>
-            `;
-            document.getElementById('tema-descricao').style.display = 'block';
-            document.getElementById('editor').disabled = false;
+            document.getElementById('texto-redacao').disabled = false;
             document.getElementById('btn-corrigir').disabled = false;
+            document.getElementById('texto-redacao').placeholder = `Tema: ${tema.titulo}\n\n${tema.descricao}\n\nEscreva sua redação aqui...`;
         }
-
-        function configurarEventListeners() {
-            document.getElementById('editor').addEventListener('input', function() {
-                const texto = this.value;
-                const palavras = texto.trim() ? texto.trim().split(/\s+/).length : 0;
-                const paragrafos = texto.trim() ? texto.split(/\n\s*\n/).length : 0;
-                
-                document.getElementById('contador-palavras').textContent = palavras;
-                document.getElementById('contador-paragrafos').textContent = paragrafos;
-            });
+        
+        function corrigirRedacao() {
+            const texto = document.getElementById('texto-redacao').value;
+            if(!texto) return alert('Escreva sua redação!');
             
-            document.getElementById('btn-corrigir').addEventListener('click', corrigirRedacao);
-        }
-
-        async function corrigirRedacao() {
-            if (!temaSelecionado) {
-                alert('Selecione um tema primeiro!');
-                return;
-            }
-
-            const texto = document.getElementById('editor').value.trim();
-            if (!texto) {
-                alert('Escreva sua redação antes de corrigir!');
-                return;
-            }
-
-            const btn = document.getElementById('btn-corrigir');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Corrigindo...';
-
-            try {
-                const response = await fetch('/api/redacao/corrigir', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        texto: texto,
-                        tema_id: temaSelecionado.id
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    exibirResultado(data.correcao);
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (error) {
-                alert('Erro: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-check-circle me-1"></i>Corrigir Redação';
-            }
-        }
-
-        function exibirResultado(correcao) {
-            document.getElementById('correcao-container').style.display = 'block';
-            document.getElementById('nota-final').textContent = correcao.nota_final.toFixed(1);
-
-            const competenciasList = document.getElementById('competencias-list');
-            competenciasList.innerHTML = '';
-            
-            Object.entries(correcao.competencias).forEach(([key, comp]) => {
-                const div = document.createElement('div');
-                div.className = 'mb-3';
-                div.innerHTML = `
-                    <h6>${getCompetenciaNome(key)}</h6>
-                    <div class="progress mb-2">
-                        <div class="progress-bar" style="width: ${(comp.nota / comp.max) * 100}%">
-                            ${comp.nota}/${comp.max}
+            fetch('/api/redacao/corrigir', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({texto: texto, tema_id: temaSelecionado.id})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) {
+                    const correcao = data.correcao;
+                    document.getElementById('correcao').innerHTML = `
+                        <div class="alert alert-info">
+                            <h5>Nota: ${correcao.nota_final}/1000</h5>
+                            <p>Palavras: ${correcao.estatisticas.palavras} | Parágrafos: ${correcao.estatisticas.paragrafos}</p>
                         </div>
-                    </div>
-                    <small class="text-muted">${comp.comentario}</small>
-                `;
-                competenciasList.appendChild(div);
+                        <h6>Sugestões:</h6>
+                        <ul>
+                            ${correcao.sugestoes.map(s => `<li>${s}</li>`).join('')}
+                        </ul>
+                    `;
+                    document.getElementById('resultado').style.display = 'block';
+                }
             });
-
-            const sugestoesList = document.getElementById('sugestoes-list');
-            sugestoesList.innerHTML = '';
-            
-            correcao.sugestoes.forEach(sugestao => {
-                const div = document.createElement('div');
-                div.className = 'alert alert-warning py-2';
-                div.textContent = sugestao;
-                sugestoesList.appendChild(div);
-            });
-        }
-
-        function getCompetenciaNome(key) {
-            const nomes = {
-                'competencia1': 'Domínio da Norma Culta',
-                'competencia2': 'Compreensão do Tema',
-                'competencia3': 'Argumentação e Coerência',
-                'competencia4': 'Organização Textual',
-                'competencia5': 'Proposta de Intervenção'
-            };
-            return nomes[key] || key;
         }
     </script>
 </body>
