@@ -3,24 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulados Personalizados - ConcursoMaster AI</title>
+    <title>Simulado Inteligente - ConcursoMaster AI</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome (para ícones) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Nosso CSS Customizado -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-brain"></i> ConcursoMaster AI
+                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI 3.0
             </a>
-            <div class="collapse navbar-collapse">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Início</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/simulado">Simulados</a>
+                        <a class="nav-link active" aria-current="page" href="/simulado">Simulado</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/redacao">Redação</a>
@@ -33,523 +41,922 @@
         </div>
     </nav>
 
-    <div class="main-container">
-        <div class="container">
-            <!-- Tela de Configuração -->
-            <div id="config-screen" class="fade-in">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div class="config-card">
-                            <h2 class="text-center mb-4">
-                                <i class="fas fa-cogs me-2"></i>Configurar Simulado
-                            </h2>
-                            
-                            <!-- Quantidade de Questões -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Quantidade de Questões</label>
-                                <input type="range" class="form-range" id="quantidade-slider" min="5" max="50" value="10">
-                                <div class="d-flex justify-content-between">
-                                    <small>5 questões</small>
-                                    <span id="quantidade-value" class="fw-bold">10 questões</span>
-                                    <small>50 questões</small>
-                                </div>
-                            </div>
+    <div class="container">
+        <!-- Tela de Configuração -->
+        <div id="tela-configuracao" class="page-container"> <!-- Usando classe padrão -->
+            <h2 class="text-center mb-4">
+                <i class="fas fa-cogs text-primary me-2"></i> Configurar Novo Simulado
+            </h2>
 
-                            <!-- Tempo por Questão -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Tempo por Questão (segundos)</label>
-                                <input type="range" class="form-range" id="tempo-slider" min="30" max="180" value="60">
-                                <div class="d-flex justify-content-between">
-                                    <small>30s</small>
-                                    <span id="tempo-value" class="fw-bold">60 segundos</span>
-                                    <small>180s</small>
-                                </div>
-                            </div>
-
-                            <!-- Matérias -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Selecione as Matérias</label>
-                                <div class="materias-grid" id="materias-container">
-                                    <!-- Matérias serão carregadas via JavaScript -->
-                                </div>
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="selectAllMaterias()">
-                                        <i class="fas fa-check-double me-1"></i>Selecionar Todas
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="deselectAllMaterias()">
-                                        <i class="fas fa-times me-1"></i>Limpar Seleção
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Resumo -->
-                            <div class="card bg-light mb-4">
-                                <div class="card-body">
-                                    <h6 class="card-title">
-                                        <i class="fas fa-info-circle me-2"></i>Resumo do Simulado
-                                    </h6>
-                                    <div id="resumo-simulado" class="small">
-                                        Selecione as matérias para ver o resumo...
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Ações -->
-                            <div class="text-center">
-                                <button id="btn-iniciar" class="btn btn-primary btn-lg px-5" onclick="iniciarSimulado()">
-                                    <i class="fas fa-play me-2"></i>Iniciar Simulado
-                                </button>
-                            </div>
+            <!-- Seleção de Matérias -->
+            <div class="mb-4">
+                <h5><i class="fas fa-book me-1"></i> 1. Selecione as Matérias</h5>
+                <div id="lista-materias" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-2">
+                    <div class="col-12 text-center p-5">
+                         <div class="spinner-border text-secondary" role="status">
+                            <span class="visually-hidden">Carregando matérias...</span>
                         </div>
+                        <p class="text-muted mt-2">Carregando matérias disponíveis...</p>
+                    </div>
+                </div>
+                 <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="selecionar-todas">
+                    <label class="form-check-label" for="selecionar-todas">
+                        Selecionar Todas / Nenhuma
+                    </label>
+                </div>
+            </div>
+
+            <!-- Configurações (Sliders) -->
+            <div class="row mb-4 config-sliders">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <h5><i class="fas fa-list-ol me-1"></i> 2. Quantidade de Questões</h5>
+                    <label for="quantidade-questoes" class="form-label">
+                        Total: <span id="quantidade-value" class="fw-bold badge bg-primary">50</span>
+                    </label>
+                    <input type="range" class="form-range" id="quantidade-questoes"
+                           min="5" max="100" value="50" step="5">
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="far fa-clock me-1"></i> 3. Tempo Estimado</h5>
+                    <label for="tempo-simulado" class="form-label">
+                        Minutos: <span id="tempo-value" class="fw-bold badge bg-info text-dark">180</span>
+                    </label>
+                    <input type="range" class="form-range" id="tempo-simulado"
+                           min="15" max="360" value="180" step="15">
+                </div>
+            </div>
+
+            <!-- Modo Aleatório -->
+            <div class="mb-4 form-check form-switch fs-5">
+                <input class="form-check-input" type="checkbox" id="modo-aleatorio" checked>
+                <label class="form-check-label" for="modo-aleatorio">
+                    <i class="fas fa-random me-1"></i> Embaralhar Ordem das Questões
+                </label>
+            </div>
+
+            <!-- Botão Iniciar -->
+            <div class="text-center border-top pt-4 mt-4">
+                <button id="btn-iniciar-simulado" class="btn btn-primary btn-lg px-5 shadow-sm" disabled> <!-- Começa desabilitado -->
+                     <span id="btn-iniciar-text"><i class="fas fa-play me-2"></i> Iniciar Simulado</span>
+                     <!-- Spinner e texto de loading ficam DENTRO do botão -->
+                     <span id="loading-spinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                     <span id="loading-text" style="display: none;"> Iniciando...</span>
+                </button>
+                <!-- Mensagem de erro -->
+                <div id="error-message" class="alert alert-danger mt-3" role="alert" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Tela do Simulado (inicialmente oculta) -->
+        <div id="tela-simulado" class="page-container" style="display: none;"> <!-- Usando classe padrão -->
+
+            <!-- Cabeçalho com Progresso e Timer (sticky-top para fixar) -->
+            <div class="questao-header sticky-top"> <!-- Classe CSS controla o estilo sticky -->
+                <div>
+                    <h4 class="mb-0">Questão <span id="numero-questao-atual">1</span> de <span id="total-questoes">0</span></h4>
+                    <span id="materia-atual" class="badge bg-secondary">Carregando...</span>
+                </div>
+                <div class="timer d-flex align-items-center">
+                    <i class="far fa-clock me-2"></i> <span id="timer-display">00:00</span>
+                </div>
+            </div>
+            <!-- Barra de Progresso -->
+            <div class="progress mb-4" style="height: 10px;">
+                <div id="progresso-bar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+
+            <!-- Área da Questão -->
+            <div id="tela-questao">
+                <!-- Enunciado (com spinner inicial) -->
+                <div id="questao-enunciado" class="mb-4 fs-5 alert alert-light">
+                     <div class="text-center p-5">
+                         <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando questão...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container das Alternativas -->
+                <div id="alternativas-container">
+                    <!-- Alternativas serão carregadas via JavaScript -->
+                     <div class="text-center p-3 text-muted">
+                        Carregando alternativas...
                     </div>
                 </div>
             </div>
 
-            <!-- Tela do Simulado -->
-            <div id="simulado-screen" class="d-none fade-in">
-                <div class="row">
-                    <div class="col-lg-8 mx-auto">
-                        <!-- Header do Simulado -->
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-md-6">
-                                        <h5 class="mb-0">
-                                            <i class="fas fa-clock me-2 text-warning"></i>
-                                            <span id="timer">00:00</span>
-                                        </h5>
-                                    </div>
-                                    <div class="col-md-6 text-md-end">
-                                        <span id="progress-text">Questão 1 de 10</span>
-                                    </div>
-                                </div>
-                                <div class="progress-container mt-3">
-                                    <div class="progress">
-                                        <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Questão -->
-                        <div id="questao-container" class="questao-card">
-                            <!-- Questão será carregada via JavaScript -->
-                        </div>
-
-                        <!-- Navegação -->
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <button id="btn-anterior" class="btn btn-outline-primary" onclick="questaoAnterior()" disabled>
-                                        <i class="fas fa-arrow-left me-2"></i>Anterior
-                                    </button>
-                                    <button id="btn-proxima" class="btn btn-primary" onclick="proximaQuestao()">
-                                        Próxima<i class="fas fa-arrow-right ms-2"></i>
-                                    </button>
-                                    <button id="btn-finalizar" class="btn btn-success d-none" onclick="finalizarSimulado()">
-                                        <i class="fas fa-flag-checkered me-2"></i>Finalizar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Box de Feedback (inicialmente oculto) -->
+            <div id="feedback-container" class="feedback-box mt-4" style="display: none;">
+                <h5 id="feedback-titulo"></h5>
+                <p id="feedback-justificativa" class="justificativa"></p>
+                <!-- Container para Dica e Fórmula (dentro do feedback) -->
+                <div id="dica-container" class="dica-box" style="display: none;">
+                    <h6><i class="fas fa-lightbulb"></i> Dica:</h6>
+                    <p id="texto-dica"></p>
+                    <div id="formula-container" style="display: none;">
+                        <h6><i class="fas fa-square-root-variable"></i> Fórmula:</h6>
+                        <p id="texto-formula"></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Tela de Resultado -->
-            <div id="resultado-screen" class="d-none fade-in">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="config-card text-center">
-                            <h2 class="mb-4">
-                                <i class="fas fa-trophy me-2 text-warning"></i>Simulado Finalizado!
-                            </h2>
-                            
-                            <div id="resultado-content">
-                                <!-- Resultados serão carregados via JavaScript -->
-                            </div>
+            <!-- Botões de Navegação -->
+            <div class="d-flex justify-content-between align-items-center mt-4 border-top pt-4">
+                <button id="btn-finalizar-simulado" class="btn btn-outline-danger">
+                    <i class="fas fa-stop me-1"></i> Finalizar Simulado
+                </button>
+                <button id="btn-proxima" class="btn btn-success btn-lg shadow-sm" disabled> <!-- Começa desabilitado -->
+                    <span id="btn-proxima-text">Próxima Questão</span> <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
-                            <div class="mt-4">
-                                <button class="btn btn-primary me-3" onclick="voltarParaConfig()">
-                                    <i class="fas fa-redo me-2"></i>Novo Simulado
-                                </button>
-                                <a href="/dashboard" class="btn btn-success">
-                                    <i class="fas fa-chart-line me-2"></i>Ver Dashboard
-                                </a>
+    <!-- Modal de Resultado (Bootstrap) -->
+    <div class="modal fade" id="modal-resultado" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalResultadoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fs-4" id="modalResultadoLabel">
+                        <i class="fas fa-trophy text-warning me-2"></i> Resultado do Simulado
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="btn-fechar-modal-resultado"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Resumo Geral -->
+                    <div class="row text-center mb-4 g-3">
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-total-acertos" class="text-success display-6 fw-bold">0</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Acertos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-total-erros" class="text-danger display-6 fw-bold">0</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Erros</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-percentual-acerto" class="text-primary display-6 fw-bold">0%</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Percentual</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-tempo-total" class="text-info display-6 fw-bold">0 min</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Tempo Total</p>
                             </div>
                         </div>
                     </div>
+
+                    <div class="row">
+                        <!-- Gráfico de Desempenho -->
+                        <div class="col-lg-7 mb-4 mb-lg-0">
+                            <h5><i class="fas fa-chart-bar me-2"></i>Desempenho por Matéria</h5>
+                            <!-- Container para o canvas e o placeholder -->
+                            <div class="chart-container" style="height: 350px;">
+                                <canvas id="grafico-desempenho-modal"></canvas>
+                                <!-- Placeholder para quando não há dados -->
+                                <div id="grafico-placeholder" class="chart-placeholder" style="display: none;">
+                                    <i class="fas fa-info-circle fa-2x mb-2 text-muted"></i>
+                                    <p>Nenhuma questão respondida para gerar o gráfico.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recomendações -->
+                        <div class="col-lg-5">
+                            <h5><i class="fas fa-lightbulb me-2"></i>Recomendações</h5>
+                            <ul id="lista-recomendacoes" class="list-group list-group-flush" style="max-height: 350px; overflow-y: auto;">
+                                <!-- Recomendações via JS -->
+                                <li class="list-group-item border-0 text-muted">Carregando recomendações...</li>
+                            </ul>
+                        </div>
+                    </div>
+                     <!-- Botão para revisar questões (agora controla collapse) -->
+                    <div class="text-center mt-4 border-top pt-3">
+                         <button id="btn-revisar-questoes" class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#revisao-questoes-container" aria-expanded="false" aria-controls="revisao-questoes-container">
+                             <i class="fas fa-search me-1"></i> Revisar Questões Detalhadamente <i class="fas fa-chevron-down ms-1 small"></i>
+                         </button>
+                    </div>
+                    <!-- Área Colapsável para Revisão -->
+                     <div class="collapse mt-3" id="revisao-questoes-container">
+                        <div class="card card-body bg-light border-light"> <!-- Fundo leve para destaque -->
+                            <h5 class="mb-3"><i class="fas fa-list-ol me-2"></i>Revisão Detalhada</h5>
+                            <div id="revisao-questoes-content" style="max-height: 400px; overflow-y: auto;">
+                                <!-- Detalhes das questões serão inseridos aqui -->
+                                <p class="text-muted">Carregando revisão...</p>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light justify-content-center flex-wrap">
+                    <a href="/dashboard" class="btn btn-outline-primary m-1">
+                        <i class="fas fa-chart-line"></i> Ver Dashboard Completo
+                    </a>
+                    <button id="btn-novo-simulado" class="btn btn-primary m-1" data-bs-dismiss="modal">
+                        <i class="fas fa-redo"></i> Fazer Novo Simulado
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let simuladoData = {
-            questões: [],
-            respostas: {},
-            questaoAtual: 0,
-            tempoRestante: 0,
-            timerInterval: null,
-            config: {}
-        };
 
-        // Carregar matérias disponíveis
-        async function carregarMaterias() {
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lógica do Simulado (V3.3 - Correção Início + UI) -->
+    <script>
+        // --- Variáveis Globais de Estado ---
+        let simuladoId = null;
+        let questoesCache = []; // Array [questaoObj, questaoObj, ...]
+        let questaoAtualIndex = 0;
+        let totalQuestoes = 0;
+        let respostasUsuario = {}; // {0: 'A', 1: 'C', ...}
+        let tempoRestanteSeg = 0;
+        let timerInterval = null;
+        let tempoInicioQuestao = null; // Timestamp (ms) de início da questão atual
+        let resultadoModal = null; // Instância do Modal Bootstrap
+        let graficoModalInstance = null;
+        let relatorioFinalCache = null; // Guarda o relatório para revisão
+
+        // --- Elementos DOM (cache para performance) ---
+        const telaConfiguracao = document.getElementById('tela-configuracao');
+        const telaSimulado = document.getElementById('tela-simulado');
+        const btnIniciarSimulado = document.getElementById('btn-iniciar-simulado');
+        const btnIniciarText = document.getElementById('btn-iniciar-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const loadingText = document.getElementById('loading-text');
+        const errorMessage = document.getElementById('error-message');
+        const listaMateriasContainer = document.getElementById('lista-materias');
+        const questaoEnunciadoEl = document.getElementById('questao-enunciado');
+        const alternativasContainerEl = document.getElementById('alternativas-container');
+        const feedbackContainerEl = document.getElementById('feedback-container');
+        const numeroQuestaoAtualEl = document.getElementById('numero-questao-atual');
+        const totalQuestoesEl = document.getElementById('total-questoes');
+        const materiaAtualEl = document.getElementById('materia-atual');
+        const timerDisplayEl = document.getElementById('timer-display');
+        const progressoBarEl = document.getElementById('progresso-bar');
+        const modalResultadoEl = document.getElementById('modal-resultado');
+        const btnSelecionarTodas = document.getElementById('selecionar-todas');
+        const btnProxima = document.getElementById('btn-proxima');
+        const btnProximaText = document.getElementById('btn-proxima-text'); // Span dentro do botão
+        const btnFinalizar = document.getElementById('btn-finalizar-simulado');
+        const btnRevisarQuestoes = document.getElementById('btn-revisar-questoes');
+        const revisaoQuestoesContainer = document.getElementById('revisao-questoes-container'); // O div collapsable
+        const revisaoQuestoesContent = document.getElementById('revisao-questoes-content'); // Onde o conteúdo vai
+        const graficoPlaceholder = document.getElementById('grafico-placeholder'); // Placeholder no gráfico
+
+
+        // --- Inicialização ---
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarMaterias(); // Carrega as matérias ao iniciar
+            configurarEventListeners();
             try {
-                const response = await fetch('/api/questoes/random?quantidade=1');
+                // Tenta inicializar o modal do Bootstrap
+                resultadoModal = new bootstrap.Modal(modalResultadoEl);
+            } catch (e) {
+                console.error("Erro ao inicializar o modal do Bootstrap:", e);
+                // Adicionar fallback ou mensagem de erro se necessário
+            }
+
+            // Listener para limpar revisão quando modal fecha
+            modalResultadoEl.addEventListener('hidden.bs.modal', function () {
+                // Esconde a área de revisão e limpa o conteúdo
+                const collapseElement = document.getElementById('revisao-questoes-container');
+                 const bsCollapseInstance = bootstrap.Collapse.getInstance(collapseElement);
+                 if (bsCollapseInstance) {
+                    bsCollapseInstance.hide();
+                 }
+                revisaoQuestoesContent.innerHTML = '<p class="text-muted">Carregando revisão...</p>'; // Reset
+                 // Resetar ícone do botão de revisão
+                 btnRevisarQuestoes.querySelector('i.fa-chevron-up, i.fa-chevron-down').className = 'fas fa-chevron-down ms-1 small';
+                 btnRevisarQuestoes.setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        async function carregarMaterias() {
+             btnIniciarSimulado.disabled = true; // Desabilita enquanto carrega
+             listaMateriasContainer.innerHTML = `
+                 <div class="col-12 text-center p-5">
+                     <div class="spinner-border text-secondary" role="status"></div>
+                     <p class="text-muted mt-2">Carregando matérias...</p>
+                 </div>`; // Mostra spinner
+            try {
+                const response = await fetch('/api/materias');
+                if (!response.ok) throw new Error(`Erro HTTP! ${response.status} - ${response.statusText}`);
                 const data = await response.json();
-                
-                // Buscar matérias únicas
-                const materiasResponse = await fetch('/api/questoes/random?quantidade=100');
-                const materiasData = await materiasResponse.json();
-                
-                const materiasUnicas = [...new Set(materiasData.questoes.map(q => q.materia))];
-                const container = document.getElementById('materias-container');
-                
-                container.innerHTML = materiasUnicas.map(materia => `
-                    <div class="materia-option" onclick="toggleMateria(this)" data-materia="${materia}">
-                        ${materia}
-                    </div>
-                `).join('');
-                
+
+                listaMateriasContainer.innerHTML = ''; // Limpa o "Carregando..."
+
+                if (data.error){
+                    throw new Error(data.error); // Propaga erro da API
+                }
+
+                if (!data.materias || data.materias.length === 0) {
+                     listaMateriasContainer.innerHTML = '<p class="text-warning col-12 fw-bold">Nenhuma matéria com questões foi encontrada no banco de dados. Adicione questões antes de criar um simulado.</p>';
+                     return; // Mantém o botão Iniciar desabilitado
+                }
+
+                data.materias.forEach(materia => {
+                    const total = data.estatisticas[materia]?.total || 0;
+                    const div = document.createElement('div');
+                    div.className = 'col';
+                    const materiaId = `materia-${materia.replace(/[^a-zA-Z0-9_-]/g, '-')}`; // Cria ID seguro
+                    div.innerHTML = `
+                        <div class="form-check materia-checkbox">
+                            <input class="form-check-input materia-checkbox-input" type="checkbox"
+                                   value="${materia}" id="${materiaId}" ${total === 0 ? 'disabled' : ''}>
+                            <label class="form-check-label w-100" for="${materiaId}">
+                                ${materia} <span class="badge bg-light text-dark float-end">${total}</span>
+                            </label>
+                        </div>
+                    `;
+                    listaMateriasContainer.appendChild(div);
+                });
+                // Habilita o botão iniciar APENAS se houver matérias carregadas com sucesso
+                btnIniciarSimulado.disabled = false;
+
             } catch (error) {
                 console.error('Erro ao carregar matérias:', error);
+                listaMateriasContainer.innerHTML =
+                    `<p class="text-danger col-12 fw-bold">Falha ao carregar matérias: ${error.message}. Verifique a conexão ou o console.</p>`;
+                 btnIniciarSimulado.disabled = true; // Mantém desabilitado em caso de erro
             }
         }
 
-        // Sliders
-        document.getElementById('quantidade-slider').addEventListener('input', function() {
-            const value = this.value;
-            document.getElementById('quantidade-value').textContent = `${value} questões`;
-            atualizarResumo();
-        });
-
-        document.getElementById('tempo-slider').addEventListener('input', function() {
-            const value = this.value;
-            document.getElementById('tempo-value').textContent = `${value} segundos`;
-            atualizarResumo();
-        });
-
-        // Controle de matérias
-        function toggleMateria(element) {
-            element.classList.toggle('selected');
-            atualizarResumo();
-        }
-
-        function selectAllMaterias() {
-            document.querySelectorAll('.materia-option').forEach(opt => {
-                opt.classList.add('selected');
+        function configurarEventListeners() {
+            // Sliders
+            document.getElementById('quantidade-questoes').addEventListener('input', e => {
+                document.getElementById('quantidade-value').textContent = e.target.value;
             });
-            atualizarResumo();
-        }
-
-        function deselectAllMaterias() {
-            document.querySelectorAll('.materia-option').forEach(opt => {
-                opt.classList.remove('selected');
+            document.getElementById('tempo-simulado').addEventListener('input', e => {
+                document.getElementById('tempo-value').textContent = e.target.value;
             });
-            atualizarResumo();
+
+            // Botões
+            btnIniciarSimulado.addEventListener('click', iniciarSimulado);
+            btnProxima.addEventListener('click', proximaQuestao);
+            btnFinalizar.addEventListener('click', confirmarFinalizarSimulado);
+            document.getElementById('btn-novo-simulado').addEventListener('click', reiniciarInterface);
+            document.getElementById('btn-fechar-modal-resultado').addEventListener('click', reiniciarInterface);
+
+            // Checkbox "Selecionar Todas"
+            btnSelecionarTodas.addEventListener('change', (e) => {
+                 document.querySelectorAll('.materia-checkbox-input:not(:disabled)').forEach(checkbox => {
+                     checkbox.checked = e.target.checked;
+                 });
+            });
+
+             // Botão Revisar Questões (controla ícone do collapse)
+             const collapseElement = document.getElementById('revisao-questoes-container');
+             if (collapseElement) {
+                 collapseElement.addEventListener('show.bs.collapse', () => {
+                     btnRevisarQuestoes.querySelector('i.fa-chevron-down').className = 'fas fa-chevron-up ms-1 small';
+                 });
+                 collapseElement.addEventListener('hide.bs.collapse', () => {
+                     btnRevisarQuestoes.querySelector('i.fa-chevron-up').className = 'fas fa-chevron-down ms-1 small';
+                 });
+                 // Carrega o conteúdo da revisão QUANDO o collapse é mostrado
+                 collapseElement.addEventListener('shown.bs.collapse', mostrarRevisaoDetalhada); // Carrega toda vez que abre
+             } else {
+                 console.error("Elemento 'revisao-questoes-container' não encontrado.");
+             }
         }
 
-        function getMateriasSelecionadas() {
-            return Array.from(document.querySelectorAll('.materia-option.selected'))
-                       .map(opt => opt.dataset.materia);
-        }
+        // --- Lógica Principal do Simulado ---
 
-        function atualizarResumo() {
-            const quantidade = document.getElementById('quantidade-slider').value;
-            const tempo = document.getElementById('tempo-slider').value;
-            const materias = getMateriasSelecionadas();
-            
-            const resumo = `
-                <strong>${quantidade} questões</strong> | 
-                <strong>${tempo}s por questão</strong> | 
-                <strong>${materias.length} matérias</strong> selecionadas
-                ${materias.length > 0 ? `<br><small>${materias.join(', ')}</small>` : ''}
-            `;
-            
-            document.getElementById('resumo-simulado').innerHTML = resumo;
-        }
-
-        // Iniciar simulado
         async function iniciarSimulado() {
-            const quantidade = parseInt(document.getElementById('quantidade-slider').value);
-            const materias = getMateriasSelecionadas();
-            const tempoPorQuestao = parseInt(document.getElementById('tempo-slider').value);
-            
-            if (materias.length === 0) {
-                alert('Selecione pelo menos uma matéria!');
+            const materiasCheckboxes = document.querySelectorAll('.materia-checkbox-input:checked');
+            const materiasSelecionadas = Array.from(materiasCheckboxes).map(cb => cb.value);
+
+            errorMessage.style.display = 'none'; // Esconde erro anterior
+            if (materiasSelecionadas.length === 0) {
+                 errorMessage.textContent = 'Erro: Selecione pelo menos uma matéria para iniciar o simulado!';
+                 errorMessage.style.display = 'block';
+                 return;
+            }
+
+            const config = {
+                materias: materiasSelecionadas,
+                quantidade_total: parseInt(document.getElementById('quantidade-questoes').value),
+                tempo_minutos: parseInt(document.getElementById('tempo-simulado').value),
+                aleatorio: document.getElementById('modo-aleatorio').checked
+            };
+
+            // Feedback visual de carregamento no botão
+            btnIniciarSimulado.disabled = true;
+            btnIniciarText.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            loadingText.style.display = 'inline';
+            btnIniciarSimulado.classList.add('loading'); // Adiciona classe para estado de loading
+
+            try {
+                console.log("[iniciarSimulado] Enviando config:", config); // Log detalhado
+                const response = await fetch('/api/simulado/iniciar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+
+                 console.log("[iniciarSimulado] Resposta recebida:", response.status); // Log
+                 const data = await response.json();
+                 console.log("[iniciarSimulado] Dados da resposta:", data); // Log
+
+                // Tratamento de erro robusto
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || `Erro ${response.status} ao iniciar simulado.`);
+                }
+                if (!data.simulado_id || data.total_questoes <= 0 || !data.primeira_questao) {
+                     console.error("[iniciarSimulado] Resposta da API inválida:", data);
+                     throw new Error("Resposta inesperada do servidor.");
+                }
+
+                // --- Sucesso ---
+                simuladoId = data.simulado_id;
+                totalQuestoes = data.total_questoes;
+                tempoRestanteSeg = data.tempo_limite_seg;
+                questoesCache = new Array(totalQuestoes);
+                questoesCache[0] = data.primeira_questao; // Guarda a primeira questão
+                respostasUsuario = {};
+                questaoAtualIndex = 0;
+                relatorioFinalCache = null;
+
+                console.log(`[iniciarSimulado] Sucesso! ID: ${simuladoId}, Total Q: ${totalQuestoes}`); // Log
+
+                // Mudar para tela do simulado
+                telaConfiguracao.style.display = 'none';
+                telaSimulado.style.display = 'block';
+
+                 // Ajusta margem superior do progresso
+                 const headerElement = document.querySelector('.questao-header');
+                 if(headerElement) {
+                     const headerHeight = headerElement.offsetHeight;
+                     progressoBarEl.parentElement.style.marginTop = `${headerHeight + 15}px`;
+                 }
+
+                iniciarTimer();
+                carregarQuestao(0); // Carrega a primeira questão (cache)
+
+            } catch (error) {
+                console.error('[iniciarSimulado] Erro:', error);
+                errorMessage.textContent = `Erro ao iniciar: ${error.message}`;
+                errorMessage.style.display = 'block';
+                // Restaura o botão
+                btnIniciarSimulado.disabled = false;
+                btnIniciarText.style.display = 'inline';
+                loadingSpinner.style.display = 'none';
+                loadingText.style.display = 'none';
+                btnIniciarSimulado.classList.remove('loading');
+            }
+        }
+
+        async function carregarQuestao(index) {
+            // Validação
+            if (index < 0 || index >= totalQuestoes || !simuladoId) {
+                console.error(`[carregarQuestao] Tentativa inválida: index=${index}, total=${totalQuestoes}, id=${simuladoId}`);
+                finalizarSimulado(); // Finaliza se índice for inválido
                 return;
             }
 
-            try {
-                document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
-                document.getElementById('btn-iniciar').disabled = true;
+            console.log(`[carregarQuestao] Carregando questão ${index}`); // Log
+            questaoAtualIndex = index;
+            tempoInicioQuestao = Date.now();
 
-                const response = await fetch('/api/simulado/iniciar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        quantidade: quantidade,
-                        materias: materias,
-                        tempo_por_questao: tempoPorQuestao
-                    })
-                });
+            // Reset UI
+            feedbackContainerEl.style.display = 'none';
+            alternativasContainerEl.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></div>'; // Spinner
+            btnProxima.disabled = true;
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    simuladoData.config = { quantidade, materias, tempoPorQuestao };
-                    simuladoData.tempoRestante = quantidade * tempoPorQuestao;
-                    
-                    // Mostrar tela do simulado
-                    document.getElementById('config-screen').classList.add('d-none');
-                    document.getElementById('simulado-screen').classList.remove('d-none');
-                    
-                    // Iniciar timer e carregar primeira questão
-                    iniciarTimer();
-                    carregarQuestao(0);
-                } else {
-                    alert('Erro ao iniciar simulado: ' + data.error);
+            // Update progress
+            numeroQuestaoAtualEl.textContent = index + 1;
+            totalQuestoesEl.textContent = totalQuestoes;
+            const progresso = ((index + 1) / totalQuestoes) * 100;
+            progressoBarEl.style.width = `${progresso}%`;
+            progressoBarEl.setAttribute('aria-valuenow', progresso);
+
+            // Update next button text
+            if (index === totalQuestoes - 1) {
+                btnProximaText.textContent = 'Finalizar Simulado';
+                btnProxima.querySelector('i').className = 'fas fa-check-circle ms-2';
+            } else {
+                btnProximaText.textContent = 'Próxima Questão';
+                btnProxima.querySelector('i').className = 'fas fa-arrow-right ms-2';
+            }
+
+            // Fetch question (cache or API)
+            let questao;
+            if (questoesCache[index]) {
+                console.log(`[carregarQuestao] Questão ${index} do cache.`); // Log
+                questao = questoesCache[index];
+                renderizarQuestao(questao);
+            } else {
+                 questaoEnunciadoEl.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div></div>'; // Spinner
+                try {
+                    console.log(`[carregarQuestao] Buscando questão ${index} da API...`); // Log
+                    const response = await fetch(`/api/simulado/${simuladoId}/questao/${index}`);
+                    if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                     if (!data.questao) throw new Error("Resposta da API sem dados da questão.");
+
+                    questoesCache[index] = data.questao; // Save to cache
+                    renderizarQuestao(data.questao);
+                } catch (error) {
+                    console.error('[carregarQuestao] Erro API:', error);
+                    questaoEnunciadoEl.innerHTML = `<div class="alert alert-danger">Erro ao carregar: ${error.message}</div>`;
+                    alternativasContainerEl.innerHTML = '';
+                     btnFinalizar.disabled = false; // Allow manual finish
                 }
-                
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao iniciar simulado');
-            } finally {
-                document.getElementById('btn-iniciar').innerHTML = '<i class="fas fa-play me-2"></i>Iniciar Simulado';
-                document.getElementById('btn-iniciar').disabled = false;
             }
         }
 
-        // Timer
+        function renderizarQuestao(questao) {
+             console.log(`[renderizarQuestao] Renderizando questão ID ${questao?.id}`); // Log
+            // Validate question data
+            if (!questao || !questao.enunciado || !questao.alternativas || typeof questao.alternativas !== 'object') {
+                 console.error("[renderizarQuestao] Dados inválidos:", questao);
+                 questaoEnunciadoEl.innerHTML = '<div class="alert alert-warning">Erro: Dados da questão inválidos.</div>';
+                 alternativasContainerEl.innerHTML = '';
+                 return;
+            }
+
+            materiaAtualEl.textContent = questao.materia || 'N/A';
+            // Use textContent for security
+            const enunciadoP = document.createElement('p');
+            enunciadoP.textContent = questao.enunciado;
+            questaoEnunciadoEl.innerHTML = ''; // Clear previous
+            questaoEnunciadoEl.className = 'mb-4 fs-5 alert alert-light'; // Reset class
+            questaoEnunciadoEl.appendChild(enunciadoP);
+
+            alternativasContainerEl.innerHTML = ''; // Clear previous
+
+            // Create buttons for alternatives (sorted A, B, C...)
+            const letrasOrdenadas = Object.keys(questao.alternativas).sort();
+            letrasOrdenadas.forEach(letra => {
+                const texto = questao.alternativas[letra];
+                if (texto && String(texto).trim() !== '') {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'alternativa text-start';
+                    button.dataset.alternativa = letra;
+
+                    const strong = document.createElement('strong');
+                    strong.className = 'me-2';
+                    strong.textContent = `${letra})`;
+                    button.appendChild(strong);
+                    button.appendChild(document.createTextNode(` ${texto}`));
+
+                    button.onclick = () => selecionarAlternativa(letra, button);
+                    alternativasContainerEl.appendChild(button);
+                } else {
+                     console.warn(`[renderizarQuestao] Alternativa ${letra} vazia para Q ${questao.id}.`);
+                }
+            });
+             // Ajusta a margem do progresso DEPOIS que a questão renderiza
+             const headerElement = document.querySelector('.questao-header');
+             if(headerElement) {
+                 const headerHeight = headerElement.offsetHeight;
+                 progressoBarEl.parentElement.style.marginTop = `${headerHeight + 15}px`;
+             }
+
+        }
+
+        async function selecionarAlternativa(letra, botaoSelecionado) {
+            const tempoFimQuestao = Date.now();
+            const tempoGastoSeg = Math.max(0, Math.round((tempoFimQuestao - tempoInicioQuestao) / 1000));
+
+            // Disable all alternatives immediately
+            const alternativas = alternativasContainerEl.querySelectorAll('.alternativa');
+            alternativas.forEach(btn => { btn.disabled = true; });
+
+            botaoSelecionado.classList.add('selecionada');
+
+            // Show processing feedback
+            feedbackContainerEl.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm text-secondary"></div> Verificando...</div>';
+            feedbackContainerEl.style.display = 'block';
+
+            try {
+                 console.log(`[selecionarAlternativa] Enviando: Q${questaoAtualIndex}, Alt ${letra}, Tempo ${tempoGastoSeg}s`); // Log
+                 const response = await fetch(`/api/simulado/${simuladoId}/responder`, {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         questao_index: questaoAtualIndex,
+                         alternativa: letra,
+                         tempo_gasto: tempoGastoSeg
+                     })
+                 });
+                 const data = await response.json();
+                 console.log("[selecionarAlternativa] Resposta API:", data); // Log
+
+                 if (!response.ok || !data.success) {
+                     throw new Error(data.error || `Erro HTTP ${response.status}`);
+                 }
+
+                 // Save user's answer locally ONLY after API success
+                 respostasUsuario[questaoAtualIndex] = letra;
+                 console.log("[selecionarAlternativa] Resposta registrada."); // Log
+
+                 // Display visual feedback based on API response
+                 mostrarFeedback(letra, botaoSelecionado, data);
+                 btnProxima.disabled = false; // Enable Next/Finish button
+
+            } catch (error) {
+                 console.error("[selecionarAlternativa] Erro:", error);
+                 feedbackContainerEl.innerHTML = `<div class="alert alert-danger mb-0">Erro: ${error.message}. Clique em Próxima Questão.</div>`;
+                 feedbackContainerEl.style.display = 'block';
+                 // Allow user to proceed even if API fails
+                 btnProxima.disabled = false;
+            }
+        }
+
+        function mostrarFeedback(letraEscolhida, botaoSelecionado, feedbackData) {
+            const { acertou, resposta_correta, justificativa, dica, formula } = feedbackData;
+
+            if (typeof acertou !== 'boolean' || !resposta_correta) {
+                 console.error("[mostrarFeedback] Dados de feedback inválidos:", feedbackData);
+                 feedbackContainerEl.innerHTML = '<div class="alert alert-warning">Erro ao receber feedback.</div>';
+                 return;
+            }
+
+            const tituloEl = document.getElementById('feedback-titulo');
+            const justificativaEl = document.getElementById('feedback-justificativa');
+
+            // Style alternatives based on feedback
+            alternativasContainerEl.querySelectorAll('.alternativa').forEach(btn => {
+                const altLetra = btn.dataset.alternativa;
+                if (altLetra === resposta_correta) {
+                    btn.classList.add('correta');
+                }
+                if (altLetra === letraEscolhida && !acertou) {
+                    btn.classList.add('errada-escolhida');
+                }
+            });
+
+            // Configure feedback box style and title
+            if (acertou) {
+                feedbackContainerEl.className = 'feedback-box correto';
+                tituloEl.innerHTML = '<i class="fas fa-check-circle me-2"></i>Resposta Correta!';
+            } else {
+                feedbackContainerEl.className = 'feedback-box incorreto';
+                tituloEl.innerHTML = `<i class="fas fa-times-circle me-2"></i>Resposta Incorreta! A correta era a ${resposta_correta}.`;
+            }
+
+            // Display justification, tip, formula
+            justificativaEl.textContent = justificativa || (acertou ? 'Parabéns!' : `A alternativa correta era a ${resposta_correta}.`);
+
+            const dicaContainer = document.getElementById('dica-container');
+            const textoDicaEl = document.getElementById('texto-dica');
+            if (dica) {
+                textoDicaEl.textContent = dica;
+                dicaContainer.style.display = 'block';
+            } else {
+                dicaContainer.style.display = 'none';
+            }
+
+            const formulaContainer = document.getElementById('formula-container');
+             const textoFormulaEl = document.getElementById('texto-formula');
+            if (formula) {
+                textoFormulaEl.textContent = formula;
+                formulaContainer.style.display = 'block';
+            } else {
+                formulaContainer.style.display = 'none';
+            }
+
+            feedbackContainerEl.style.display = 'block';
+            feedbackContainerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function proximaQuestao() {
+             errorMessage.style.display = 'none'; // Clear general errors
+            // If it's the last question, the button acts as "Finish"
+            if (questaoAtualIndex === totalQuestoes - 1) {
+                finalizarSimulado();
+            } else {
+                carregarQuestao(questaoAtualIndex + 1);
+            }
+        }
+
+        function confirmarFinalizarSimulado() {
+            const respondidasCount = Object.keys(respostasUsuario).length;
+            const naoRespondidasCount = totalQuestoes - respondidasCount;
+            let msg = "Tem certeza que deseja finalizar o simulado agora?";
+            if (naoRespondidasCount > 0) {
+                 msg += `\n${naoRespondidasCount} questão(ões) não foi(ram) respondida(s) e será(ão) considerada(s) como erro.`;
+            }
+
+            if (confirm(msg)) {
+                finalizarSimulado();
+            }
+        }
+
+        async function finalizarSimulado() {
+            clearInterval(timerInterval); // Stop timer immediately
+            console.log("[finalizarSimulado] Iniciando finalização..."); // Log
+
+            // Loading feedback
+            telaSimulado.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                    <h3 class="text-muted">Calculando seu resultado...</h3>
+                </div>`;
+
+            try {
+                console.log(`[finalizarSimulado] Enviando POST para /api/simulado/${simuladoId}/finalizar`); // Log
+                const response = await fetch(`/api/simulado/${simuladoId}/finalizar`, { method: 'POST' });
+                 console.log("[finalizarSimulado] Resposta API:", response.status); // Log
+                 if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
+                const data = await response.json();
+                console.log("[finalizarSimulado] Dados resposta:", data); // Log
+
+                if (data.success && data.relatorio) {
+                    relatorioFinalCache = data.relatorio; // Save for review
+                    mostrarResultado(data.relatorio);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido ao finalizar.');
+                }
+            } catch (error) {
+                console.error('[finalizarSimulado] Erro:', error);
+                telaSimulado.innerHTML = `
+                     <div class="alert alert-danger text-center">
+                         <h4>Erro ao Finalizar</h4><p>${error.message}</p>
+                         <button onclick="reiniciarInterface()" class="btn btn-primary mt-2">
+                             <i class="fas fa-redo me-1"></i> Voltar
+                         </button>
+                     </div>`;
+                 if (resultadoModal) { resultadoModal.hide(); }
+            }
+        }
+
+        // --- Timer ---
         function iniciarTimer() {
-            atualizarTimerDisplay();
-            simuladoData.timerInterval = setInterval(() => {
-                simuladoData.tempoRestante--;
-                atualizarTimerDisplay();
-                
-                if (simuladoData.tempoRestante <= 0) {
-                    clearInterval(simuladoData.timerInterval);
+            clearInterval(timerInterval);
+            console.log(`[iniciarTimer] Iniciando com ${tempoRestanteSeg} segundos.`); // Log
+
+            function atualizarDisplay() {
+                 const minutos = Math.floor(tempoRestanteSeg / 60);
+                 const segundos = tempoRestanteSeg % 60;
+                 timerDisplayEl.textContent = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+
+                 if (tempoRestanteSeg <= 60 && !timerDisplayEl.classList.contains('text-danger')) {
+                     timerDisplayEl.classList.add('text-danger');
+                 } else if (tempoRestanteSeg > 60 && timerDisplayEl.classList.contains('text-danger')) {
+                     timerDisplayEl.classList.remove('text-danger');
+                 }
+            }
+            atualizarDisplay(); // Update immediately
+
+            timerInterval = setInterval(() => {
+                if (tempoRestanteSeg > 0) {
+                    tempoRestanteSeg--;
+                    atualizarDisplay();
+                }
+                if (tempoRestanteSeg <= 0) {
+                    clearInterval(timerInterval);
+                    console.log("[iniciarTimer] Tempo acabou!"); // Log
+                    alert("O tempo do simulado acabou!");
                     finalizarSimulado();
                 }
             }, 1000);
         }
 
-        function atualizarTimerDisplay() {
-            const minutes = Math.floor(simuladoData.tempoRestante / 60);
-            const seconds = simuladoData.tempoRestante % 60;
-            document.getElementById('timer').textContent = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        // --- Resultado, Revisão e Reinício ---
+        function mostrarResultado(relatorio) {
+            console.log("[mostrarResultado] Exibindo modal com:", relatorio); // Log
+            telaSimulado.style.display = 'none';
+
+            // Fill KPIs
+            document.getElementById('modal-total-acertos').textContent = relatorio.geral?.acertos ?? 0;
+            document.getElementById('modal-total-erros').textContent = relatorio.geral?.erros ?? 0;
+            document.getElementById('modal-percentual-acerto').textContent = `${relatorio.geral?.percentual_acerto ?? 0}%`;
+            document.getElementById('modal-tempo-total').textContent = `${relatorio.geral?.tempo_total_minutos ?? 0} min`;
+
+            // Render chart
+            renderGraficoModal(relatorio.por_materia);
+
+            // Show recommendations
+            const listaRecomendacoes = document.getElementById('lista-recomendacoes');
+            listaRecomendacoes.innerHTML = ''; // Clear
+            if (relatorio.recomendacoes && relatorio.recomendacoes.length > 0) {
+                relatorio.recomendacoes.forEach(recHTML => {
+                     listaRecomendacoes.insertAdjacentHTML('beforeend', recHTML);
+                });
+            } else {
+                 listaRecomendacoes.innerHTML = '<li class="list-group-item border-0 text-muted">Nenhuma recomendação específica gerada.</li>';
+            }
+
+            // Show modal
+            if(resultadoModal) {
+                resultadoModal.show();
+            } else {
+                console.error("[mostrarResultado] Modal não inicializado.");
+                alert("Erro ao exibir o modal de resultado.");
+            }
         }
 
-        // Navegação de questões
-        async function carregarQuestao(index) {
-            try {
-                const response = await fetch(`/api/simulado/questao/${simuladoData.questoes[index].id}`);
-                const data = await response.json();
-                
-                if (data.questao) {
-                    exibirQuestao(data.questao, index);
-                    simuladoData.questaoAtual = index;
-                    atualizarNavegacao();
+        function renderGraficoModal(dadosMateria) {
+             const canvas = document.getElementById('grafico-desempenho-modal');
+             const ctx = canvas.getContext('2d');
+             graficoPlaceholder.style.display = 'none';
+
+            if (graficoModalInstance) { graficoModalInstance.destroy(); }
+
+            const materias = Object.keys(dadosMateria);
+            const percentuais = materias.map(materia => dadosMateria[materia]?.percentual ?? 0);
+
+             if (materias.length === 0) {
+                 graficoPlaceholder.style.display = 'block';
+                 canvas.style.display = 'none';
+                 return;
+             }
+             canvas.style.display = 'block';
+
+            graficoModalInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: materias, datasets: [{ label: 'Acerto (%)', data: percentuais, backgroundColor: 'rgba(13, 110, 253, 0.7)', borderColor: 'rgba(13, 110, 253, 1)', borderWidth: 1, borderRadius: 5 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100, ticks: { callback: value => value + "%" } }, x: { ticks: { autoSkip: false } } },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.label}: ${context.formattedValue}%` } } }
                 }
-            } catch (error) {
-                console.error('Erro ao carregar questão:', error);
-            }
-        }
-
-        function exibirQuestao(questao, index) {
-            const container = document.getElementById('questao-container');
-            const alternativas = Object.entries(questao.alternativas)
-                .map(([letra, texto]) => `
-                    <button class="alternativa-btn" onclick="selecionarAlternativa('${letra}')" data-letra="${letra}">
-                        <div class="alternativa-letter">${letra}</div>
-                        <div class="alternativa-texto">${texto}</div>
-                    </button>
-                `).join('');
-            
-            container.innerHTML = `
-                <div class="questao-header mb-4">
-                    <span class="badge bg-primary">${questao.materia}</span>
-                    <span class="badge bg-secondary ms-2">${questao.dificuldade}</span>
-                </div>
-                <div class="questao-enunciado">
-                    ${questao.enunciado}
-                </div>
-                <div class="alternativas-list">
-                    ${alternativas}
-                </div>
-            `;
-            
-            // Restaurar resposta selecionada se existir
-            const respostaSalva = simuladoData.respostas[questao.id];
-            if (respostaSalva) {
-                selecionarAlternativa(respostaSalva.resposta, false);
-            }
-            
-            // Atualizar progresso
-            const progresso = ((index + 1) / simuladoData.config.quantidade) * 100;
-            document.getElementById('progress-bar').style.width = `${progresso}%`;
-            document.getElementById('progress-text').textContent = 
-                `Questão ${index + 1} de ${simuladoData.config.quantidade}`;
-        }
-
-        function selecionarAlternativa(letra, salvar = true) {
-            // Remover seleção anterior
-            document.querySelectorAll('.alternativa-btn').forEach(btn => {
-                btn.classList.remove('selected');
             });
-            
-            // Selecionar nova
-            const btn = document.querySelector(`.alternativa-btn[data-letra="${letra}"]`);
-            if (btn) {
-                btn.classList.add('selected');
-                
-                if (salvar) {
-                    const questaoAtual = simuladoData.questoes[simuladoData.questaoAtual];
-                    salvarResposta(questaoAtual.id, letra);
-                }
-            }
         }
 
-        async function salvarResposta(questaoId, resposta) {
-            try {
-                await fetch('/api/simulado/responder', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        questao_id: questaoId,
-                        resposta: resposta
-                    })
-                });
-                
-                simuladoData.respostas[questaoId] = { resposta, timestamp: new Date().toISOString() };
-            } catch (error) {
-                console.error('Erro ao salvar resposta:', error);
-            }
+        function mostrarRevisaoDetalhada() {
+             console.log("[mostrarRevisaoDetalhada] Carregando revisão..."); // Log
+             if (!relatorioFinalCache || !relatorioFinalCache.questoes_com_detalhes) {
+                 console.warn("[mostrarRevisaoDetalhada] Dados não encontrados."); // Log
+                 revisaoQuestoesContent.innerHTML = '<p class="text-danger">Erro ao carregar revisão.</p>';
+                 return;
+             }
+
+             revisaoQuestoesContent.innerHTML = ''; // Clear previous
+
+             if(relatorioFinalCache.questoes_com_detalhes.length === 0) {
+                 revisaoQuestoesContent.innerHTML = '<p class="text-muted">Nenhuma questão para revisar.</p>';
+                 return;
+             }
+
+             relatorioFinalCache.questoes_com_detalhes.forEach(q => {
+                 const divQuestao = document.createElement('div');
+                 divQuestao.className = 'revisao-item';
+
+                 const acertouIcon = q.acertou === true ? '<i class="fas fa-check-circle text-success ms-2"></i>' :
+                                    q.acertou === false ? '<i class="fas fa-times-circle text-danger ms-2"></i>' :
+                                    '<i class="fas fa-minus-circle text-muted ms-2"></i>';
+
+                 const header = document.createElement('div');
+                 header.className = 'revisao-header';
+                 header.innerHTML = `<span class="revisao-numero">Q.${q.numero} (${q.materia || 'N/A'})</span><span>${acertouIcon}</span>`;
+                 divQuestao.appendChild(header);
+
+                 const enunciadoEl = document.createElement('div');
+                 enunciadoEl.className = 'revisao-enunciado';
+                 enunciadoEl.textContent = q.enunciado || '[Enunciado ausente]';
+                 divQuestao.appendChild(enunciadoEl);
+
+                 const altsDiv = document.createElement('div');
+                 const alternativas = q.alternativas || {};
+                 Object.keys(alternativas).sort().forEach(letra => {
+                     const altSpan = document.createElement('span');
+                     altSpan.className = 'revisao-alternativa d-block';
+                     altSpan.innerHTML = `<strong>${letra})</strong> `;
+                     altSpan.appendChild(document.createTextNode(alternativas[letra] || '[Alternativa ausente]'));
+
+                     if (letra === q.resposta_correta) { altSpan.classList.add('bg-success-light', 'text-success-dark', 'fw-bold'); }
+                     if (letra === q.resposta_usuario && q.acertou === false) { altSpan.classList.add('bg-danger-light', 'text-danger-dark'); altSpan.style.textDecoration = 'line-through'; }
+                     if (letra === q.resposta_usuario && q.acertou === true) { altSpan.style.border = '2px solid #198754'; }
+                     altsDiv.appendChild(altSpan);
+                 });
+                 divQuestao.appendChild(altsDiv);
+
+                 if (q.justificativa) {
+                    const justDiv = document.createElement('div');
+                    justDiv.className = 'revisao-justificativa';
+                    justDiv.innerHTML = `<strong>Justificativa:</strong> `;
+                    justDiv.appendChild(document.createTextNode(q.justificativa));
+                    divQuestao.appendChild(justDiv);
+                 }
+                 revisaoQuestoesContent.appendChild(divQuestao);
+             });
+         }
+
+
+        function reiniciarInterface() {
+            console.log("[reiniciarInterface] Reiniciando..."); // Log
+            // Forma mais segura: Recarregar a página para garantir estado limpo
+            window.location.reload();
         }
 
-        function questaoAnterior() {
-            if (simuladoData.questaoAtual > 0) {
-                carregarQuestao(simuladoData.questaoAtual - 1);
-            }
-        }
-
-        function proximaQuestao() {
-            if (simuladoData.questaoAtual < simuladoData.config.quantidade - 1) {
-                carregarQuestao(simuladoData.questaoAtual + 1);
-            }
-        }
-
-        function atualizarNavegacao() {
-            const btnAnterior = document.getElementById('btn-anterior');
-            const btnProxima = document.getElementById('btn-proxima');
-            const btnFinalizar = document.getElementById('btn-finalizar');
-            
-            btnAnterior.disabled = simuladoData.questaoAtual === 0;
-            
-            const isUltimaQuestao = simuladoData.questaoAtual === simuladoData.config.quantidade - 1;
-            btnProxima.classList.toggle('d-none', isUltimaQuestao);
-            btnFinalizar.classList.toggle('d-none', !isUltimaQuestao);
-        }
-
-        // Finalizar simulado
-        async function finalizarSimulado() {
-            if (simuladoData.timerInterval) {
-                clearInterval(simuladoData.timerInterval);
-            }
-            
-            try {
-                const response = await fetch('/api/simulado/finalizar', {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    exibirResultado(data.relatorio);
-                    document.getElementById('simulado-screen').classList.add('d-none');
-                    document.getElementById('resultado-screen').classList.remove('d-none');
-                }
-            } catch (error) {
-                console.error('Erro ao finalizar simulado:', error);
-                alert('Erro ao finalizar simulado');
-            }
-        }
-
-        function exibirResultado(relatorio) {
-            const geral = relatorio.geral;
-            const container = document.getElementById('resultado-content');
-            
-            container.innerHTML = `
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.percentual_acerto}%</div>
-                            <div class="kpi-label">Acerto</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.acertos}</div>
-                            <div class="kpi-label">Acertos</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.erros}</div>
-                            <div class="kpi-label">Erros</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="kpi-card">
-                            <div class="kpi-value">${geral.tempo_total_minutos}m</div>
-                            <div class="kpi-label">Tempo</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-chart-bar me-2"></i>Desempenho por Matéria
-                    </div>
-                    <div class="card-body">
-                        ${Object.entries(relatorio.por_materia).map(([materia, stats]) => `
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span>${materia}</span>
-                                <span class="score-badge ${getScoreBadgeClass(stats.percentual)}">
-                                    ${stats.acertos}/${stats.total} (${stats.percentual}%)
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function getScoreBadgeClass(percentual) {
-            if (percentual >= 80) return 'score-high';
-            if (percentual >= 60) return 'score-medium';
-            return 'score-low';
-        }
-
-        function voltarParaConfig() {
-            document.getElementById('resultado-screen').classList.add('d-none');
-            document.getElementById('config-screen').classList.remove('d-none');
-            location.reload(); // Recarregar para limpar estado
-        }
-
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarMaterias();
-            atualizarResumo();
-        });
     </script>
 </body>
 </html>
+
+

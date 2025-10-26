@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 # Chave secreta para gerenciamento de sessão (importante para segurança)
 # Em produção, use uma variável de ambiente!
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key_placeholder_12345') # Substitua por uma chave forte ou use variável de ambiente
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key_placeholder_12345_67890') # Chave mais segura
 
 DATABASE = 'concurso.db' # Nome do arquivo do banco de dados
 
@@ -352,8 +352,10 @@ class SistemaSimulado:
             return
 
         simulado_id_str = simulado.get('id', '')
+        # Usar .get com default vazio evita erros se config/relatorio não existirem
         config_json = json.dumps(simulado.get('config', {}))
         relatorio_json = json.dumps(simulado.get('relatorio', {}))
+        # Trata caso inicio/fim sejam None
         inicio_iso = simulado.get('inicio').isoformat() if simulado.get('inicio') else None
         fim_iso = simulado.get('fim').isoformat() if simulado.get('fim') else None
 
@@ -528,7 +530,7 @@ def health():
     return jsonify({
         "status": "online",
         "message": "ConcursoMaster AI 3.0",
-        "version": "3.0", # Pode vir de uma config
+        "version": "3.1", # Atualizar versão se fizer mudanças significativas
         "database_status": "connected" if db_ok else "error",
         "timestamp": datetime.now().isoformat()
     }), status_code
@@ -539,7 +541,8 @@ def materias():
     logger.debug("Acessando API /api/materias")
     # Garante que a tabela 'questoes' existe antes de consultar
     if not criar_tabelas_se_necessario():
-         return jsonify({"error": "Erro ao verificar estrutura do banco de dados."}), 500
+         logger.error("Falha ao verificar/criar tabelas na API /api/materias.")
+         return jsonify({"error": "Erro ao inicializar o banco de dados."}), 500
 
     conn = get_db_connection()
     if not conn:
@@ -568,15 +571,21 @@ def materias():
             estatisticas_dict[materia] = {'total': total} # Guarda a contagem
             total_geral += total
 
-        logger.info(f"API /api/materias retornou {len(materias_lista)} matérias.")
+        logger.info(f"API /api/materias retornou {len(materias_lista)} matérias com questões.")
         return jsonify({
             "materias": materias_lista,
             "estatisticas": estatisticas_dict,
             "total_geral": total_geral
         })
 
+    except sqlite3.OperationalError as op_err:
+        logger.error(f"Erro Operacional SQLite em /api/materias (tabela 'questoes' existe?): {op_err}", exc_info=True)
+        # Tenta recriar tabelas uma vez em caso de erro de schema
+        logger.info("Tentando recriar tabelas devido a erro operacional...")
+        criar_tabelas_se_necessario() # Pode resolver se a tabela foi deletada
+        return jsonify({"error": "Erro operacional no banco ao consultar matérias. Tente novamente."}), 500
     except sqlite3.Error as db_err:
-        logger.error(f"Erro de SQLite em /api/materias: {db_err}", exc_info=True)
+        logger.error(f"Erro SQLite em /api/materias: {db_err}", exc_info=True)
         return jsonify({"error": "Erro ao consultar matérias no banco."}), 500
     except Exception as e:
         logger.error(f"Erro geral em /api/materias: {e}", exc_info=True)
@@ -648,6 +657,8 @@ def iniciar_simulado_api():
         # Verificação de segurança adicional
         if not simulado_ativo or not simulado_ativo.get('questoes'):
              logger.error(f"Inconsistência: Simulado {simulado_id} registrado, mas sem dados ou questões na memória.")
+             # Tenta remover o simulado inconsistente se ele existir na memória
+             if simulado_id in sistema_simulado.simulados_ativos: del sistema_simulado.simulados_ativos[simulado_id]
              return jsonify({"success": False, "error": "Erro interno crítico ao recuperar dados do simulado iniciado."}), 500
 
         primeira_questao = simulado_ativo['questoes'][0]
@@ -922,9 +933,9 @@ def get_estatisticas_dashboard():
                     global_stats_materia[materia]['total'] += int(stats.get('total', 0))
 
             except json.JSONDecodeError as json_err:
-                 logger.error(f"Erro ao decodificar JSON do relatório histórico ID {row.get('id', 'N/A')}: {json_err}")
+                 logger.error(f"Erro ao decodificar JSON do relatório histórico ID {row['id'] if 'id' in row.keys() else 'N/A'}: {json_err}") # Acesso seguro ao ID
             except Exception as e_proc:
-                 logger.error(f"Erro ao processar relatório histórico ID {row.get('id', 'N/A')}: {e_proc}", exc_info=True)
+                 logger.error(f"Erro ao processar relatório histórico ID {row['id'] if 'id' in row.keys() else 'N/A'}: {e_proc}", exc_info=True)
 
 
         desempenho_global_materia = {
@@ -978,16 +989,24 @@ def serve_static_files(filename):
 # --- Tratamento de Erros ---
 @app.errorhandler(404)
 def not_found_error(error):
-    logger.warning(f"Rota não encontrada: {request.url}")
-    return render_template('error.html', mensagem="Página não encontrada (Erro 404)"), 404
+    # Loga o acesso a uma rota inexistente
+    logger.warning(f"Rota não encontrada (404): {request.url}")
+    # Renderiza uma página de erro 404 amigável (se existir error.html)
+    # ou retorna um JSON se for uma API
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Endpoint não encontrado"}), 404
+    return render_template('error.html', mensagem="Página não encontrada (Erro 404). Verifique o endereço digitado."), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    # Logar o erro completo para debugging
-    logger.error(f"Erro interno do servidor (500): {error}", exc_info=True)
-    # Tentar reverter transações do DB se houver
+    # Loga o erro completo para debugging interno
+    logger.error(f"Erro interno do servidor (500) na rota {request.url}: {error}", exc_info=True)
+    # Tentar reverter transações do DB se houver (depende da sua arquitetura)
     # db_session.rollback() # Exemplo se usar SQLAlchemy
-    return render_template('error.html', mensagem="Ocorreu um erro interno no servidor (Erro 500). Tente novamente mais tarde."), 500
+    # Renderiza uma página de erro 500 genérica para o usuário
+    if request.path.startswith('/api/'):
+         return jsonify({"error": "Erro interno do servidor"}), 500
+    return render_template('error.html', mensagem="Ocorreu um erro interno inesperado no servidor (Erro 500). Nossa equipe foi notificada. Por favor, tente novamente mais tarde."), 500
 
 
 # --- Inicialização da Aplicação ---
@@ -995,13 +1014,13 @@ if __name__ == '__main__':
     # Define a porta usando variável de ambiente ou um padrão
     port = int(os.environ.get('PORT', 8080))
 
-    # Garante que as tabelas do banco de dados existam antes de iniciar
+    # Garante que as tabelas do banco de dados existam ANTES de iniciar o servidor
     if not criar_tabelas_se_necessario():
          logger.critical("########## FALHA AO INICIALIZAR O BANCO DE DADOS ##########")
-         logger.critical("O aplicativo pode não funcionar corretamente. Verifique os logs.")
-         # Considerar sair do aplicativo se o DB for essencial para operação básica
+         logger.critical("O aplicativo pode não funcionar corretamente. Verifique os logs de erro.")
+         # Considerar sair do aplicativo se o DB for essencial para operação básica?
          # import sys
-         # sys.exit(1)
+         # sys.exit(1) # Descomente para sair se o DB falhar na inicialização
 
     logger.info(f"========= INICIANDO ConcursoMaster AI 3.0 NA PORTA {port} =========")
 
@@ -1009,20 +1028,19 @@ if __name__ == '__main__':
     # debug=True recarrega automaticamente e mostra erros detalhados no navegador (NÃO USAR EM PRODUÇÃO)
     # Em produção (como Railway), Gunicorn ou Waitress será usado, e debug=False é essencial.
     is_production = os.environ.get('RAILWAY_ENVIRONMENT') == 'production' # Exemplo de variável do Railway
-    use_debug = not is_production
+    # Forçar debug=False se estiver em produção, caso contrário, respeitar FLASK_DEBUG
+    use_debug = not is_production and os.environ.get('FLASK_DEBUG') == '1'
 
     if use_debug:
-        logger.warning("Rodando em modo DEBUG. Não use em produção!")
-        # Roda com o servidor de desenvolvimento do Flask (bom para debug)
+        logger.warning("############## Rodando em modo DEBUG ##############")
+        logger.warning("NÃO USE ESTE MODO EM PRODUÇÃO!")
+        # Roda com o servidor de desenvolvimento do Flask (bom para debug local)
         app.run(host='0.0.0.0', port=port, debug=True)
     else:
         # Em produção, um servidor WSGI como Gunicorn ou Waitress deve ser usado.
-        # Se este script for chamado diretamente em produção (não recomendado),
-        # pelo menos roda sem debug. O Railway geralmente usa Gunicorn.
-        # Exemplo com Waitress (instalar com pip install waitress):
-        # from waitress import serve
-        # logger.info("Iniciando com Waitress...")
-        # serve(app, host='0.0.0.0', port=port)
-        # Exemplo se fosse rodar app.run em prod (NÃO IDEAL):
+        # O Railway geralmente usa Gunicorn configurado externamente (Procfile).
+        # Se este script for chamado diretamente em produção (não ideal),
+        # pelo menos roda sem debug.
+        logger.info("Rodando em modo PRODUÇÃO (debug=False)")
         app.run(host='0.0.0.0', port=port, debug=False)
 
