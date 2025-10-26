@@ -1,606 +1,1021 @@
-﻿{% extends "base.html" %}
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulado Inteligente - ConcursoMaster AI</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome (para ícones) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Nosso CSS Customizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-light">
 
-{% block title %}Simulados - ConcursoMaster AI{% endblock %}
-
-{% block extra_css %}
-<style>
-.config-section {
-    margin-bottom: 2.5rem;
-}
-
-.section-title {
-    color: #2d3748;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.quantidade-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.quantidade-option {
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 1.5rem 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: white;
-}
-
-.quantidade-option:hover {
-    border-color: #4361ee;
-    transform: translateY(-2px);
-}
-
-.quantidade-option.active {
-    border-color: #4361ee;
-    background: #4361ee;
-    color: white;
-    box-shadow: 0 8px 25px rgba(67, 97, 238, 0.3);
-}
-
-.quantidade-number {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-}
-
-.quantidade-label {
-    font-size: 0.875rem;
-    opacity: 0.8;
-}
-
-.materias-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    background: white;
-}
-
-.materia-card {
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: white;
-}
-
-.materia-card:hover {
-    border-color: #4361ee;
-    transform: translateY(-2px);
-}
-
-.materia-card.selected {
-    border-color: #4361ee;
-    background: rgba(67, 97, 238, 0.05);
-    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
-}
-
-.materia-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.materia-name {
-    font-weight: 600;
-    color: #2d3748;
-}
-
-.materia-count {
-    background: #4361ee;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.config-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-.config-item {
-    background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-}
-
-.config-item:hover {
-    border-color: #4361ee;
-    transform: translateY(-2px);
-}
-
-.config-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.config-icon {
-    width: 40px;
-    height: 40px;
-    background: #4361ee;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-}
-
-.config-title {
-    font-weight: 600;
-    color: #2d3748;
-    margin: 0;
-}
-
-.config-description {
-    color: #718096;
-    font-size: 0.875rem;
-    margin: 0;
-}
-
-.form-check-input:checked {
-    background-color: #4361ee;
-    border-color: #4361ee;
-}
-
-.quick-actions {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.stats-bar {
-    background: white;
-    border-radius: 10px;
-    padding: 1rem;
-    margin-top: 1rem;
-    border: 2px solid #e2e8f0;
-}
-
-.stats-text {
-    font-weight: 600;
-    color: #4361ee;
-    margin: 0;
-}
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <!-- Cabeçalho -->
-            <div class="text-center mb-5">
-                <h1 class="display-5 fw-bold text-white mb-3">
-                    <i class="fas fa-rocket me-2"></i>Configurar Simulado
-                </h1>
-                <p class="lead text-white-50">Personalize seu simulado para maximizar seu aprendizado</p>
-            </div>
-
-            <div class="premium-card p-5">
-                <form id="configSimuladoForm">
-                    <!-- Seção 1: Quantidade -->
-                    <div class="config-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-list-ol text-primary"></i>
-                            Quantidade de Questões
-                        </h3>
-                        
-                        <div class="quantidade-grid">
-                            <div class="quantidade-option active" data-quantidade="10">
-                                <div class="quantidade-number">10</div>
-                                <div class="quantidade-label">Rápido</div>
-                                <small>~10 min</small>
-                            </div>
-                            <div class="quantidade-option" data-quantidade="20">
-                                <div class="quantidade-number">20</div>
-                                <div class="quantidade-label">Padrão</div>
-                                <small>~20 min</small>
-                            </div>
-                            <div class="quantidade-option" data-quantidade="30">
-                                <div class="quantidade-number">30</div>
-                                <div class="quantidade-label">Completo</div>
-                                <small>~30 min</small>
-                            </div>
-                            <div class="quantidade-option" data-quantidade="50">
-                                <div class="quantidade-number">50</div>
-                                <div class="quantidade-label">Intensivo</div>
-                                <small>~50 min</small>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Ou digite um número personalizado:</label>
-                                <input type="number" class="form-control form-control-lg" 
-                                       id="quantidadeCustom" min="5" max="100" value="10">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Seção 2: Matérias -->
-                    <div class="config-section">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3 class="section-title mb-0">
-                                <i class="fas fa-book text-primary"></i>
-                                Matérias do Simulado
-                            </h3>
-                            <div class="quick-actions">
-                                <button type="button" class="btn btn-outline-success btn-sm" id="btnSelecionarTodas">
-                                    <i class="fas fa-check-double me-1"></i> Todas
-                                </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnSelecionarPrincipais">
-                                    <i class="fas fa-star me-1"></i> Principais
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="materias-grid">
-                            {% for materia in materias %}
-                            <div class="materia-card" data-materia="{{ materia.nome }}">
-                                <div class="materia-header">
-                                    <span class="materia-name">{{ materia.nome }}</span>
-                                    <span class="materia-count">{{ materia.total }}</span>
-                                </div>
-                                <input type="checkbox" class="materia-checkbox d-none" 
-                                       value="{{ materia.nome }}" id="materia{{ loop.index }}" checked>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        
-                        <div class="stats-bar">
-                            <p class="stats-text" id="contadorMaterias">
-                                {{ materias|length }} matérias selecionadas • 
-                                <span id="totalQuestoesEstimate">~10 questões</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Seção 3: Configurações -->
-                    <div class="config-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-sliders-h text-primary"></i>
-                            Configurações Avançadas
-                        </h3>
-                        
-                        <div class="config-grid">
-                            <div class="config-item">
-                                <div class="config-header">
-                                    <div class="config-icon">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                    <h4 class="config-title">Tempo Cronometrado</h4>
-                                </div>
-                                <p class="config-description">
-                                    Simula condições reais de prova com tempo limitado
-                                </p>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="tempoCronometrado" checked>
-                                    <label class="form-check-label fw-semibold" for="tempoCronometrado">
-                                        Ativar cronômetro
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="config-item">
-                                <div class="config-header">
-                                    <div class="config-icon">
-                                        <i class="fas fa-lightbulb"></i>
-                                    </div>
-                                    <h4 class="config-title">Dicas Inteligentes</h4>
-                                </div>
-                                <p class="config-description">
-                                    Receba dicas contextuais durante as questões
-                                </p>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="dicasAutomaticas" checked>
-                                    <label class="form-check-label fw-semibold" for="dicasAutomaticas">
-                                        Ativar dicas
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="config-item">
-                                <div class="config-header">
-                                    <div class="config-icon">
-                                        <i class="fas fa-calculator"></i>
-                                    </div>
-                                    <h4 class="config-title">Fórmulas Matemáticas</h4>
-                                </div>
-                                <p class="config-description">
-                                    Acesso rápido a fórmulas em questões de exatas
-                                </p>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="formulasMatematicas" checked>
-                                    <label class="form-check-label fw-semibold" for="formulasMatematicas">
-                                        Mostrar fórmulas
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="config-item">
-                                <div class="config-header">
-                                    <div class="config-icon">
-                                        <i class="fas fa-graduation-cap"></i>
-                                    </div>
-                                    <h4 class="config-title">Feedback Detalhado</h4>
-                                </div>
-                                <p class="config-description">
-                                    Explicações completas após cada resposta
-                                </p>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="feedbackDetalhado" checked>
-                                    <label class="form-check-label fw-semibold" for="feedbackDetalhado">
-                                        Feedback completo
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Botões de Ação -->
-                    <div class="d-grid gap-3 d-md-flex justify-content-md-end pt-4 border-top">
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg me-md-3">
-                            <i class="fas fa-arrow-left me-2"></i> Voltar
-                        </a>
-                        <button type="submit" class="btn btn-premium btn-lg px-5" id="btnIniciarSimulado">
-                            <i class="fas fa-play-circle me-2"></i> Iniciar Simulado
-                        </button>
-                    </div>
-                </form>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI 3.0
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/simulado">Simulado</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/redacao">Redação</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                </ul>
             </div>
         </div>
-    </div>
-</div>
+    </nav>
 
-<!-- Loading Modal -->
-<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-body text-center py-5">
-                <div class="spinner-border text-primary mb-4" style="width: 4rem; height: 4rem;" role="status">
-                    <span class="visually-hidden">Carregando...</span>
+    <div class="container">
+        <!-- Tela de Configuração -->
+        <div id="tela-configuracao" class="page-container"> <!-- Usando classe padrão -->
+            <h2 class="text-center mb-4">
+                <i class="fas fa-cogs text-primary me-2"></i> Configurar Novo Simulado
+            </h2>
+
+            <!-- Seleção de Matérias -->
+            <div class="mb-4">
+                <h5><i class="fas fa-book me-1"></i> 1. Selecione as Matérias</h5>
+                <div id="lista-materias" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-2">
+                    <div class="col-12 text-center p-5">
+                         <div class="spinner-border text-secondary" role="status">
+                            <span class="visually-hidden">Carregando matérias...</span>
+                        </div>
+                        <p class="text-muted mt-2">Carregando matérias disponíveis...</p>
+                    </div>
                 </div>
-                <h4 class="fw-bold text-dark mb-3">Preparando seu simulado...</h4>
-                <p class="text-muted mb-0">Isso pode levar alguns segundos</p>
+                 <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="selecionar-todas">
+                    <label class="form-check-label" for="selecionar-todas">
+                        Selecionar Todas / Nenhuma
+                    </label>
+                </div>
+            </div>
+
+            <!-- Configurações (Sliders) -->
+            <div class="row mb-4 config-sliders">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <h5><i class="fas fa-list-ol me-1"></i> 2. Quantidade de Questões</h5>
+                    <label for="quantidade-questoes" class="form-label">
+                        Total: <span id="quantidade-value" class="fw-bold badge bg-primary">50</span>
+                    </label>
+                    <input type="range" class="form-range" id="quantidade-questoes"
+                           min="5" max="100" value="50" step="5">
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="far fa-clock me-1"></i> 3. Tempo Estimado</h5>
+                    <label for="tempo-simulado" class="form-label">
+                        Minutos: <span id="tempo-value" class="fw-bold badge bg-info text-dark">180</span>
+                    </label>
+                    <input type="range" class="form-range" id="tempo-simulado"
+                           min="15" max="360" value="180" step="15">
+                </div>
+            </div>
+
+            <!-- Modo Aleatório -->
+            <div class="mb-4 form-check form-switch fs-5">
+                <input class="form-check-input" type="checkbox" id="modo-aleatorio" checked>
+                <label class="form-check-label" for="modo-aleatorio">
+                    <i class="fas fa-random me-1"></i> Embaralhar Ordem das Questões
+                </label>
+            </div>
+
+            <!-- Botão Iniciar -->
+            <div class="text-center border-top pt-4 mt-4">
+                <button id="btn-iniciar-simulado" class="btn btn-primary btn-lg px-5 shadow-sm" disabled> <!-- Começa desabilitado -->
+                     <span id="btn-iniciar-text"><i class="fas fa-play me-2"></i> Iniciar Simulado</span>
+                     <!-- Spinner e texto de loading ficam DENTRO do botão -->
+                     <span id="loading-spinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                     <span id="loading-text" style="display: none;"> Iniciando...</span>
+                </button>
+                <!-- Mensagem de erro -->
+                <div id="error-message" class="alert alert-danger mt-3" role="alert" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Tela do Simulado (inicialmente oculta) -->
+        <div id="tela-simulado" class="page-container" style="display: none;"> <!-- Usando classe padrão -->
+
+            <!-- Cabeçalho com Progresso e Timer (sticky-top para fixar) -->
+            <div class="questao-header sticky-top"> <!-- Classe CSS controla o estilo sticky -->
+                <div>
+                    <h4 class="mb-0">Questão <span id="numero-questao-atual">1</span> de <span id="total-questoes">0</span></h4>
+                    <span id="materia-atual" class="badge bg-secondary">Carregando...</span>
+                </div>
+                <div class="timer d-flex align-items-center">
+                    <i class="far fa-clock me-2"></i> <span id="timer-display">00:00</span>
+                </div>
+            </div>
+            <!-- Barra de Progresso -->
+            <div class="progress mb-4" style="height: 10px;">
+                <div id="progresso-bar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+
+            <!-- Área da Questão -->
+            <div id="tela-questao">
+                <!-- Enunciado (com spinner inicial) -->
+                <div id="questao-enunciado" class="mb-4 fs-5 alert alert-light">
+                     <div class="text-center p-5">
+                         <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando questão...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Container das Alternativas -->
+                <div id="alternativas-container">
+                    <!-- Alternativas serão carregadas via JavaScript -->
+                     <div class="text-center p-3 text-muted">
+                        Carregando alternativas...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Box de Feedback (inicialmente oculto) -->
+            <div id="feedback-container" class="feedback-box mt-4" style="display: none;">
+                <h5 id="feedback-titulo"></h5>
+                <p id="feedback-justificativa" class="justificativa"></p>
+                <!-- Container para Dica e Fórmula (dentro do feedback) -->
+                <div id="dica-container" class="dica-box" style="display: none;">
+                    <h6><i class="fas fa-lightbulb"></i> Dica:</h6>
+                    <p id="texto-dica"></p>
+                    <div id="formula-container" style="display: none;">
+                        <h6><i class="fas fa-square-root-variable"></i> Fórmula:</h6>
+                        <p id="texto-formula"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Navegação -->
+            <div class="d-flex justify-content-between align-items-center mt-4 border-top pt-4">
+                <button id="btn-finalizar-simulado" class="btn btn-outline-danger">
+                    <i class="fas fa-stop me-1"></i> Finalizar Simulado
+                </button>
+                <button id="btn-proxima" class="btn btn-success btn-lg shadow-sm" disabled> <!-- Começa desabilitado -->
+                    <span id="btn-proxima-text">Próxima Questão</span> <i class="fas fa-arrow-right ms-2"></i>
+                </button>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando sistema de simulado...');
-    
-    let quantidadeSelecionada = 10;
-    const materiasCheckboxes = document.querySelectorAll('.materia-checkbox');
-    const materiaCards = document.querySelectorAll('.materia-card');
-    
-    // Sistema de seleção de quantidade
-    const quantidadeOptions = document.querySelectorAll('.quantidade-option');
-    quantidadeOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            console.log('📊 Quantidade selecionada:', this.dataset.quantidade);
-            
-            // Remover active de todos
-            quantidadeOptions.forEach(opt => opt.classList.remove('active'));
-            
-            // Adicionar active ao clicado
-            this.classList.add('active');
-            
-            // Atualizar quantidade
-            quantidadeSelecionada = parseInt(this.dataset.quantidade);
-            
-            // Atualizar input custom
-            document.getElementById('quantidadeCustom').value = quantidadeSelecionada;
-            
-            // Atualizar estimativa
-            atualizarEstimativaQuestoes();
-        });
-    });
-    
-    // Input customizado
-    document.getElementById('quantidadeCustom').addEventListener('input', function() {
-        const valor = parseInt(this.value);
-        if (valor >= 5 && valor <= 100) {
-            quantidadeSelecionada = valor;
-            quantidadeOptions.forEach(opt => opt.classList.remove('active'));
-            atualizarEstimativaQuestoes();
-        }
-    });
-    
-    // Sistema de seleção de matérias
-    materiaCards.forEach(card => {
-        card.addEventListener('click', function() {
-            const materiaNome = this.dataset.materia;
-            const checkbox = this.querySelector('.materia-checkbox');
-            
-            // Alternar seleção
-            checkbox.checked = !checkbox.checked;
-            
-            // Atualizar visual
-            if (checkbox.checked) {
-                this.classList.add('selected');
+    <!-- Modal de Resultado (Bootstrap) -->
+    <div class="modal fade" id="modal-resultado" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalResultadoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fs-4" id="modalResultadoLabel">
+                        <i class="fas fa-trophy text-warning me-2"></i> Resultado do Simulado
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="btn-fechar-modal-resultado"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Resumo Geral -->
+                    <div class="row text-center mb-4 g-3">
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-total-acertos" class="text-success display-6 fw-bold">0</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Acertos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-total-erros" class="text-danger display-6 fw-bold">0</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Erros</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-percentual-acerto" class="text-primary display-6 fw-bold">0%</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Percentual</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="stats-card p-3">
+                                <h3 id="modal-tempo-total" class="text-info display-6 fw-bold">0 min</h3>
+                                <p class="text-muted mb-0 small text-uppercase">Tempo Total</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Gráfico de Desempenho -->
+                        <div class="col-lg-7 mb-4 mb-lg-0">
+                            <h5><i class="fas fa-chart-bar me-2"></i>Desempenho por Matéria</h5>
+                            <!-- Container para o canvas e o placeholder -->
+                            <div class="chart-container" style="height: 350px;">
+                                <canvas id="grafico-desempenho-modal"></canvas>
+                                <!-- Placeholder para quando não há dados -->
+                                <div id="grafico-placeholder" class="chart-placeholder" style="display: none;">
+                                    <i class="fas fa-info-circle fa-2x mb-2 text-muted"></i>
+                                    <p>Nenhuma questão respondida para gerar o gráfico.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recomendações -->
+                        <div class="col-lg-5">
+                            <h5><i class="fas fa-lightbulb me-2"></i>Recomendações</h5>
+                            <ul id="lista-recomendacoes" class="list-group list-group-flush" style="max-height: 350px; overflow-y: auto;">
+                                <!-- Recomendações via JS -->
+                                <li class="list-group-item border-0 text-muted">Carregando recomendações...</li>
+                            </ul>
+                        </div>
+                    </div>
+                     <!-- Botão para revisar questões (agora controla collapse) -->
+                    <div class="text-center mt-4 border-top pt-3">
+                         <button id="btn-revisar-questoes" class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#revisao-questoes-container" aria-expanded="false" aria-controls="revisao-questoes-container">
+                             <i class="fas fa-search me-1"></i> Revisar Questões Detalhadamente <i class="fas fa-chevron-down ms-1 small"></i>
+                         </button>
+                    </div>
+                    <!-- Área Colapsável para Revisão -->
+                     <div class="collapse mt-3" id="revisao-questoes-container">
+                        <div class="card card-body bg-light border-light"> <!-- Fundo leve para destaque -->
+                            <h5 class="mb-3"><i class="fas fa-list-ol me-2"></i>Revisão Detalhada</h5>
+                            <div id="revisao-questoes-content" style="max-height: 400px; overflow-y: auto;">
+                                <!-- Detalhes das questões serão inseridos aqui -->
+                                <p class="text-muted">Carregando revisão...</p>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light justify-content-center flex-wrap">
+                    <a href="/dashboard" class="btn btn-outline-primary m-1">
+                        <i class="fas fa-chart-line"></i> Ver Dashboard Completo
+                    </a>
+                    <button id="btn-novo-simulado" class="btn btn-primary m-1" data-bs-dismiss="modal">
+                        <i class="fas fa-redo"></i> Fazer Novo Simulado
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lógica do Simulado (V3.4 - Correção Erros JS + Debug Logs) -->
+    <script>
+        // --- Variáveis Globais de Estado ---
+        let simuladoId = null;
+        let questoesCache = []; // Array [questaoObj, questaoObj, ...]
+        let questaoAtualIndex = 0;
+        let totalQuestoes = 0;
+        let respostasUsuario = {}; // {0: 'A', 1: 'C', ...}
+        let tempoRestanteSeg = 0;
+        let timerInterval = null;
+        let tempoInicioQuestao = null; // Timestamp (ms) de início da questão atual
+        let resultadoModal = null; // Instância do Modal Bootstrap
+        let graficoModalInstance = null;
+        let relatorioFinalCache = null; // Guarda o relatório para revisão
+
+        // --- Elementos DOM (cache para performance) ---
+        const telaConfiguracao = document.getElementById('tela-configuracao');
+        const telaSimulado = document.getElementById('tela-simulado');
+        const btnIniciarSimulado = document.getElementById('btn-iniciar-simulado');
+        const btnIniciarText = document.getElementById('btn-iniciar-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const loadingText = document.getElementById('loading-text');
+        const errorMessage = document.getElementById('error-message');
+        const listaMateriasContainer = document.getElementById('lista-materias');
+        const questaoEnunciadoEl = document.getElementById('questao-enunciado');
+        const alternativasContainerEl = document.getElementById('alternativas-container');
+        const feedbackContainerEl = document.getElementById('feedback-container');
+        const numeroQuestaoAtualEl = document.getElementById('numero-questao-atual');
+        const totalQuestoesEl = document.getElementById('total-questoes');
+        const materiaAtualEl = document.getElementById('materia-atual');
+        const timerDisplayEl = document.getElementById('timer-display');
+        const progressoBarEl = document.getElementById('progresso-bar');
+        const modalResultadoEl = document.getElementById('modal-resultado');
+        const btnSelecionarTodas = document.getElementById('selecionar-todas');
+        const btnProxima = document.getElementById('btn-proxima');
+        const btnProximaText = document.getElementById('btn-proxima-text'); // Span dentro do botão
+        const btnFinalizar = document.getElementById('btn-finalizar-simulado');
+        const btnRevisarQuestoes = document.getElementById('btn-revisar-questoes');
+        const revisaoQuestoesContainer = document.getElementById('revisao-questoes-container'); // O div collapsable
+        const revisaoQuestoesContent = document.getElementById('revisao-questoes-content'); // Onde o conteúdo vai
+        const graficoPlaceholder = document.getElementById('grafico-placeholder'); // Placeholder no gráfico
+
+
+        // --- Funções Auxiliares ---
+        function log(level, message, data = null) {
+            const prefix = `[SimuladoJS ${level.toUpperCase()}]`;
+            if (data !== null) { // Permite logar 0 ou false
+                console[level](prefix, message, data);
             } else {
-                this.classList.remove('selected');
+                console[level](prefix, message);
             }
-            
-            atualizarContadorMaterias();
-            atualizarEstimativaQuestoes();
-            
-            console.log('📚 Matéria alterada:', materiaNome, checkbox.checked);
+        }
+
+        // --- Inicialização ---
+        document.addEventListener('DOMContentLoaded', function() {
+            log('info','DOM carregado. Iniciando script.');
+            carregarMaterias(); // Carrega as matérias ao iniciar
+            configurarEventListeners();
+            try {
+                // Tenta inicializar o modal do Bootstrap
+                resultadoModal = new bootstrap.Modal(modalResultadoEl);
+                 log('info','Modal Bootstrap inicializado.');
+            } catch (e) {
+                log('error',"Erro ao inicializar o modal do Bootstrap:", e);
+                // Adicionar fallback ou mensagem de erro se necessário
+            }
+
+            // Listener para limpar revisão quando modal fecha
+            modalResultadoEl.addEventListener('hidden.bs.modal', function () {
+                log('debug','Modal fechado. Limpando revisão.');
+                // Esconde a área de revisão e limpa o conteúdo
+                const collapseElement = document.getElementById('revisao-questoes-container');
+                 const bsCollapseInstance = bootstrap.Collapse.getInstance(collapseElement);
+                 if (bsCollapseInstance) {
+                    bsCollapseInstance.hide();
+                 }
+                revisaoQuestoesContent.innerHTML = '<p class="text-muted">Carregando revisão...</p>'; // Reset
+                 // Resetar ícone do botão de revisão
+                 btnRevisarQuestoes.querySelector('i.fa-chevron-up, i.fa-chevron-down').className = 'fas fa-chevron-down ms-1 small';
+                 btnRevisarQuestoes.setAttribute('aria-expanded', 'false');
+            });
         });
-    });
-    
-    // Botões de seleção rápida
-    document.getElementById('btnSelecionarTodas').addEventListener('click', function() {
-        console.log('✅ Selecionando todas matérias');
-        materiasCheckboxes.forEach(cb => {
-            cb.checked = true;
-            const card = document.querySelector([data-materia=\"\"]);
-            if (card) card.classList.add('selected');
-        });
-        atualizarContadorMaterias();
-        atualizarEstimativaQuestoes();
-    });
-    
-    document.getElementById('btnSelecionarPrincipais').addEventListener('click', function() {
-        console.log('⭐ Selecionando matérias principais');
-        const principais = ['Língua Portuguesa', 'Matemática', 'Raciocínio Lógico', 'Direito Constitucional', 'Direito Administrativo'];
-        
-        materiasCheckboxes.forEach(cb => {
-            const selecionar = principais.includes(cb.value);
-            cb.checked = selecionar;
-            const card = document.querySelector([data-materia=\"\"]);
-            if (card) {
-                if (selecionar) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
+
+        async function carregarMaterias() {
+             log('info','Carregando matérias...');
+             btnIniciarSimulado.disabled = true; // Desabilita enquanto carrega
+             listaMateriasContainer.innerHTML = `
+                 <div class="col-12 text-center p-5">
+                     <div class="spinner-border text-secondary" role="status"></div>
+                     <p class="text-muted mt-2">Carregando matérias...</p>
+                 </div>`; // Mostra spinner
+            try {
+                const response = await fetch('/api/materias');
+                 log('debug','Resposta API /materias:', response.status);
+                if (!response.ok) throw new Error(`Erro HTTP! ${response.status} - ${response.statusText}`);
+                const data = await response.json();
+                 log('debug','Dados API /materias:', data);
+
+                listaMateriasContainer.innerHTML = ''; // Limpa o "Carregando..."
+
+                if (data.error){
+                    throw new Error(data.error); // Propaga erro da API
+                }
+
+                if (!data.materias || data.materias.length === 0) {
+                     log('warn','Nenhuma matéria encontrada na API.');
+                     listaMateriasContainer.innerHTML = '<p class="text-warning col-12 fw-bold">Nenhuma matéria com questões foi encontrada no banco de dados. Adicione questões antes de criar um simulado.</p>';
+                     return; // Mantém o botão Iniciar desabilitado
+                }
+
+                data.materias.forEach(materia => {
+                    const total = data.estatisticas[materia]?.total || 0;
+                    const div = document.createElement('div');
+                    div.className = 'col';
+                    const materiaId = `materia-${materia.replace(/[^a-zA-Z0-9_-]/g, '-')}`; // Cria ID seguro
+                    div.innerHTML = `
+                        <div class="form-check materia-checkbox">
+                            <input class="form-check-input materia-checkbox-input" type="checkbox"
+                                   value="${materia}" id="${materiaId}" ${total === 0 ? 'disabled' : ''}>
+                            <label class="form-check-label w-100" for="${materiaId}">
+                                ${materia} <span class="badge bg-light text-dark float-end">${total}</span>
+                            </label>
+                        </div>
+                    `;
+                    listaMateriasContainer.appendChild(div);
+                });
+                // Habilita o botão iniciar APENAS se houver matérias carregadas com sucesso
+                btnIniciarSimulado.disabled = false;
+                 log('info','Matérias carregadas e exibidas.');
+
+            } catch (error) {
+                log('error','Erro ao carregar matérias:', error);
+                listaMateriasContainer.innerHTML =
+                    `<p class="text-danger col-12 fw-bold">Falha ao carregar matérias: ${error.message}. Verifique a conexão ou o console.</p>`;
+                 btnIniciarSimulado.disabled = true; // Mantém desabilitado em caso de erro
+            }
+        }
+
+        function configurarEventListeners() {
+             log('debug','Configurando event listeners...');
+            // Sliders
+            document.getElementById('quantidade-questoes').addEventListener('input', e => {
+                document.getElementById('quantidade-value').textContent = e.target.value;
+            });
+            document.getElementById('tempo-simulado').addEventListener('input', e => {
+                document.getElementById('tempo-value').textContent = e.target.value;
+            });
+
+            // Botões
+            btnIniciarSimulado.addEventListener('click', iniciarSimulado);
+            btnProxima.addEventListener('click', proximaQuestao);
+            btnFinalizar.addEventListener('click', confirmarFinalizarSimulado);
+            document.getElementById('btn-novo-simulado').addEventListener('click', reiniciarInterface);
+            document.getElementById('btn-fechar-modal-resultado').addEventListener('click', reiniciarInterface);
+
+            // Checkbox "Selecionar Todas"
+            btnSelecionarTodas.addEventListener('change', (e) => {
+                 log('debug',`Checkbox 'Selecionar Todas' mudou para: ${e.target.checked}`);
+                 document.querySelectorAll('.materia-checkbox-input:not(:disabled)').forEach(checkbox => {
+                     checkbox.checked = e.target.checked;
+                 });
+            });
+
+             // Botão Revisar Questões (controla ícone do collapse)
+             const collapseElement = document.getElementById('revisao-questoes-container');
+             if (collapseElement) {
+                 collapseElement.addEventListener('show.bs.collapse', () => {
+                     log('debug','Collapse revisão mostrando.');
+                     btnRevisarQuestoes.querySelector('i.fa-chevron-down').className = 'fas fa-chevron-up ms-1 small';
+                 });
+                 collapseElement.addEventListener('hide.bs.collapse', () => {
+                     log('debug','Collapse revisão escondendo.');
+                     btnRevisarQuestoes.querySelector('i.fa-chevron-up').className = 'fas fa-chevron-down ms-1 small';
+                 });
+                 // Carrega o conteúdo da revisão QUANDO o collapse é mostrado
+                 collapseElement.addEventListener('shown.bs.collapse', mostrarRevisaoDetalhada); // Carrega toda vez que abre
+             } else {
+                 log('error',"Elemento 'revisao-questoes-container' não encontrado.");
+             }
+             log('debug','Event listeners configurados.');
+        }
+
+        // --- Lógica Principal do Simulado ---
+
+        async function iniciarSimulado() {
+            log('info',"[iniciarSimulado] Botão clicado!");
+            const materiasCheckboxes = document.querySelectorAll('.materia-checkbox-input:checked');
+            const materiasSelecionadas = Array.from(materiasCheckboxes).map(cb => cb.value);
+
+            errorMessage.style.display = 'none'; // Esconde erro anterior
+            if (materiasSelecionadas.length === 0) {
+                 errorMessage.textContent = 'Erro: Selecione pelo menos uma matéria para iniciar o simulado!';
+                 errorMessage.style.display = 'block';
+                 log('warn',"[iniciarSimulado] Nenhuma matéria selecionada.");
+                 return;
+            }
+
+            const config = {
+                materias: materiasSelecionadas,
+                quantidade_total: parseInt(document.getElementById('quantidade-questoes').value),
+                tempo_minutos: parseInt(document.getElementById('tempo-simulado').value),
+                aleatorio: document.getElementById('modo-aleatorio').checked
+            };
+
+            // Feedback visual de carregamento
+            btnIniciarSimulado.disabled = true;
+            btnIniciarText.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            loadingText.style.display = 'inline';
+            btnIniciarSimulado.classList.add('loading');
+            log('debug',"[iniciarSimulado] Mostrando loading e desabilitando botão.");
+
+            try {
+                log('info',"[iniciarSimulado] Enviando configuração para API:", config);
+                const response = await fetch('/api/simulado/iniciar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
+                });
+
+                 log('info',`[iniciarSimulado] Resposta API recebida: ${response.status}`);
+                 if (!response.ok) { // Verifica o status HTTP ANTES de tentar parsear JSON
+                    let errorBodyText = await response.text(); // Tenta ler o corpo como texto
+                    let errorMsg = `Erro ${response.status} ao iniciar simulado.`;
+                    try {
+                        const errorJson = JSON.parse(errorBodyText);
+                        errorMsg = errorJson.error || errorMsg;
+                    } catch(e) { /* Não era JSON, usa texto */ errorMsg += ` Detalhe: ${errorBodyText}`;}
+                    throw new Error(errorMsg);
+                 }
+                 const data = await response.json();
+                 log('debug',"[iniciarSimulado] Dados da resposta JSON:", data);
+
+                // Tratamento de erro e validação
+                if (!data.success) {
+                     throw new Error(data.error || "Erro desconhecido retornado pela API.");
+                }
+                if (!data.simulado_id || !data.total_questoes || data.total_questoes <= 0 || !data.primeira_questao) {
+                     log('error',"[iniciarSimulado] Resposta da API inválida (dados faltando):", data);
+                     throw new Error("Resposta inesperada do servidor após iniciar o simulado.");
+                }
+
+                // --- Sucesso ---
+                simuladoId = data.simulado_id;
+                totalQuestoes = data.total_questoes;
+                tempoRestanteSeg = data.tempo_limite_seg;
+                questoesCache = new Array(totalQuestoes);
+                questoesCache[0] = data.primeira_questao;
+                respostasUsuario = {};
+                questaoAtualIndex = 0;
+                relatorioFinalCache = null;
+
+                log('info',`[iniciarSimulado] Sucesso! ID: ${simuladoId}, Total Q: ${totalQuestoes}`);
+
+                // Mudar para tela do simulado
+                telaConfiguracao.style.display = 'none';
+                telaSimulado.style.display = 'block';
+
+                 // Ajusta margem superior do progresso
+                 requestAnimationFrame(() => { // Espera o DOM atualizar
+                     const headerElement = document.querySelector('.questao-header');
+                     if(headerElement) {
+                         const headerHeight = headerElement.offsetHeight;
+                         // A barra de progresso está dentro de 'tela-simulado', então seu pai já tem o padding
+                         // Mas o header fixo cobre o topo, então precisamos empurrar o conteúdo
+                         // Vamos adicionar padding-top ao corpo da tela do simulado
+                         //telaSimulado.style.paddingTop = `${headerHeight + 20}px`; // Adiciona padding dinamicamente
+                         // Em vez de padding, ajustar a margem da barra
+                         progressoBarEl.parentElement.style.marginTop = `${headerHeight + 15}px`;
+                         log('debug',`[iniciarSimulado] Margem do progresso ajustada para ${headerHeight + 15}px.`);
+                     } else {
+                          log('warn',"[iniciarSimulado] Elemento .questao-header não encontrado para ajuste de margem.");
+                     }
+                 });
+
+
+                iniciarTimer();
+                carregarQuestao(0); // Carrega a primeira questão (cache)
+
+            } catch (error) {
+                log('error','[iniciarSimulado] Erro durante a inicialização:', error);
+                errorMessage.textContent = `Erro ao iniciar: ${error.message}`;
+                errorMessage.style.display = 'block';
+                // Restaura o botão
+                btnIniciarSimulado.disabled = false;
+                btnIniciarText.style.display = 'inline';
+                loadingSpinner.style.display = 'none';
+                loadingText.style.display = 'none';
+                btnIniciarSimulado.classList.remove('loading');
+            }
+        }
+
+        async function carregarQuestao(index) {
+            // Validação
+            if (index < 0 || index >= totalQuestoes || !simuladoId) {
+                log('error',`[carregarQuestao] Tentativa inválida: index=${index}, total=${totalQuestoes}, id=${simuladoId}`);
+                finalizarSimulado();
+                return;
+            }
+
+            log('info',`[carregarQuestao] Carregando questão ${index}`);
+            questaoAtualIndex = index;
+            tempoInicioQuestao = Date.now();
+
+            // Reset UI
+            feedbackContainerEl.style.display = 'none';
+            alternativasContainerEl.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-secondary" role="status"></div></div>';
+            btnProxima.disabled = true;
+
+            // Update progress
+            numeroQuestaoAtualEl.textContent = index + 1;
+            totalQuestoesEl.textContent = totalQuestoes;
+            const progresso = ((index + 1) / totalQuestoes) * 100;
+            progressoBarEl.style.width = `${progresso}%`;
+            progressoBarEl.setAttribute('aria-valuenow', progresso);
+
+            // Update next button text
+            if (index === totalQuestoes - 1) {
+                btnProximaText.textContent = 'Finalizar Simulado';
+                btnProxima.querySelector('i').className = 'fas fa-check-circle ms-2';
+            } else {
+                btnProximaText.textContent = 'Próxima Questão';
+                btnProxima.querySelector('i').className = 'fas fa-arrow-right ms-2';
+            }
+
+            // Fetch question (cache or API)
+            let questao;
+            if (questoesCache[index]) {
+                log('debug',`[carregarQuestao] Questão ${index} do cache.`);
+                questao = questoesCache[index];
+                renderizarQuestao(questao);
+            } else {
+                 questaoEnunciadoEl.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div></div>';
+                try {
+                    log('info',`[carregarQuestao] Buscando questão ${index} da API...`);
+                    const response = await fetch(`/api/simulado/${simuladoId}/questao/${index}`);
+                     log('debug',`[carregarQuestao] Resposta API questao ${index}: ${response.status}`);
+                    if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                     if (!data.questao) throw new Error("API não retornou a questão.");
+
+                     log('debug',`[carregarQuestao] Questão ${index} recebida da API:`, data.questao);
+                    questoesCache[index] = data.questao; // Save to cache
+                    renderizarQuestao(data.questao);
+                } catch (error) {
+                    log('error','[carregarQuestao] Erro API:', error);
+                    questaoEnunciadoEl.innerHTML = `<div class="alert alert-danger">Erro ao carregar: ${error.message}</div>`;
+                    alternativasContainerEl.innerHTML = '';
+                     btnFinalizar.disabled = false; // Allow manual finish
                 }
             }
-        });
-        atualizarContadorMaterias();
-        atualizarEstimativaQuestoes();
-    });
-    
-    // Atualizar contador de matérias
-    function atualizarContadorMaterias() {
-        const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
-        document.getElementById('contadorMaterias').innerHTML = 
-            <strong></strong> matérias selecionadas •  +
-            <span id=\"totalQuestoesEstimate\">~ questões</span>;
-    }
-    
-    // Atualizar estimativa de questões
-    function atualizarEstimativaQuestoes() {
-        const selecionadas = Array.from(materiasCheckboxes).filter(cb => cb.checked).length;
-        const estimate = selecionadas > 0 ? quantidadeSelecionada : 0;
-        document.getElementById('totalQuestoesEstimate').textContent = ~ questões;
-    }
-    
-    // Submissão do formulário
-    document.getElementById('configSimuladoForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        console.log('📝 Enviando formulário de simulado...');
-        
-        // Coletar dados
-        const materiasSelecionadas = Array.from(materiasCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-        
-        const configs = {
-            tempoCronometrado: document.getElementById('tempoCronometrado').checked,
-            dicasAutomaticas: document.getElementById('dicasAutomaticas').checked,
-            formulasMatematicas: document.getElementById('formulasMatematicas').checked,
-            feedbackDetalhado: document.getElementById('feedbackDetalhado').checked
-        };
-        
-        console.log('📦 Dados coletados:', {
-            quantidade: quantidadeSelecionada,
-            materias: materiasSelecionadas,
-            configs: configs
-        });
-        
-        // Validações
-        if (materiasSelecionadas.length === 0) {
-            showNotification('❌ Selecione pelo menos uma matéria para continuar.', 'danger');
-            return;
         }
-        
-        if (!quantidadeSelecionada || quantidadeSelecionada < 5 || quantidadeSelecionada > 100) {
-            showNotification('❌ Selecione uma quantidade entre 5 e 100 questões.', 'danger');
-            return;
-        }
-        
-        // Mostrar loading
-        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        loadingModal.show();
-        
-        // Loading state no botão
-        const btnIniciar = document.getElementById('btnIniciarSimulado');
-        const btnTextoOriginal = btnIniciar.innerHTML;
-        btnIniciar.disabled = true;
-        btnIniciar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Configurando...';
-        
-        try {
-            console.log('📡 Enviando requisição para API...');
-            
-            const response = await fetch('/api/simulado/iniciar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    quantidade: quantidadeSelecionada,
-                    materias: materiasSelecionadas,
-                    configs: configs
-                })
-            });
-            
-            const data = await response.json();
-            console.log('📊 Resposta da API:', data);
-            
-            if (data.success) {
-                console.log('✅ Simulado iniciado com sucesso!');
-                showNotification('🎉 Simulado configurado! Redirecionando...', 'success');
-                
-                setTimeout(() => {
-                    window.location.href = data.redirect_url;
-                }, 1000);
-                
-            } else {
-                throw new Error(data.error || 'Erro desconhecido ao iniciar simulado');
+
+        function renderizarQuestao(questao) {
+             log('info',`[renderizarQuestao] Renderizando questão ID ${questao?.id}`);
+            // Validate question data
+            if (!questao || !questao.enunciado || !questao.alternativas || typeof questao.alternativas !== 'object') {
+                 log('error',"[renderizarQuestao] Dados inválidos:", questao);
+                 questaoEnunciadoEl.innerHTML = '<div class="alert alert-warning">Erro: Dados da questão inválidos.</div>';
+                 alternativasContainerEl.innerHTML = '';
+                 return;
             }
-            
-        } catch (error) {
-            console.error('❌ Erro:', error);
-            loadingModal.hide();
-            
-            // Restaurar botão
-            btnIniciar.disabled = false;
-            btnIniciar.innerHTML = btnTextoOriginal;
-            
-            showNotification('❌ Erro: ' + error.message, 'danger');
+
+            materiaAtualEl.textContent = questao.materia || 'N/A';
+            // Use innerHTML com replace para permitir <br>, assumindo segurança do DB
+            const enunciadoP = document.createElement('p');
+            enunciadoP.innerHTML = questao.enunciado.replace(/\n/g, '<br>'); // Permite quebras de linha
+
+            questaoEnunciadoEl.innerHTML = ''; // Clear previous
+            questaoEnunciadoEl.className = 'mb-4 fs-5 alert alert-light'; // Reset class
+            questaoEnunciadoEl.appendChild(enunciadoP);
+
+            alternativasContainerEl.innerHTML = ''; // Clear previous
+
+            // Create buttons for alternatives (sorted A, B, C...)
+            const letrasOrdenadas = Object.keys(questao.alternativas).sort();
+            letrasOrdenadas.forEach(letra => {
+                const texto = questao.alternativas[letra];
+                if (texto && String(texto).trim() !== '') {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'alternativa text-start';
+                    button.dataset.alternativa = letra;
+
+                    const strong = document.createElement('strong');
+                    strong.className = 'me-2';
+                    strong.textContent = `${letra})`;
+                    button.appendChild(strong);
+                    button.appendChild(document.createTextNode(` ${texto}`));
+
+                    button.onclick = () => selecionarAlternativa(letra, button);
+                    alternativasContainerEl.appendChild(button);
+                } else {
+                     log('warn',`[renderizarQuestao] Alternativa ${letra} vazia para Q ${questao.id}.`);
+                }
+            });
+             log('debug',`[renderizarQuestao] Questão ID ${questao.id} renderizada.`);
         }
-    });
-    
-    // Inicializar
-    atualizarContadorMaterias();
-    atualizarEstimativaQuestoes();
-    
-    // Inicializar seleção visual das matérias
-    materiaCards.forEach(card => {
-        const checkbox = card.querySelector('.materia-checkbox');
-        if (checkbox.checked) {
-            card.classList.add('selected');
+
+        async function selecionarAlternativa(letra, botaoSelecionado) {
+            const tempoFimQuestao = Date.now();
+            const tempoGastoSeg = Math.max(0, Math.round((tempoFimQuestao - tempoInicioQuestao) / 1000));
+            log('info',`[selecionarAlternativa] Selecionada: ${letra}, Tempo: ${tempoGastoSeg}s`);
+
+            // Disable all alternatives immediately
+            const alternativas = alternativasContainerEl.querySelectorAll('.alternativa');
+            alternativas.forEach(btn => { btn.disabled = true; });
+
+            botaoSelecionado.classList.add('selecionada');
+
+            // Show processing feedback
+            feedbackContainerEl.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm text-secondary"></div> Verificando...</div>';
+            feedbackContainerEl.style.display = 'block';
+
+            try {
+                 log('debug',`[selecionarAlternativa] Enviando POST para /responder`);
+                 const response = await fetch(`/api/simulado/${simuladoId}/responder`, {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         questao_index: questaoAtualIndex,
+                         alternativa: letra,
+                         tempo_gasto: tempoGastoSeg
+                     })
+                 });
+                 const data = await response.json();
+                 log('debug',"[selecionarAlternativa] Resposta API /responder:", data);
+
+                 if (!response.ok || !data.success) {
+                     throw new Error(data.error || `Erro HTTP ${response.status}`);
+                 }
+
+                 // Save user's answer locally ONLY after API success
+                 respostasUsuario[questaoAtualIndex] = letra;
+                 log('info',"[selecionarAlternativa] Resposta registrada.");
+
+                 // Display visual feedback based on API response
+                 mostrarFeedback(letra, botaoSelecionado, data);
+                 btnProxima.disabled = false; // Enable Next/Finish button
+
+            } catch (error) {
+                 log('error',"[selecionarAlternativa] Erro:", error);
+                 feedbackContainerEl.innerHTML = `<div class="alert alert-danger mb-0">Erro: ${error.message}. Clique em Próxima Questão.</div>`;
+                 feedbackContainerEl.style.display = 'block';
+                 // Allow user to proceed even if API fails
+                 btnProxima.disabled = false;
+            }
         }
-    });
-    
-    console.log('✅ Sistema de simulado inicializado!');
-});
-</script>
-{% endblock %}
+
+        function mostrarFeedback(letraEscolhida, botaoSelecionado, feedbackData) {
+            log('info',`[mostrarFeedback] Exibindo feedback para ${letraEscolhida}. Acertou: ${feedbackData?.acertou}`);
+            const { acertou, resposta_correta, justificativa, dica, formula } = feedbackData;
+
+            if (typeof acertou !== 'boolean' || !resposta_correta) {
+                 log('error',"[mostrarFeedback] Dados inválidos:", feedbackData);
+                 feedbackContainerEl.innerHTML = '<div class="alert alert-warning">Erro ao receber feedback.</div>';
+                 return;
+            }
+
+            const tituloEl = document.getElementById('feedback-titulo');
+            const justificativaEl = document.getElementById('feedback-justificativa');
+
+            // Style alternatives based on feedback
+            alternativasContainerEl.querySelectorAll('.alternativa').forEach(btn => {
+                const altLetra = btn.dataset.alternativa;
+                if (altLetra === resposta_correta) {
+                    btn.classList.add('correta');
+                }
+                if (altLetra === letraEscolhida && !acertou) {
+                    btn.classList.add('errada-escolhida');
+                }
+            });
+
+            // Configure feedback box style and title
+            if (acertou) {
+                feedbackContainerEl.className = 'feedback-box correto';
+                tituloEl.innerHTML = '<i class="fas fa-check-circle me-2"></i>Resposta Correta!';
+            } else {
+                feedbackContainerEl.className = 'feedback-box incorreto';
+                tituloEl.innerHTML = `<i class="fas fa-times-circle me-2"></i>Resposta Incorreta! A correta era a ${resposta_correta}.`;
+            }
+
+            // Display justification, tip, formula
+            justificativaEl.textContent = justificativa || (acertou ? 'Parabéns!' : `A alternativa correta era a ${resposta_correta}.`);
+
+            const dicaContainer = document.getElementById('dica-container');
+            const textoDicaEl = document.getElementById('texto-dica');
+            if (dica) {
+                textoDicaEl.textContent = dica;
+                dicaContainer.style.display = 'block';
+            } else {
+                dicaContainer.style.display = 'none';
+            }
+
+            const formulaContainer = document.getElementById('formula-container');
+             const textoFormulaEl = document.getElementById('texto-formula');
+            if (formula) {
+                textoFormulaEl.textContent = formula;
+                formulaContainer.style.display = 'block';
+            } else {
+                formulaContainer.style.display = 'none';
+            }
+
+            feedbackContainerEl.style.display = 'block';
+            feedbackContainerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function proximaQuestao() {
+             log('info',"[proximaQuestao] Clicado.");
+             errorMessage.style.display = 'none'; // Clear general errors
+            // If it's the last question, the button acts as "Finish"
+            if (questaoAtualIndex === totalQuestoes - 1) {
+                finalizarSimulado();
+            } else {
+                carregarQuestao(questaoAtualIndex + 1);
+            }
+        }
+
+        function confirmarFinalizarSimulado() {
+            log('info',"[confirmarFinalizarSimulado] Clicado.");
+            const respondidasCount = Object.keys(respostasUsuario).length;
+            const naoRespondidasCount = totalQuestoes - respondidasCount;
+            let msg = "Tem certeza que deseja finalizar o simulado agora?";
+            if (naoRespondidasCount > 0) {
+                 msg += `\n${naoRespondidasCount} questão(ões) não foi(ram) respondida(s) e será(ão) considerada(s) como erro.`;
+            }
+
+            if (confirm(msg)) {
+                 log('info',"[confirmarFinalizarSimulado] Confirmado pelo usuário.");
+                finalizarSimulado();
+            } else {
+                 log('info',"[confirmarFinalizarSimulado] Cancelado pelo usuário.");
+            }
+        }
+
+        async function finalizarSimulado() {
+            clearInterval(timerInterval); // Stop timer immediately
+            log('info',"[finalizarSimulado] Iniciando finalização...");
+
+            // Loading feedback
+            telaSimulado.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                    <h3 class="text-muted">Calculando seu resultado...</h3>
+                </div>`;
+
+            try {
+                log('info',`[finalizarSimulado] Enviando POST para /api/simulado/${simuladoId}/finalizar`);
+                const response = await fetch(`/api/simulado/${simuladoId}/finalizar`, { method: 'POST' });
+                 log('info',"[finalizarSimulado] Resposta API:", response.status);
+                 if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
+                const data = await response.json();
+                log('debug',"[finalizarSimulado] Dados resposta:", data);
+
+                if (data.success && data.relatorio) {
+                    relatorioFinalCache = data.relatorio; // Save for review
+                    mostrarResultado(data.relatorio);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido ao finalizar.');
+                }
+            } catch (error) {
+                log('error','[finalizarSimulado] Erro:', error);
+                telaSimulado.innerHTML = `
+                     <div class="alert alert-danger text-center">
+                         <h4>Erro ao Finalizar</h4><p>${error.message}</p>
+                         <button onclick="reiniciarInterface()" class="btn btn-primary mt-2">
+                             <i class="fas fa-redo me-1"></i> Voltar
+                         </button>
+                     </div>`;
+                 if (resultadoModal) { resultadoModal.hide(); }
+            }
+        }
+
+        // --- Timer ---
+        function iniciarTimer() {
+            clearInterval(timerInterval);
+            log('info',`[iniciarTimer] Iniciando com ${tempoRestanteSeg} segundos.`);
+
+            function atualizarDisplay() {
+                 const minutos = Math.floor(tempoRestanteSeg / 60);
+                 const segundos = tempoRestanteSeg % 60;
+                 timerDisplayEl.textContent = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+
+                 if (tempoRestanteSeg <= 60 && !timerDisplayEl.classList.contains('text-danger')) {
+                     timerDisplayEl.classList.add('text-danger');
+                 } else if (tempoRestanteSeg > 60 && timerDisplayEl.classList.contains('text-danger')) {
+                     timerDisplayEl.classList.remove('text-danger');
+                 }
+            }
+            atualizarDisplay(); // Update immediately
+
+            timerInterval = setInterval(() => {
+                if (tempoRestanteSeg > 0) {
+                    tempoRestanteSeg--;
+                    atualizarDisplay();
+                }
+                if (tempoRestanteSeg <= 0) {
+                    clearInterval(timerInterval);
+                    log('warn',"[iniciarTimer] Tempo acabou!");
+                    // Correção: Usar alert pode bloquear a execução, vamos logar e finalizar
+                    console.warn("O tempo do simulado acabou!"); // Mantém log no console
+                    // Adiciona feedback visual antes de finalizar
+                    feedbackContainerEl.innerHTML = `<div class="alert alert-warning text-center fw-bold">O tempo acabou! Finalizando simulado...</div>`;
+                    feedbackContainerEl.style.display = 'block';
+                    setTimeout(finalizarSimulado, 1500); // Dá tempo para o usuário ver a mensagem
+                }
+            }, 1000);
+        }
+
+        // --- Resultado, Revisão e Reinício ---
+        function mostrarResultado(relatorio) {
+            log('info',"[mostrarResultado] Exibindo modal com:", relatorio);
+            telaSimulado.style.display = 'none';
+
+            // Fill KPIs
+            document.getElementById('modal-total-acertos').textContent = relatorio.geral?.acertos ?? 0;
+            document.getElementById('modal-total-erros').textContent = relatorio.geral?.erros ?? 0;
+            document.getElementById('modal-percentual-acerto').textContent = `${relatorio.geral?.percentual_acerto ?? 0}%`;
+            document.getElementById('modal-tempo-total').textContent = `${relatorio.geral?.tempo_total_minutos ?? 0} min`;
+
+            // Render chart
+            renderGraficoModal(relatorio.por_materia);
+
+            // Show recommendations
+            const listaRecomendacoes = document.getElementById('lista-recomendacoes');
+            listaRecomendacoes.innerHTML = ''; // Clear
+            if (relatorio.recomendacoes && relatorio.recomendacoes.length > 0) {
+                relatorio.recomendacoes.forEach(recHTML => {
+                     listaRecomendacoes.insertAdjacentHTML('beforeend', recHTML);
+                });
+            } else {
+                 listaRecomendacoes.innerHTML = '<li class="list-group-item border-0 text-muted">Nenhuma recomendação específica gerada.</li>';
+            }
+
+            // Show modal
+            if(resultadoModal) {
+                resultadoModal.show();
+            } else {
+                log('error',"[mostrarResultado] Modal não inicializado.");
+                // Fallback: Mostrar resultados básicos na página se o modal falhar
+                alert(`Simulado finalizado!\nAcertos: ${relatorio.geral?.acertos}\nErros: ${relatorio.geral?.erros}\nPercentual: ${relatorio.geral?.percentual_acerto}%`);
+            }
+        }
+
+        function renderGraficoModal(dadosMateria) {
+             const canvas = document.getElementById('grafico-desempenho-modal');
+             const ctx = canvas.getContext('2d');
+             graficoPlaceholder.style.display = 'none';
+
+            if (graficoModalInstance) { graficoModalInstance.destroy(); }
+
+            const materias = Object.keys(dadosMateria);
+            const percentuais = materias.map(materia => dadosMateria[materia]?.percentual ?? 0);
+
+             if (materias.length === 0) {
+                 log('warn',"[renderGraficoModal] Sem dados para o gráfico.");
+                 graficoPlaceholder.style.display = 'block';
+                 canvas.style.display = 'none';
+                 return;
+             }
+             canvas.style.display = 'block';
+             log('debug',"[renderGraficoModal] Renderizando gráfico com dados:", dadosMateria);
+
+            graficoModalInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: materias, datasets: [{ label: 'Acerto (%)', data: percentuais, backgroundColor: 'rgba(13, 110, 253, 0.7)', borderColor: 'rgba(13, 110, 253, 1)', borderWidth: 1, borderRadius: 5 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100, ticks: { callback: value => value + "%" } }, x: { ticks: { autoSkip: false } } },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => `${context.label}: ${context.formattedValue}%` } } }
+                }
+            });
+        }
+
+        function mostrarRevisaoDetalhada() {
+             log('info',"[mostrarRevisaoDetalhada] Carregando revisão...");
+             // Garante que o conteúdo seja carregado mesmo que o collapse já estivesse aberto antes
+             revisaoQuestoesContent.innerHTML = '<p class="text-muted">Carregando detalhes...</p>'; // Spinner
+
+             if (!relatorioFinalCache || !relatorioFinalCache.questoes_com_detalhes) {
+                 log('warn',"[mostrarRevisaoDetalhada] Dados não encontrados.");
+                 revisaoQuestoesContent.innerHTML = '<p class="text-danger">Erro ao carregar revisão.</p>';
+                 return;
+             }
+
+             revisaoQuestoesContent.innerHTML = ''; // Clear previous
+
+             if(relatorioFinalCache.questoes_com_detalhes.length === 0) {
+                 revisaoQuestoesContent.innerHTML = '<p class="text-muted">Nenhuma questão para revisar.</p>';
+                 return;
+             }
+             log('debug',`[mostrarRevisaoDetalhada] Renderizando ${relatorioFinalCache.questoes_com_detalhes.length} itens.`);
+
+             relatorioFinalCache.questoes_com_detalhes.forEach(q => {
+                 const divQuestao = document.createElement('div');
+                 divQuestao.className = 'revisao-item';
+
+                 const acertouIcon = q.acertou === true ? '<i class="fas fa-check-circle text-success ms-2"></i>' :
+                                    q.acertou === false ? '<i class="fas fa-times-circle text-danger ms-2"></i>' :
+                                    '<i class="fas fa-minus-circle text-muted ms-2"></i>';
+
+                 const header = document.createElement('div');
+                 header.className = 'revisao-header';
+                 header.innerHTML = `<span class="revisao-numero">Q.${q.numero} (${q.materia || 'N/A'})</span><span>${acertouIcon}</span>`;
+                 divQuestao.appendChild(header);
+
+                 const enunciadoEl = document.createElement('div');
+                 enunciadoEl.className = 'revisao-enunciado';
+                 enunciadoEl.textContent = q.enunciado || '[Enunciado ausente]';
+                 divQuestao.appendChild(enunciadoEl);
+
+                 const altsDiv = document.createElement('div');
+                 const alternativas = q.alternativas || {};
+                 Object.keys(alternativas).sort().forEach(letra => {
+                     const altSpan = document.createElement('span');
+                     altSpan.className = 'revisao-alternativa d-block';
+                     altSpan.innerHTML = `<strong>${letra})</strong> `;
+                     altSpan.appendChild(document.createTextNode(alternativas[letra] || '[Alternativa ausente]'));
+
+                     if (letra === q.resposta_correta) { altSpan.classList.add('bg-success-light', 'text-success-dark', 'fw-bold'); }
+                     if (letra === q.resposta_usuario && q.acertou === false) { altSpan.classList.add('bg-danger-light', 'text-danger-dark'); altSpan.style.textDecoration = 'line-through'; }
+                     if (letra === q.resposta_usuario && q.acertou === true) { altSpan.style.border = '2px solid #198754'; }
+                     altsDiv.appendChild(altSpan);
+                 });
+                 divQuestao.appendChild(altsDiv);
+
+                 if (q.justificativa) {
+                    const justDiv = document.createElement('div');
+                    justDiv.className = 'revisao-justificativa';
+                    justDiv.innerHTML = `<strong>Justificativa:</strong> `;
+                    justDiv.appendChild(document.createTextNode(q.justificativa));
+                    divQuestao.appendChild(justDiv);
+                 }
+                 revisaoQuestoesContent.appendChild(divQuestao);
+             });
+         }
+
+
+        function reiniciarInterface() {
+            log('info',"[reiniciarInterface] Reiniciando...");
+            // Forma mais segura: Recarregar a página para garantir estado limpo
+            window.location.reload();
+        }
+
+    </script>
+</body>
+</html>

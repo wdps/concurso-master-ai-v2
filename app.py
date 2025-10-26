@@ -20,16 +20,16 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key_placeholder_
 DATABASE = 'concurso.db' # Nome do arquivo do banco de dados
 
 class SistemaSimulado:
-    """Gerencia a lógica de simulados ativos em memória."""
+    '''Gerencia a lógica de simulados ativos em memória.'''
     def __init__(self):
         # Dicionário para armazenar os dados dos simulados ativos {simulado_id: simulado_data}
         self.simulados_ativos = {}
 
     def iniciar_simulado(self, user_id, config):
-        """
+        '''
         Cria um novo registro de simulado em memória com base na configuração.
         Retorna o ID do simulado ou None se não encontrar questões.
-        """
+        '''
         simulado_id = f"{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         simulado_data = {
@@ -57,10 +57,10 @@ class SistemaSimulado:
         return simulado_id
 
     def _carregar_questoes_simulado(self, config):
-        """
+        '''
         Busca questões no banco de dados SQLite com base nos filtros da configuração.
         Retorna uma lista de dicionários representando as questões.
-        """
+        '''
         conn = get_db_connection()
         if not conn:
             logger.error("Falha ao carregar questões: Sem conexão com DB.")
@@ -166,10 +166,10 @@ class SistemaSimulado:
                 conn.close()
 
     def registrar_resposta(self, simulado_id, questao_index, alternativa, tempo_gasto_na_questao):
-        """
+        '''
         Registra a resposta do usuário para uma questão específica no simulado ativo.
         Retorna True se bem-sucedido, False caso contrário.
-        """
+        '''
         simulado = self.simulados_ativos.get(simulado_id)
         if not simulado:
             logger.warning(f"Tentativa de resposta para simulado {simulado_id} inexistente ou finalizado.")
@@ -198,10 +198,10 @@ class SistemaSimulado:
         return True
 
     def finalizar_simulado(self, simulado_id):
-        """
+        '''
         Marca um simulado como finalizado, calcula o relatório, salva no histórico
         e remove da memória ativa. Retorna o relatório calculado ou None.
-        """
+        '''
         simulado = self.simulados_ativos.get(simulado_id)
         if not simulado:
              logger.warning(f"Tentativa de finalizar simulado {simulado_id} inexistente.")
@@ -230,11 +230,11 @@ class SistemaSimulado:
         return relatorio
 
     def _gerar_relatorio(self, simulado):
-        """
+        '''
         Calcula as estatísticas do simulado (geral e por matéria)
         e gera recomendações com base nas respostas registradas.
         Retorna um dicionário com o relatório completo.
-        """
+        '''
         respostas = simulado.get('respostas', {}) # Dict {index: resposta}
         questoes = simulado.get('questoes', [])
         total_questoes_planejadas = len(questoes)
@@ -286,10 +286,10 @@ class SistemaSimulado:
 
 
     def _gerar_recomendacoes(self, estatisticas_materia):
-        """
+        '''
         Gera uma lista de strings (HTML formatado) com recomendações
         com base no percentual de acerto por matéria.
-        """
+        '''
         recomendacoes = []
         # Ordena as matérias pelo menor percentual de acerto primeiro
         materias_ordenadas = sorted(estatisticas_materia.items(), key=lambda item: item[1].get('percentual', 0.0))
@@ -313,10 +313,10 @@ class SistemaSimulado:
 
 
     def _preparar_questoes_detalhadas(self, simulado):
-        """
+        '''
         Cria uma lista de dicionários, cada um representando uma questão do simulado
         com a resposta do usuário e informações adicionais para a tela de revisão.
-        """
+        '''
         detalhes = []
         questoes = simulado.get('questoes', [])
         respostas = simulado.get('respostas', {})
@@ -342,10 +342,10 @@ class SistemaSimulado:
 
 
     def _salvar_historico(self, simulado):
-        """
+        '''
         Salva o registro final do simulado (configuração, relatório, datas)
         na tabela 'historico_simulados' do banco de dados.
-        """
+        '''
         conn = get_db_connection()
         if not conn:
             logger.error(f"Falha ao salvar histórico do simulado {simulado.get('id', 'N/A')}: Sem conexão com DB.")
@@ -385,7 +385,7 @@ class SistemaSimulado:
 # --- Funções de Banco de Dados ---
 
 def get_db_connection():
-    """Estabelece conexão com o banco de dados SQLite."""
+    '''Estabelece conexão com o banco de dados SQLite.'''
     try:
         conn = sqlite3.connect(DATABASE)
         # Otimizações podem ser benéficas
@@ -398,7 +398,7 @@ def get_db_connection():
         return None
 
 def criar_tabelas_se_necessario():
-    """Verifica e cria todas as tabelas do schema V3.0 se não existirem."""
+    '''Verifica e cria todas as tabelas do schema V3.0 se não existirem.'''
     conn = get_db_connection()
     if not conn:
         logger.critical("Falha CRÍTICA ao criar tabelas: Sem conexão com DB.")
@@ -487,25 +487,25 @@ def criar_tabelas_se_necessario():
 
 @app.route('/')
 def index():
-    """Renderiza a página inicial (index.html)."""
+    '''Renderiza a página inicial (index.html).'''
     logger.debug("Acessando rota /")
     return render_template('index.html')
 
 @app.route('/simulado')
 def simulado():
-    """Renderiza a página do simulado (simulado.html)."""
+    '''Renderiza a página do simulado (simulado.html).'''
     logger.debug("Acessando rota /simulado")
     return render_template('simulado.html')
 
 @app.route('/redacao')
 def redacao():
-    """Renderiza a página de redação (redacao.html)."""
+    '''Renderiza a página de redação (redacao.html).'''
     logger.debug("Acessando rota /redacao")
     return render_template('redacao.html')
 
 @app.route('/dashboard')
 def dashboard():
-    """Renderiza a página do dashboard (dashboard.html)."""
+    '''Renderiza a página do dashboard (dashboard.html).'''
     logger.debug("Acessando rota /dashboard")
     return render_template('dashboard.html')
 
@@ -513,7 +513,7 @@ def dashboard():
 
 @app.route('/api/health')
 def health():
-    """Verifica a saúde da aplicação e a conexão com o banco."""
+    '''Verifica a saúde da aplicação e a conexão com o banco.'''
     logger.debug("Acessando API /api/health")
     db_ok = False
     conn = get_db_connection()
@@ -537,7 +537,7 @@ def health():
 
 @app.route('/api/materias')
 def materias():
-    """Retorna a lista de matérias disponíveis com a contagem de questões."""
+    '''Retorna a lista de matérias disponíveis com a contagem de questões.'''
     logger.debug("Acessando API /api/materias")
     # Garante que a tabela 'questoes' existe antes de consultar
     if not criar_tabelas_se_necessario():
@@ -599,11 +599,11 @@ def materias():
 
 @app.route('/api/simulado/iniciar', methods=['POST'])
 def iniciar_simulado_api():
-    """
+    '''
     Recebe a configuração do simulado (matérias, quantidade, tempo, aleatório),
     inicia o simulado usando a classe SistemaSimulado e retorna o ID,
     o total de questões e a primeira questão (sem gabarito).
-    """
+    '''
     logger.debug("Acessando API POST /api/simulado/iniciar")
     try:
         data = request.get_json()
@@ -686,10 +686,10 @@ def iniciar_simulado_api():
 
 @app.route('/api/simulado/<simulado_id>/questao/<int:questao_index>')
 def get_questao_simulado(simulado_id, questao_index):
-    """
+    '''
     Retorna os dados de uma questão específica de um simulado ativo,
     excluindo a resposta correta e a justificativa.
-    """
+    '''
     logger.debug(f"Acessando API GET /api/simulado/{simulado_id}/questao/{questao_index}")
     simulado = sistema_simulado.simulados_ativos.get(simulado_id)
     if not simulado:
@@ -717,10 +717,10 @@ def get_questao_simulado(simulado_id, questao_index):
 
 @app.route('/api/simulado/<simulado_id>/responder', methods=['POST'])
 def responder_questao_api(simulado_id):
-    """
+    '''
     Registra a resposta do usuário para uma questão específica e retorna
     o feedback (se acertou, resposta correta, justificativa, etc.).
-    """
+    '''
     logger.debug(f"Acessando API POST /api/simulado/{simulado_id}/responder")
     try:
         data = request.get_json()
@@ -788,9 +788,9 @@ def responder_questao_api(simulado_id):
 
 @app.route('/api/simulado/<simulado_id>/finalizar', methods=['POST'])
 def finalizar_simulado_api(simulado_id):
-    """
-    Endpoint para finalizar manualmente um simulado ativo e obter o relatório final.
-    """
+    '''
+    Endpoint para finalizar manually um simulado ativo e obter o relatório final.
+    '''
     logger.debug(f"Acessando API POST /api/simulado/{simulado_id}/finalizar")
     try:
         # Chama o método da classe que faz a lógica de finalização
@@ -813,7 +813,7 @@ def finalizar_simulado_api(simulado_id):
 # --- API do Sistema de Redação ---
 @app.route('/api/redacoes/temas')
 def get_temas_redacao():
-    """Retorna a lista de temas de redação disponíveis."""
+    '''Retorna a lista de temas de redação disponíveis.'''
     logger.debug("Acessando API GET /api/redacoes/temas")
     if not criar_tabelas_se_necessario():
          return jsonify({"temas": [], "error": "Erro ao verificar DB"}), 500
@@ -837,7 +837,7 @@ def get_temas_redacao():
 
 @app.route('/api/redacoes/corrigir', methods=['POST'])
 def corrigir_redacao_api():
-    """Recebe texto da redação, simula correção e salva no histórico."""
+    '''Recebe texto da redação, simula correção e salva no histórico.'''
     logger.debug("Acessando API POST /api/redacoes/corrigir")
     try:
         data = request.get_json()
@@ -892,7 +892,7 @@ def corrigir_redacao_api():
 # --- API do Dashboard Avançado ---
 @app.route('/api/dashboard/estatisticas')
 def get_estatisticas_dashboard():
-    """Retorna estatísticas agregadas para preencher o dashboard."""
+    '''Retorna estatísticas agregadas para preencher o dashboard.'''
     logger.debug("Acessando API GET /api/dashboard/estatisticas")
     if not criar_tabelas_se_necessario():
         return jsonify({"estatisticas": {}, "error": "Erro ao verificar DB"}), 500
@@ -933,9 +933,12 @@ def get_estatisticas_dashboard():
                     global_stats_materia[materia]['total'] += int(stats.get('total', 0))
 
             except json.JSONDecodeError as json_err:
-                 logger.error(f"Erro ao decodificar JSON do relatório histórico ID {row['id'] if 'id' in row.keys() else 'N/A'}: {json_err}") # Acesso seguro ao ID
+                 # Acesso seguro ao ID da linha, se existir
+                 row_id = row['id'] if 'id' in row.keys() else 'N/A'
+                 logger.error(f"Erro ao decodificar JSON do relatório histórico ID {row_id}: {json_err}")
             except Exception as e_proc:
-                 logger.error(f"Erro ao processar relatório histórico ID {row['id'] if 'id' in row.keys() else 'N/A'}: {e_proc}", exc_info=True)
+                 row_id = row['id'] if 'id' in row.keys() else 'N/A'
+                 logger.error(f"Erro ao processar relatório histórico ID {row_id}: {e_proc}", exc_info=True)
 
 
         desempenho_global_materia = {
@@ -995,7 +998,12 @@ def not_found_error(error):
     # ou retorna um JSON se for uma API
     if request.path.startswith('/api/'):
         return jsonify({"error": "Endpoint não encontrado"}), 404
-    return render_template('error.html', mensagem="Página não encontrada (Erro 404). Verifique o endereço digitado."), 404
+    # Tenta renderizar 'error.html', se não existir, retorna texto simples
+    try:
+        return render_template('error.html', mensagem="Página não encontrada (Erro 404). Verifique o endereço digitado."), 404
+    except:
+        return "<h1>Erro 404: Página não encontrada</h1>", 404
+
 
 @app.errorhandler(500)
 def internal_error(error):
@@ -1006,7 +1014,11 @@ def internal_error(error):
     # Renderiza uma página de erro 500 genérica para o usuário
     if request.path.startswith('/api/'):
          return jsonify({"error": "Erro interno do servidor"}), 500
-    return render_template('error.html', mensagem="Ocorreu um erro interno inesperado no servidor (Erro 500). Nossa equipe foi notificada. Por favor, tente novamente mais tarde."), 500
+     # Tenta renderizar 'error.html', se não existir, retorna texto simples
+    try:
+        return render_template('error.html', mensagem="Ocorreu um erro interno inesperado no servidor (Erro 500). Nossa equipe foi notificada. Por favor, tente novamente mais tarde."), 500
+    except:
+        return "<h1>Erro 500: Erro interno do servidor</h1>", 500
 
 
 # --- Inicialização da Aplicação ---
@@ -1017,7 +1029,7 @@ if __name__ == '__main__':
     # Garante que as tabelas do banco de dados existam ANTES de iniciar o servidor
     if not criar_tabelas_se_necessario():
          logger.critical("########## FALHA AO INICIALIZAR O BANCO DE DADOS ##########")
-         logger.critical("O aplicativo pode não funcionar corretamente. Verifique os logs de erro.")
+         logger.critical("O aplicativo pode não funcionar corretamente. Verifique os logs.")
          # Considerar sair do aplicativo se o DB for essencial para operação básica?
          # import sys
          # sys.exit(1) # Descomente para sair se o DB falhar na inicialização
