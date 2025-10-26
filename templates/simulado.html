@@ -3,242 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado Inteligente V4.0 - ConcursoMaster AI</title>
-    <!-- Bootstrap CSS -->
+    <title>Simulado - ConcursoMaster AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- CSS Customizado V4.0 -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for(''static'', filename=''style.css'') }}">
 </head>
-<body class="bg-light">
-
+<body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-graduation-cap"></i> ConcursoMaster AI 4.0
+                <i class="fas fa-brain me-2"></i><strong>Concurso</strong>Master AI
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"> <a class="nav-link" href="/">Início</a> </li>
-                    <li class="nav-item"> <a class="nav-link active" aria-current="page" href="/simulado">Simulado</a> </li>
-                    <li class="nav-item"> <a class="nav-link" href="/redacao">Redação</a> </li>
-                    <li class="nav-item"> <a class="nav-link" href="/dashboard">Dashboard</a> </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/simulado">Simulado</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/redacao">Redação</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container my-4">
         <!-- Tela de Configuração -->
-        <div id="tela-configuracao" class="page-container"> <!-- Usando classe padrão -->
-            <h2 class="text-center mb-4">
-                <i class="fas fa-cogs text-primary me-2"></i> Configurar Novo Simulado
-            </h2>
+        <div id="tela-configuracao">
+            <div class="text-center mb-4">
+                <i class="fas fa-cogs fa-3x text-primary mb-3"></i>
+                <h1 class="h2">Configurar Simulado</h1>
+                <p class="lead text-muted">Personalize seu simulado para maximizar seu aprendizado.</p>
+            </div>
 
             <!-- Seleção de Matérias -->
-            <div class="mb-4">
-                <h5><i class="fas fa-book me-1"></i> 1. Selecione as Matérias</h5>
-                <div id="lista-materias" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-2">
-                    <div class="col-12 text-center p-5">
-                         <div class="spinner-border text-secondary" role="status">
-                            <span class="visually-hidden">Carregando matérias...</span>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-book me-2 text-primary"></i>1. Selecione as Matérias</h5>
+                </div>
+                <div class="card-body">
+                    <div id="lista-materias" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-2">
+                        <div class="col-12 text-center p-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                            <p class="text-muted mt-2">Carregando matérias...</p>
                         </div>
-                        <p class="text-muted mt-2">Carregando matérias disponíveis...</p>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="selecionar-todas">
+                        <label class="form-check-label" for="selecionar-todas">
+                            Selecionar Todas / Nenhuma
+                        </label>
                     </div>
                 </div>
-                 <div class="form-check mt-3">
-                    <input class="form-check-input" type="checkbox" id="selecionar-todas">
-                    <label class="form-check-label" for="selecionar-todas"> Selecionar Todas / Nenhuma </label>
-                </div>
             </div>
 
-            <!-- Configurações (Sliders) -->
-            <div class="row mb-4 config-sliders">
-                <div class="col-md-6 mb-3 mb-md-0">
-                    <h5><i class="fas fa-list-ol me-1"></i> 2. Quantidade</h5>
-                    <label for="quantidade-questoes" class="form-label">
-                        Total: <span id="quantidade-value" class="fw-bold badge bg-primary">50</span> Questões
-                    </label>
-                    <input type="range" class="form-range" id="quantidade-questoes" min="5" max="100" value="50" step="5">
+            <!-- Configurações -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-sliders-h me-2 text-primary"></i>2. Ajustes</h5>
                 </div>
-                <div class="col-md-6">
-                    <h5><i class="far fa-clock me-1"></i> 3. Tempo</h5>
-                    <label for="tempo-simulado" class="form-label">
-                        Limite: <span id="tempo-value" class="fw-bold badge bg-info text-dark">180</span> Minutos
-                    </label>
-                    <input type="range" class="form-range" id="tempo-simulado" min="15" max="360" value="180" step="15">
+                <div class="card-body">
+                    <div class="row config-sliders">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantidade-questoes" class="form-label">
+                                Quantidade de Questões: <span id="quantidade-value" class="badge bg-primary">50</span>
+                            </label>
+                            <input type="range" class="form-range" id="quantidade-questoes" min="5" max="100" value="50" step="5">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tempo-simulado" class="form-label">
+                                Tempo Limite: <span id="tempo-value" class="badge bg-info">180</span> minutos
+                            </label>
+                            <input type="range" class="form-range" id="tempo-simulado" min="15" max="360" value="180" step="15">
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" id="modo-aleatorio" checked>
+                        <label class="form-check-label" for="modo-aleatorio">
+                            <i class="fas fa-random me-1"></i> Embaralhar Ordem das Questões
+                        </label>
+                    </div>
                 </div>
             </div>
-
-            <!-- Modo Aleatório -->
-            <div class="mb-4 form-check form-switch fs-5">
-                <input class="form-check-input" type="checkbox" id="modo-aleatorio" checked>
-                <label class="form-check-label" for="modo-aleatorio"> <i class="fas fa-random me-1"></i> Embaralhar Questões </label>
-            </div>
-
+            
             <!-- Botão Iniciar -->
-            <div class="text-center border-top pt-4 mt-4">
-                <button id="btn-iniciar-simulado" class="btn btn-primary btn-lg px-5 shadow-sm" disabled>
-                     <span id="btn-iniciar-text"><i class="fas fa-play me-2"></i> Iniciar Simulado</span>
-                     <span id="loading-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
-                     <span id="loading-text" style="display: none;"> Iniciando...</span>
+            <div class="text-center">
+                <button id="btn-iniciar-simulado" class="btn btn-primary btn-lg px-5" disabled>
+                    <span id="btn-iniciar-text"><i class="fas fa-play me-2"></i> Iniciar Simulado</span>
+                    <span id="loading-spinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
                 </button>
                 <div id="error-message" class="alert alert-danger mt-3" style="display: none;"></div>
             </div>
         </div>
 
-        <!-- Tela do Simulado (Jogo) -->
-        <div id="tela-simulado" class="page-container" style="display: none;"> <!-- Usando classe padrão -->
-
-            <!-- Cabeçalho Fixo -->
-            <div class="questao-header sticky-top"> <!-- Classe CSS controla o estilo sticky -->
-                <div>
-                    <h4 class="mb-0">Questão <span id="numero-questao-atual">1</span> / <span id="total-questoes">0</span></h4>
-                    <span id="materia-atual" class="badge bg-secondary">...</span>
+        <!-- Tela do Simulado -->
+        <div id="tela-simulado" style="display: none;">
+            <!-- Cabeçalho -->
+            <div class="questao-header bg-light p-3 rounded mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1">Questão <span id="numero-questao-atual">1</span> de <span id="total-questoes">0</span></h4>
+                        <span id="materia-atual" class="badge bg-primary">Carregando...</span>
+                    </div>
+                    <div class="timer bg-white p-2 rounded">
+                        <i class="far fa-clock me-2 text-primary"></i>
+                        <span id="timer-display" class="fw-bold fs-5">00:00</span>
+                    </div>
                 </div>
-                <div class="timer d-flex align-items-center">
-                    <i class="far fa-clock me-2"></i> <span id="timer-display">00:00</span>
+                <div class="progress mt-2" style="height: 8px;">
+                    <div id="progresso-bar" class="progress-bar" style="width: 0%;"></div>
                 </div>
             </div>
-            <!-- Barra de Progresso -->
-            <div class="progress mb-4" style="height: 10px;">
-                <div id="progresso-bar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: 0%"></div>
-            </div>
 
-            <!-- Área da Questão -->
+            <!-- Questão -->
             <div id="tela-questao">
-                <div id="questao-enunciado" class="mb-4 fs-5 alert alert-light shadow-sm">
-                     <div class="text-center p-5"><div class="spinner-border text-primary"></div></div>
-                </div>
-                <div id="alternativas-container">
-                     <div class="text-center p-3 text-muted">Carregando alternativas...</div>
-                </div>
-            </div>
-
-            <!-- Box de Feedback (Gamificado) -->
-            <div id="feedback-container" class="feedback-box mt-4" style="display: none;">
-                <h5 id="feedback-titulo" class="d-flex align-items-center"></h5>
-                <p id="feedback-justificativa" class="justificativa"></p>
-                <div id="dica-container" class="dica-box" style="display: none;">
-                     <h6><i class="fas fa-lightbulb text-warning"></i> Dica de Interpretação:</h6>
-                    <p id="texto-dica"></p>
-                </div>
-                 <div id="formula-container" class="dica-box mt-2" style="display: none;">
-                    <h6><i class="fas fa-calculator text-info"></i> Fórmula Aplicável:</h6>
-                    <p id="texto-formula" class="font-monospace"></p>
-                </div>
-            </div>
-
-            <!-- Botões de Navegação -->
-            <div class="d-flex justify-content-between align-items-center mt-4 border-top pt-4">
-                 <button id="btn-voltar" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Voltar Questão
-                </button>
-                <div> <!-- Agrupa botões da direita -->
-                    <button id="btn-finalizar-simulado" class="btn btn-outline-danger me-2">
-                        <i class="fas fa-stop me-1"></i> Finalizar
-                    </button>
-                    <button id="btn-proxima" class="btn btn-success btn-lg shadow-sm" disabled>
-                        <span id="btn-proxima-text">Próxima</span> <i class="fas fa-arrow-right ms-2"></i>
-                    </button>
-                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Resultado (Gamificado) -->
-    <div class="modal fade" id="modal-resultado" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-light border-0">
-                    <h5 class="modal-title fs-4" id="modalResultadoLabel">
-                        <i class="fas fa-trophy text-warning me-2"></i> Resultado Final do Simulado
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" id="btn-fechar-modal-resultado"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <!-- Resumo Geral com Ícones -->
-                    <div class="row text-center mb-4 g-3">
-                        <div class="col-md-3 col-6"> <div class="stats-card p-3"><i class="fas fa-check-circle fa-2x text-success mb-2"></i> <h3 id="modal-total-acertos" class="fw-bold">0</h3> <p class="text-muted mb-0 small text-uppercase">Acertos</p> </div> </div>
-                        <div class="col-md-3 col-6"> <div class="stats-card p-3"><i class="fas fa-times-circle fa-2x text-danger mb-2"></i> <h3 id="modal-total-erros" class="fw-bold">0</h3> <p class="text-muted mb-0 small text-uppercase">Erros</p> </div> </div>
-                        <div class="col-md-3 col-6"> <div class="stats-card p-3"><i class="fas fa-percentage fa-2x text-primary mb-2"></i> <h3 id="modal-percentual-acerto" class="fw-bold">0%</h3> <p class="text-muted mb-0 small text-uppercase">Desempenho</p> </div> </div>
-                        <div class="col-md-3 col-6"> <div class="stats-card p-3"><i class="far fa-clock fa-2x text-info mb-2"></i> <h3 id="modal-tempo-total" class="fw-bold">0 min</h3> <p class="text-muted mb-0 small text-uppercase">Tempo Gasto</p> </div> </div>
+                <div id="questao-enunciado" class="card p-4 mb-4">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary mb-3"></div>
+                        <p class="text-muted">Carregando questão...</p>
                     </div>
+                </div>
 
+                <!-- Alternativas -->
+                <div id="alternativas-container" class="mb-4">
+                    <!-- Alternativas carregadas via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Feedback -->
+            <div id="feedback-container" class="card mt-4" style="display: none;">
+                <div class="card-header bg-success text-white" id="feedback-titulo">
+                    <i class="fas fa-check-circle me-2"></i>Resposta Correta!
+                </div>
+                <div class="card-body">
+                    <p id="feedback-justificativa" class="mb-3"></p>
+                    
                     <div class="row">
-                        <!-- Gráfico de Desempenho -->
-                        <div class="col-lg-7 mb-4 mb-lg-0">
-                            <h5><i class="fas fa-chart-bar me-2"></i>Desempenho por Matéria</h5>
-                            <div class="chart-container" style="height: 350px;">
-                                <canvas id="grafico-desempenho-modal"></canvas>
-                                <div id="grafico-placeholder" class="chart-placeholder" style="display: none;"> <i class="fas fa-info-circle fa-2x mb-2 text-muted"></i> <p>Nenhuma questão respondida.</p> </div>
+                        <div class="col-md-6">
+                            <div class="dica-box bg-warning bg-opacity-10 p-3 rounded mb-3">
+                                <h6><i class="fas fa-lightbulb me-2 text-warning"></i>Dica</h6>
+                                <p id="texto-dica" class="mb-0 small"></p>
                             </div>
                         </div>
-                        <!-- Recomendações -->
-                        <div class="col-lg-5">
-                            <h5><i class="fas fa-lightbulb me-2"></i>Plano de Estudo Sugerido</h5>
-                            <ul id="lista-recomendacoes" class="list-group list-group-flush" style="max-height: 350px; overflow-y: auto;">
-                                <li class="list-group-item border-0 text-muted">Calculando...</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <!-- Revisão Detalhada (Collapse) -->
-                    <div class="text-center mt-4 border-top pt-3">
-                         <button id="btn-revisar-questoes" class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#revisao-questoes-container" aria-expanded="false">
-                             <i class="fas fa-search me-1"></i> Revisar Gabarito Detalhado <i class="fas fa-chevron-down ms-1 small"></i>
-                         </button>
-                    </div>
-                     <div class="collapse mt-3" id="revisao-questoes-container">
-                        <div class="card card-body bg-light border-light">
-                            <h5 class="mb-3"><i class="fas fa-list-ol me-2"></i>Revisão Detalhada</h5>
-                            <div id="revisao-questoes-content" style="max-height: 400px; overflow-y: auto;">
-                                <p class="text-muted">Carregando...</p>
+                        <div class="col-md-6">
+                            <div class="formula-box bg-info bg-opacity-10 p-3 rounded">
+                                <h6><i class="fas fa-square-root-variable me-2 text-info"></i>Fórmula</h6>
+                                <p id="texto-formula" class="mb-0 small font-monospace"></p>
                             </div>
-                         </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light justify-content-center flex-wrap">
-                    <a href="/dashboard" class="btn btn-outline-primary m-1"> <i class="fas fa-chart-line"></i> Ver Dashboard </a>
-                    <button id="btn-novo-simulado" class="btn btn-primary m-1" data-bs-dismiss="modal"> <i class="fas fa-redo"></i> Fazer Novo Simulado </button>
+            </div>
+
+            <!-- Navegação -->
+            <div class="d-flex justify-content-between mt-4">
+                <button id="btn-voltar" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Anterior
+                </button>
+                <button id="btn-finalizar-simulado" class="btn btn-outline-danger">
+                    <i class="fas fa-stop-circle me-2"></i>Finalizar
+                </button>
+                <button id="btn-proxima" class="btn btn-primary" disabled>
+                    <span id="btn-proxima-text">Próxima</span>
+                    <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultado -->
+    <div class="modal fade" id="modal-resultado" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-trophy me-2"></i>Resultado do Simulado
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3"></div>
+                        <p>Calculando resultado...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-
-    <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Lógica do Simulado (V4.0 - UI Profissional + Funcional) -->
     <script>
-        // --- Variáveis Globais ---
+        // Variáveis globais
         let simuladoId = null;
         let questoesCache = [];
         let questaoAtualIndex = 0;
         let totalQuestoes = 0;
-        let respostasUsuario = {}; // { index: { alternativa: 'A', tempo: 15.5, feedbackData: {...} }, ... }
+        let respostasUsuario = {};
         let tempoRestanteSeg = 0;
         let timerInterval = null;
         let tempoInicioQuestao = null;
-        let resultadoModal = null;
-        let graficoModalInstance = null;
-        let relatorioFinalCache = null;
 
-        // --- Cache de Elementos DOM ---
-        const DOMElements = {
+        // Elementos DOM
+        const elementos = {
             telaConfig: document.getElementById('tela-configuracao'),
             telaSimulado: document.getElementById('tela-simulado'),
             btnIniciar: document.getElementById('btn-iniciar-simulado'),
-            btnIniciarText: document.getElementById('btn-iniciar-text'),
-            loadingSpinner: document.getElementById('loading-spinner'),
-            loadingText: document.getElementById('loading-text'),
             errorMessage: document.getElementById('error-message'),
             listaMaterias: document.getElementById('lista-materias'),
             questaoEnunciado: document.getElementById('questao-enunciado'),
@@ -246,461 +229,274 @@
             feedbackContainer: document.getElementById('feedback-container'),
             feedbackTitulo: document.getElementById('feedback-titulo'),
             feedbackJustificativa: document.getElementById('feedback-justificativa'),
-            dicaContainer: document.getElementById('dica-container'),
             textoDica: document.getElementById('texto-dica'),
-            formulaContainer: document.getElementById('formula-container'),
             textoFormula: document.getElementById('texto-formula'),
             numeroQuestaoAtual: document.getElementById('numero-questao-atual'),
             totalQuestoesEl: document.getElementById('total-questoes'),
             materiaAtual: document.getElementById('materia-atual'),
             timerDisplay: document.getElementById('timer-display'),
             progressoBar: document.getElementById('progresso-bar'),
-            modalResultado: document.getElementById('modal-resultado'),
-            btnSelecionarTodas: document.getElementById('selecionar-todas'),
             btnVoltar: document.getElementById('btn-voltar'),
             btnProxima: document.getElementById('btn-proxima'),
-            btnProximaText: document.getElementById('btn-proxima-text'),
-            btnFinalizar: document.getElementById('btn-finalizar-simulado'),
-            btnRevisarQuestoes: document.getElementById('btn-revisar-questoes'),
-            revisaoContainer: document.getElementById('revisao-questoes-container'),
-            revisaoContent: document.getElementById('revisao-questoes-content'),
-            graficoPlaceholder: document.getElementById('grafico-placeholder'),
-            quantidadeValue: document.getElementById('quantidade-value'),
-            tempoValue: document.getElementById('tempo-value'),
-            quantidadeRange: document.getElementById('quantidade-questoes'),
-            tempoRange: document.getElementById('tempo-simulado'),
-            modoAleatorioCheck: document.getElementById('modo-aleatorio'),
-            btnNovoSimulado: document.getElementById('btn-novo-simulado'),
-            btnFecharModal: document.getElementById('btn-fechar-modal-resultado')
+            btnFinalizar: document.getElementById('btn-finalizar-simulado')
         };
 
-        // --- Logger ---
-        function log(level, message, data = null) {
-            const prefix = `[Simulado ${level.toUpperCase()}]`;
-            if (data !== null) { console[level](prefix, message, data); }
-            else { console[level](prefix, message); }
-        }
-
-        // --- Inicialização ---
-        document.addEventListener('DOMContentLoaded', () => {
-            log('info','DOM carregado. Iniciando V4.0...');
+        // Carregar matérias ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
             carregarMaterias();
             configurarEventListeners();
-            try {
-                resultadoModal = new bootstrap.Modal(DOMElements.modalResultado);
-                log('info','Modal Bootstrap OK.');
-            } catch (e) { log('error',"Erro inicializar Modal:", e); }
-
-            DOMElements.modalResultado.addEventListener('hidden.bs.modal', () => {
-                log('debug','Modal fechado.');
-                const bsCollapse = bootstrap.Collapse.getInstance(DOMElements.revisaoContainer);
-                if (bsCollapse) { bsCollapse.hide(); }
-                DOMElements.revisaoContent.innerHTML = '<p class="text-muted">Carregando...</p>';
-                const icon = DOMElements.btnRevisarQuestoes.querySelector('i.fa-chevron-up, i.fa-chevron-down');
-                if(icon) icon.className = 'fas fa-chevron-down ms-1 small';
-                DOMElements.btnRevisarQuestoes.setAttribute('aria-expanded', 'false');
-            });
         });
 
-        // --- Carregar Matérias ---
         async function carregarMaterias() {
-            log('info','Carregando matérias da API...');
-            DOMElements.btnIniciar.disabled = true;
-            DOMElements.listaMaterias.innerHTML = `<div class="col-12 text-center p-5"><div class="spinner-border text-secondary"></div><p class="text-muted mt-2">Carregando...</p></div>`;
             try {
                 const response = await fetch('/api/materias');
-                log('debug','Resposta API /materias:', response.status);
-                if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
                 const data = await response.json();
-                log('debug','Dados API /materias:', data);
-                DOMElements.listaMaterias.innerHTML = ''; // Limpa
-
-                if (data.error) throw new Error(data.error);
-                if (!data.materias || data.materias.length === 0) {
-                    log('warn','Nenhuma matéria encontrada.');
-                    DOMElements.listaMaterias.innerHTML = '<p class="text-warning col-12 fw-bold">Nenhuma matéria com questões encontrada.</p>';
-                    return;
+                
+                if (data.success) {
+                    elementos.listaMaterias.innerHTML = '';
+                    
+                    data.materias.forEach(materia => {
+                        const total = data.estatisticas[materia]?.total || 0;
+                        const div = document.createElement('div');
+                        div.className = 'col';
+                        div.innerHTML = `
+                            <div class="form-check">
+                                <input class="form-check-input materia-checkbox" type="checkbox" 
+                                       value="${materia}" id="materia-${materia}" ${total === 0 ? 'disabled' : ''}>
+                                <label class="form-check-label" for="materia-${materia}">
+                                    ${materia} <span class="badge bg-secondary float-end">${total}</span>
+                                </label>
+                            </div>
+                        `;
+                        elementos.listaMaterias.appendChild(div);
+                    });
+                    
+                    elementos.btnIniciar.disabled = false;
                 }
-
-                data.materias.forEach(materia => {
-                    const total = data.estatisticas[materia]?.total || 0;
-                    const div = document.createElement('div'); div.className = 'col';
-                    const id = `materia-${materia.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
-                    div.innerHTML = `
-                        <div class="form-check materia-checkbox">
-                            <input class="form-check-input materia-checkbox-input" type="checkbox" value="${materia}" id="${id}" ${total === 0 ? 'disabled' : ''}>
-                            <label class="form-check-label w-100" for="${id}"> ${materia} <span class="badge bg-primary float-end">${total}</span> </label>
-                        </div>`;
-                    DOMElements.listaMaterias.appendChild(div);
-                });
-                DOMElements.btnIniciar.disabled = false;
-                log('info','Matérias carregadas.');
             } catch (error) {
-                log('error','Erro ao carregar matérias:', error);
-                DOMElements.listaMaterias.innerHTML = `<p class="text-danger col-12 fw-bold">Falha: ${error.message}.</p>`;
+                console.error('Erro ao carregar matérias:', error);
+                elementos.errorMessage.textContent = 'Erro ao carregar matérias. Tente novamente.';
+                elementos.errorMessage.style.display = 'block';
             }
         }
 
-        // --- Configurar Eventos ---
         function configurarEventListeners() {
-            log('debug','Configurando listeners...');
-            DOMElements.quantidadeRange.addEventListener('input', e => { DOMElements.quantidadeValue.textContent = e.target.value; });
-            DOMElements.tempoRange.addEventListener('input', e => { DOMElements.tempoValue.textContent = e.target.value; });
-            DOMElements.btnIniciar.addEventListener('click', iniciarSimulado);
-            DOMElements.btnProxima.addEventListener('click', proximaQuestao);
-            DOMElements.btnVoltar.addEventListener('click', questaoAnterior);
-            DOMElements.btnFinalizar.addEventListener('click', confirmarFinalizarSimulado);
-            DOMElements.btnNovoSimulado.addEventListener('click', reiniciarInterface);
-            DOMElements.btnFecharModal.addEventListener('click', reiniciarInterface);
-            DOMElements.btnSelecionarTodas.addEventListener('change', (e) => {
-                 document.querySelectorAll('.materia-checkbox-input:not(:disabled)').forEach(cb => cb.checked = e.target.checked);
+            elementos.btnIniciar.addEventListener('click', iniciarSimulado);
+            elementos.btnProxima.addEventListener('click', proximaQuestao);
+            elementos.btnVoltar.addEventListener('click', questaoAnterior);
+            elementos.btnFinalizar.addEventListener('click', finalizarSimulado);
+            
+            // Atualizar valores dos sliders
+            document.getElementById('quantidade-questoes').addEventListener('input', (e) => {
+                document.getElementById('quantidade-value').textContent = e.target.value;
             });
-             const collapseRevisao = DOMElements.revisaoContainer;
-             if (collapseRevisao) {
-                 collapseRevisao.addEventListener('show.bs.collapse', () => { DOMElements.btnRevisarQuestoes.querySelector('i.fa-chevron-down').className = 'fas fa-chevron-up ms-1 small'; });
-                 collapseRevisao.addEventListener('hide.bs.collapse', () => { DOMElements.btnRevisarQuestoes.querySelector('i.fa-chevron-up').className = 'fas fa-chevron-down ms-1 small'; });
-                 collapseRevisao.addEventListener('shown.bs.collapse', mostrarRevisaoDetalhada);
-             }
-            log('debug','Listeners configurados.');
+            document.getElementById('tempo-simulado').addEventListener('input', (e) => {
+                document.getElementById('tempo-value').textContent = e.target.value;
+            });
         }
 
-        // --- Lógica do Simulado ---
         async function iniciarSimulado() {
-            log('info',"[Iniciar] Clicado!");
-            const materiasSel = Array.from(document.querySelectorAll('.materia-checkbox-input:checked')).map(cb => cb.value);
-            DOMElements.errorMessage.style.display = 'none';
-            if (materiasSel.length === 0) { DOMElements.errorMessage.textContent = 'Selecione matérias!'; DOMElements.errorMessage.style.display = 'block'; return; }
+            const materiasSelecionadas = Array.from(document.querySelectorAll('.materia-checkbox:checked'))
+                .map(cb => cb.value);
 
-            const config = { materias: materiasSel, quantidade_total: parseInt(DOMElements.quantidadeRange.value),
-                             tempo_minutos: parseInt(DOMElements.tempoRange.value), aleatorio: DOMElements.modoAleatorioCheck.checked };
-            
-            // UI Loading
-            DOMElements.btnIniciar.disabled = true; DOMElements.btnIniciarText.style.display = 'none';
-            DOMElements.loadingSpinner.style.display = 'inline-block'; DOMElements.loadingText.style.display = 'inline';
-            DOMElements.btnIniciar.classList.add('loading');
-            log('debug',"[Iniciar] Loading UI set.");
+            if (materiasSelecionadas.length === 0) {
+                elementos.errorMessage.textContent = 'Selecione pelo menos uma matéria!';
+                elementos.errorMessage.style.display = 'block';
+                return;
+            }
+
+            elementos.errorMessage.style.display = 'none';
+            elementos.btnIniciar.disabled = true;
+            elementos.btnIniciar.querySelector('#loading-spinner').style.display = 'inline-block';
 
             try {
-                log('info',"[Iniciar] Enviando config:", config);
-                const response = await fetch('/api/simulado/iniciar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(config) });
-                 log('info',`[Iniciar] Resposta API: ${response.status}`);
-                 if (!response.ok) { let eB = await response.text(); try {eB=JSON.parse(eB).error}catch(e){} throw new Error(eB || `Erro ${response.status}`); }
-                 const data = await response.json(); log('debug',"[Iniciar] Dados resposta:", data);
-                if (!data.success) throw new Error(data.error || "Erro API.");
-                if (!data.simulado_id || !data.total_questoes || data.total_questoes <= 0 || !data.primeira_questao) throw new Error("Resposta inválida.");
+                const config = {
+                    materias: materiasSelecionadas,
+                    quantidade_total: parseInt(document.getElementById('quantidade-questoes').value),
+                    tempo_minutos: parseInt(document.getElementById('tempo-simulado').value),
+                    aleatorio: document.getElementById('modo-aleatorio').checked
+                };
 
-                // Sucesso
-                simuladoId = data.simulado_id; totalQuestoes = data.total_questoes; tempoRestanteSeg = data.tempo_limite_seg;
-                questoesCache = new Array(totalQuestoes); questoesCache[0] = data.primeira_questao;
-                respostasUsuario = {}; questaoAtualIndex = 0; relatorioFinalCache = null;
-                log('info',`[Iniciar] Sucesso! ID: ${simuladoId}, Total Q: ${totalQuestoes}`);
-
-                // Transição UI
-                DOMElements.telaConfig.style.display = 'none'; DOMElements.telaSimulado.style.display = 'block';
-                requestAnimationFrame(() => {
-                     const headerH = DOMElements.telaSimulado.querySelector('.questao-header')?.offsetHeight || 80;
-                     DOMElements.telaSimulado.style.paddingTop = `${headerH + 10}px`; // Padding dinâmico
-                     log('debug',`[Iniciar] Padding ajustado para ${headerH + 10}px`);
+                const response = await fetch('/api/simulado/iniciar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
                 });
-                iniciarTimer();
-                carregarQuestao(0);
 
+                const data = await response.json();
+
+                if (data.success) {
+                    simuladoId = data.simulado_id;
+                    totalQuestoes = data.total_questoes;
+                    tempoRestanteSeg = data.tempo_limite_seg;
+                    questoesCache[0] = data.primeira_questao;
+                    
+                    // Mostrar tela do simulado
+                    elementos.telaConfig.style.display = 'none';
+                    elementos.telaSimulado.style.display = 'block';
+                    
+                    iniciarTimer();
+                    carregarQuestao(0);
+                } else {
+                    throw new Error(data.error);
+                }
             } catch (error) {
-                log('error','[Iniciar] Erro:', error);
-                DOMElements.errorMessage.textContent = `Erro: ${error.message}`; DOMElements.errorMessage.style.display = 'block';
-                // Restaura botão
-                DOMElements.btnIniciar.disabled = false; DOMElements.btnIniciarText.style.display = 'inline';
-                DOMElements.loadingSpinner.style.display = 'none'; DOMElements.loadingText.style.display = 'none';
-                DOMElements.btnIniciar.classList.remove('loading');
+                elementos.errorMessage.textContent = 'Erro ao iniciar simulado: ' + error.message;
+                elementos.errorMessage.style.display = 'block';
+                elementos.btnIniciar.disabled = false;
+            } finally {
+                elementos.btnIniciar.querySelector('#loading-spinner').style.display = 'none';
             }
         }
 
         async function carregarQuestao(index) {
-            if (index < 0 || index >= totalQuestoes || !simuladoId) { log('error',`[CarregarQ] Inválido: idx=${index}, id=${simuladoId}`); return; }
-            log('info',`[CarregarQ] Carregando Q ${index}`);
-            questaoAtualIndex = index; tempoInicioQuestao = Date.now();
+            if (index < 0 || index >= totalQuestoes) return;
 
-            // Reset UI
-            DOMElements.feedbackContainer.style.display = 'none';
-            DOMElements.alternativasContainer.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div></div>';
-            DOMElements.btnProxima.disabled = true; DOMElements.btnVoltar.disabled = (index === 0);
+            questaoAtualIndex = index;
+            tempoInicioQuestao = Date.now();
 
-            // Update UI
-            DOMElements.numeroQuestaoAtual.textContent = index + 1; DOMElements.totalQuestoesEl.textContent = totalQuestoes;
-            const progresso = ((index + 1) / totalQuestoes) * 100;
-            DOMElements.progressoBar.style.width = `${progresso}%`; DOMElements.progressoBar.setAttribute('aria-valuenow', progresso);
-            if (index === totalQuestoes - 1) { DOMElements.btnProximaText.textContent = 'Finalizar'; DOMElements.btnProxima.querySelector('i').className = 'fas fa-check-circle ms-2'; }
-            else { DOMElements.btnProximaText.textContent = 'Próxima'; DOMElements.btnProxima.querySelector('i').className = 'fas fa-arrow-right ms-2'; }
+            // Atualizar interface
+            elementos.numeroQuestaoAtual.textContent = index + 1;
+            elementos.totalQuestoesEl.textContent = totalQuestoes;
+            elementos.progressoBar.style.width = `${((index + 1) / totalQuestoes) * 100}%`;
+            elementos.btnVoltar.disabled = index === 0;
+            elementos.btnProxima.disabled = true;
+            elementos.feedbackContainer.style.display = 'none';
 
-            // Fetch (cache or API)
-            let questao;
-            if (questoesCache[index]) {
-                log('debug',`[CarregarQ] Q ${index} do cache.`); questao = questoesCache[index]; renderizarQuestao(questao);
-            } else {
-                DOMElements.questaoEnunciado.innerHTML = '<div class="text-center p-5"><div class="spinner-border"></div></div>';
+            // Carregar questão do cache ou da API
+            let questao = questoesCache[index];
+            if (!questao) {
+                elementos.questaoEnunciado.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary"></div><p class="mt-2">Carregando questão...</p></div>';
+                
                 try {
-                    log('info',`[CarregarQ] Buscando Q ${index} da API...`);
                     const response = await fetch(`/api/simulado/${simuladoId}/questao/${index}`);
-                    log('debug',`[CarregarQ] Resposta API Q ${index}: ${response.status}`);
-                    if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
                     const data = await response.json();
-                    if (data.error) throw new Error(data.error); if (!data.questao) throw new Error("API não retornou questão.");
-                    log('debug',`[CarregarQ] Q ${index} recebida:`, data.questao);
-                    questoesCache[index] = data.questao; renderizarQuestao(data.questao);
-                } catch (error) {
-                    log('error','[CarregarQ] Erro API:', error);
-                    DOMElements.questaoEnunciado.innerHTML = `<div class="alert alert-danger">Erro: ${error.message}</div>`;
-                    DOMElements.alternativasContainer.innerHTML = ''; DOMElements.btnFinalizar.disabled = false;
-                }
-            }
-        }
-
-        function renderizarQuestao(questao) {
-             log('info',`[RenderizarQ] Renderizando Q ID ${questao?.id}`);
-            if (!questao?.enunciado || !questao?.alternativas) {
-                 log('error',"[RenderizarQ] Dados inválidos:", questao);
-                 DOMElements.questaoEnunciado.innerHTML = '<div class="alert alert-warning">Erro dados inválidos.</div>'; DOMElements.alternativasContainer.innerHTML = ''; return;
-            }
-            DOMElements.materiaAtual.textContent = questao.materia || 'N/A';
-            const enunciadoP = document.createElement('p'); enunciadoP.innerHTML = questao.enunciado.replace(/\n/g, '<br>');
-            DOMElements.questaoEnunciado.innerHTML = ''; DOMElements.questaoEnunciado.className = 'mb-4 fs-5 alert alert-light shadow-sm'; DOMElements.questaoEnunciado.appendChild(enunciadoP);
-            DOMElements.alternativasContainer.innerHTML = '';
-
-            const letrasOrdenadas = Object.keys(questao.alternativas).sort();
-            letrasOrdenadas.forEach(letra => {
-                const texto = questao.alternativas[letra];
-                if (texto && String(texto).trim() !== '') {
-                    const button = document.createElement('button'); button.type = 'button';
-                    button.className = 'alternativa text-start'; button.dataset.alternativa = letra;
-                    const strong = document.createElement('strong'); strong.className = 'me-2'; strong.textContent = `${letra})`;
-                    button.appendChild(strong); button.appendChild(document.createTextNode(` ${texto}`));
-                    // Verifica se já foi respondida (navegando de volta)
-                    if (respostasUsuario[questaoAtualIndex] && respostasUsuario[questaoAtualIndex].alternativa === letra) {
-                        button.classList.add('selecionada');
+                    
+                    if (data.success) {
+                        questao = data.questao;
+                        questoesCache[index] = questao;
+                    } else {
+                        throw new Error(data.error);
                     }
-                    button.onclick = () => selecionarAlternativa(letra, button);
-                    DOMElements.alternativasContainer.appendChild(button);
+                } catch (error) {
+                    elementos.questaoEnunciado.innerHTML = `<div class="alert alert-danger">Erro ao carregar questão: ${error.message}</div>`;
+                    return;
                 }
-            });
-            // Se a questão já foi respondida anteriormente (ao usar "Voltar"), mostra o feedback
-            if (respostasUsuario[questaoAtualIndex]) {
-                 log('debug',`[RenderizarQ] Re-exibindo feedback para Q ${questaoAtualIndex}`);
-                 mostrarFeedback(respostasUsuario[questaoAtualIndex].alternativa, DOMElements.alternativasContainer.querySelector(`.alternativa[data-alternativa="${respostasUsuario[questaoAtualIndex].alternativa}"]`), respostasUsuario[questaoAtualIndex].feedbackData, true);
-                 DOMElements.btnProxima.disabled = false; // Habilita Próxima ao voltar
-                 DOMElements.alternativasContainer.querySelectorAll('.alternativa').forEach(btn => btn.disabled = true); // Desabilita alternativas
             }
-             log('debug',`[RenderizarQ] Q ID ${questao.id} renderizada.`);
+
+            renderizarQuestao(questao, index);
         }
 
-        async function selecionarAlternativa(letra, botaoSelecionado) {
-            const tempoFimQuestao = Date.now();
-            const tempoGastoSeg = Math.max(0, Math.round((tempoFimQuestao - tempoInicioQuestao) / 1000));
-            log('info',`[SelecionarAlt] Selecionada: ${letra}, Tempo: ${tempoGastoSeg}s`);
+        function renderizarQuestao(questao, index) {
+            // Enunciado
+            elementos.questaoEnunciado.innerHTML = `<p class="fs-5">${questao.enunciado}</p>`;
+            elementos.materiaAtual.textContent = questao.materia;
 
-            const alternativas = DOMElements.alternativasContainer.querySelectorAll('.alternativa');
-            alternativas.forEach(btn => { btn.disabled = true; });
-            botaoSelecionado.classList.add('selecionada');
+            // Alternativas
+            elementos.alternativasContainer.innerHTML = '';
+            Object.entries(questao.alternativas).forEach(([letra, texto]) => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-outline-primary w-100 text-start mb-2 alternativa';
+                button.innerHTML = `
+                    <strong>${letra})</strong> ${texto}
+                `;
+                button.onclick = () => selecionarAlternativa(letra, button);
+                elementos.alternativasContainer.appendChild(button);
+            });
+        }
 
-            DOMElements.feedbackContainer.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Verificando...</div>';
-            DOMElements.feedbackContainer.style.display = 'block';
+        async function selecionarAlternativa(letra, botao) {
+            const tempoGasto = (Date.now() - tempoInicioQuestao) / 1000;
+            
+            // Desabilitar todas as alternativas
+            document.querySelectorAll('.alternativa').forEach(btn => {
+                btn.disabled = true;
+            });
+            botao.classList.add('btn-primary');
+            botao.classList.remove('btn-outline-primary');
 
             try {
-                 log('debug',`[SelecionarAlt] Enviando POST /responder`);
-                 const response = await fetch(`/api/simulado/${simuladoId}/responder`, {
-                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                     body: JSON.stringify({ questao_index: questaoAtualIndex, alternativa: letra, tempo_gasto: tempoGastoSeg })
-                 });
-                 const data = await response.json(); log('debug',"[SelecionarAlt] Resposta API:", data);
-                 if (!response.ok || !data.success) throw new Error(data.error || `Erro HTTP ${response.status}`);
+                const response = await fetch(`/api/simulado/${simuladoId}/responder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        questao_index: questaoAtualIndex,
+                        alternativa: letra,
+                        tempo_gasto: tempoGasto
+                    })
+                });
 
-                 // Guarda a resposta E o feedback recebido
-                 respostasUsuario[questaoAtualIndex] = {
-                     alternativa: letra,
-                     tempo: tempoGastoSeg,
-                     feedbackData: data // Guarda todo o objeto de feedback
-                 };
-                 log('info',"[SelecionarAlt] Resposta registrada.");
+                const data = await response.json();
 
-                 mostrarFeedback(letra, botaoSelecionado, data, false); // false = não está navegando de volta
-                 DOMElements.btnProxima.disabled = false;
+                if (data.success) {
+                    respostasUsuario[questaoAtualIndex] = {
+                        alternativa: letra,
+                        tempo_gasto: tempoGasto,
+                        feedbackData: data
+                    };
 
+                    mostrarFeedback(data);
+                    elementos.btnProxima.disabled = false;
+                }
             } catch (error) {
-                 log('error',"[SelecionarAlt] Erro:", error);
-                 DOMElements.feedbackContainer.innerHTML = `<div class="alert alert-danger mb-0">Erro: ${error.message}. Clique em Próxima.</div>`;
-                 DOMElements.feedbackContainer.style.display = 'block';
-                 DOMElements.btnProxima.disabled = false;
+                console.error('Erro ao responder:', error);
             }
         }
 
-        function mostrarFeedback(letraEscolhida, botaoSelecionado, feedbackData, isNavegandoVolta) {
-            log('info',`[MostrarFeedback] Exibindo para ${letraEscolhida}. Acertou: ${feedbackData?.acertou}. Voltando: ${isNavegandoVolta}`);
-            const { acertou, resposta_correta, justificativa, dica, formula } = feedbackData;
-
-            if (typeof acertou !== 'boolean' || !resposta_correta) { log('error',"[MostrarFeedback] Dados inválidos:", feedbackData); DOMElements.feedbackContainer.innerHTML = '<div class="alert alert-warning">Erro feedback.</div>'; return; }
-
-            const tituloEl = DOMElements.feedbackTitulo;
-            const justEl = DOMElements.feedbackJustificativa;
-
-            // Colore alternativas
-            DOMElements.alternativasContainer.querySelectorAll('.alternativa').forEach(btn => {
-                const altLetra = btn.dataset.alternativa;
-                btn.classList.remove('correta', 'errada-escolhida'); // Limpa
-                if (altLetra === resposta_correta) btn.classList.add('correta');
-                if (altLetra === letraEscolhida && !acertou) btn.classList.add('errada-escolhida');
-                if (altLetra === letraEscolhida) btn.classList.add('selecionada');
-            });
-
-            // Configura box de feedback
-            if (acertou) { feedbackContainerEl.className = 'feedback-box correto'; tituloEl.innerHTML = '<i class="fas fa-check-circle me-2"></i>Resposta Correta!'; }
-            else { feedbackContainerEl.className = 'feedback-box incorreto'; tituloEl.innerHTML = `<i class="fas fa-times-circle me-2"></i>Incorreta! (Correta: ${resposta_correta})`; }
-
-            // Mostra justif, dica, formula
-            justEl.textContent = justificativa || (acertou ? 'Parabéns!' : `A alternativa correta era a ${resposta_correta}.`);
+        function mostrarFeedback(feedbackData) {
+            elementos.feedbackContainer.style.display = 'block';
             
-            if (dica) { DOMElements.textoDica.textContent = dica; DOMElements.dicaContainer.style.display = 'block'; }
-            else { DOMElements.dicaContainer.style.display = 'none'; }
-            if (formula) { DOMElements.textoFormula.textContent = formula; DOMElements.formulaContainer.style.display = 'block'; }
-            else { DOMElements.formulaContainer.style.display = 'none'; }
-
-            feedbackContainerEl.style.display = 'block';
-            if (!isNavegandoVolta) { // Só rola se não estiver navegando de volta
-                feedbackContainerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (feedbackData.acertou) {
+                elementos.feedbackTitulo.className = 'card-header bg-success text-white';
+                elementos.feedbackTitulo.innerHTML = '<i class="fas fa-check-circle me-2"></i>Resposta Correta!';
+            } else {
+                elementos.feedbackTitulo.className = 'card-header bg-danger text-white';
+                elementos.feedbackTitulo.innerHTML = `<i class="fas fa-times-circle me-2"></i>Resposta Incorreta! (Correta: ${feedbackData.resposta_correta})`;
             }
+
+            elementos.feedbackJustificativa.textContent = feedbackData.justificativa || 'Sem justificativa disponível.';
+            elementos.textoDica.textContent = feedbackData.dica || 'Sem dica disponível.';
+            elementos.textoFormula.textContent = feedbackData.formula || 'Sem fórmula relacionada.';
         }
-        
+
         function questaoAnterior() {
-            log('info',"[questaoAnterior] Clicado.");
             if (questaoAtualIndex > 0) {
-                 carregarQuestao(questaoAtualIndex - 1);
+                carregarQuestao(questaoAtualIndex - 1);
             }
         }
 
         function proximaQuestao() {
-             log('info',"[proximaQuestao] Clicado.");
-             errorMessage.style.display = 'none';
-            if (questaoAtualIndex === totalQuestoes - 1) { finalizarSimulado(); }
-            else { carregarQuestao(questaoAtualIndex + 1); }
-        }
-
-        function confirmarFinalizarSimulado() {
-            log('info',"[confirmarFinalizar] Clicado.");
-            const respCount = Object.keys(respostasUsuario).length; const naoRespCount = totalQuestoes - respCount;
-            let msg = "Finalizar simulado agora?";
-            if (naoRespCount > 0) msg += `\n${naoRespCount} questão(ões) não respondida(s) será(ão) considerada(s) erro.`;
-            if (confirm(msg)) { log('info',"[confirmarFinalizar] Confirmado."); finalizarSimulado(); }
-            else { log('info',"[confirmarFinalizar] Cancelado."); }
-        }
-
-        async function finalizarSimulado() {
-            clearInterval(timerInterval);
-            log('info',"[finalizarSimulado] Iniciando...");
-            telaSimulado.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div><h3 class="text-muted mt-3">Calculando resultado...</h3></div>`;
-            try {
-                log('info',`[finalizarSimulado] POST /api/simulado/${simuladoId}/finalizar`);
-                const response = await fetch(`/api/simulado/${simuladoId}/finalizar`, { method: 'POST' });
-                 log('info',"[finalizarSimulado] Resposta API:", response.status); if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
-                const data = await response.json(); log('debug',"[finalizarSimulado] Dados:", data);
-                if (data.success && data.relatorio) { relatorioFinalCache = data.relatorio; mostrarResultado(data.relatorio); }
-                else { throw new Error(data.error || 'Erro desconhecido.'); }
-            } catch (error) {
-                log('error','[finalizarSimulado] Erro:', error);
-                telaSimulado.innerHTML = `<div class="alert alert-danger text-center"><h4>Erro ao Finalizar</h4><p>${error.message}</p><button onclick="reiniciarInterface()" class="btn btn-primary mt-2"><i class="fas fa-redo me-1"></i> Voltar</button></div>`;
-                 if (resultadoModal) { resultadoModal.hide(); }
+            if (questaoAtualIndex < totalQuestoes - 1) {
+                carregarQuestao(questaoAtualIndex + 1);
+            } else {
+                finalizarSimulado();
             }
         }
 
-        // --- Timer ---
+        function finalizarSimulado() {
+            if (confirm('Deseja finalizar o simulado?')) {
+                clearInterval(timerInterval);
+                // Aqui você pode adicionar a lógica para enviar o resultado
+                alert('Simulado finalizado! Em desenvolvimento...');
+            }
+        }
+
         function iniciarTimer() {
-            clearInterval(timerInterval); log('info',`[iniciarTimer] Iniciando com ${tempoRestanteSeg} segundos.`);
-            function atualizarDisplay() {
-                 const min = Math.floor(tempoRestanteSeg / 60); const seg = tempoRestanteSeg % 60;
-                 DOMElements.timerDisplay.textContent = `${String(min).padStart(2,'0')}:${String(seg).padStart(2,'0')}`;
-                 if (tempoRestanteSeg <= 60 && !DOMElements.timerDisplay.classList.contains('text-danger')) DOMElements.timerDisplay.classList.add('text-danger');
-                 else if (tempoRestanteSeg > 60 && DOMElements.timerDisplay.classList.contains('text-danger')) DOMElements.timerDisplay.classList.remove('text-danger');
-            }
-            atualizarDisplay();
-            timerInterval = setInterval(() => {
-                if (tempoRestanteSeg > 0) { tempoRestanteSeg--; atualizarDisplay(); }
+            function atualizarTimer() {
+                const minutos = Math.floor(tempoRestanteSeg / 60);
+                const segundos = tempoRestanteSeg % 60;
+                elementos.timerDisplay.textContent = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+                
                 if (tempoRestanteSeg <= 0) {
-                    clearInterval(timerInterval); log('warn',"[iniciarTimer] Tempo acabou!");
-                    console.warn("Tempo esgotado!"); // Log
-                    DOMElements.feedbackContainer.innerHTML = `<div class="alert alert-warning text-center fw-bold">Tempo esgotado! Finalizando...</div>`;
-                    DOMElements.feedbackContainer.style.display = 'block';
-                    setTimeout(finalizarSimulado, 1500);
+                    clearInterval(timerInterval);
+                    finalizarSimulado();
                 }
-            }, 1000);
+                tempoRestanteSeg--;
+            }
+
+            atualizarTimer();
+            timerInterval = setInterval(atualizarTimer, 1000);
         }
-
-        // --- Resultado, Revisão e Reinício ---
-        function mostrarResultado(relatorio) {
-            log('info',"[mostrarResultado] Exibindo modal:", relatorio);
-            telaSimulado.style.display = 'none';
-            // KPIs
-            document.getElementById('modal-total-acertos').textContent = relatorio.geral?.acertos ?? 0;
-            document.getElementById('modal-total-erros').textContent = relatorio.geral?.erros ?? 0;
-            document.getElementById('modal-percentual-acerto').textContent = `${relatorio.geral?.percentual_acerto ?? 0}%`;
-            document.getElementById('modal-tempo-total').textContent = `${relatorio.geral?.tempo_total_minutos ?? 0} min`;
-            renderGraficoModal(relatorio.por_materia); // Gráfico
-            const listaRec = DOMElements.listaRecomendacoes; listaRec.innerHTML = ''; // Recomendações
-            if (relatorio.recomendacoes?.length > 0) relatorio.recomendacoes.forEach(recHTML => listaRec.insertAdjacentHTML('beforeend', recHTML));
-            else listaRec.innerHTML = '<li class="list-group-item border-0 text-muted">Nenhuma recomendação.</li>';
-            if(resultadoModal) resultadoModal.show(); else log('error',"[mostrarResultado] Modal não inicializado.");
-        }
-
-        function renderGraficoModal(dadosMateria) {
-             const canvas = document.getElementById('grafico-desempenho-modal'); const ctx = canvas.getContext('2d');
-             graficoPlaceholder.style.display = 'none';
-            if (graficoModalInstance) graficoModalInstance.destroy();
-            const materias = Object.keys(dadosMateria); const percentuais = materias.map(m => dadosMateria[m]?.percentual ?? 0);
-             if (materias.length === 0) { log('warn',"[renderGraficoModal] Sem dados."); graficoPlaceholder.style.display = 'block'; canvas.style.display = 'none'; return; }
-             canvas.style.display = 'block'; log('debug',"[renderGraficoModal] Renderizando:", dadosMateria);
-            graficoModalInstance = new Chart(ctx, {
-                type: 'bar', data: { labels: materias, datasets: [{ label: 'Acerto (%)', data: percentuais, backgroundColor: 'rgba(13, 110, 253, 0.7)', borderRadius: 5 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%" } }, x: { ticks: { autoSkip: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.label}: ${c.formattedValue}%` } } } }
-            });
-        }
-
-        function mostrarRevisaoDetalhada() {
-             log('info',"[mostrarRevisaoDetalhada] Carregando...");
-             revisaoQuestoesContent.innerHTML = '<p class="text-muted">Carregando...</p>'; // Spinner
-             if (!relatorioFinalCache?.questoes_com_detalhes) { log('warn',"[mostrarRevisaoDetalhada] Dados não encontrados."); revisaoQuestoesContent.innerHTML = '<p class="text-danger">Erro.</p>'; return; }
-             revisaoQuestoesContent.innerHTML = ''; // Limpa
-             if(relatorioFinalCache.questoes_com_detalhes.length === 0) { revisaoQuestoesContent.innerHTML = '<p class="text-muted">Nenhuma questão.</p>'; return; }
-             log('debug',`[mostrarRevisaoDetalhada] Renderizando ${relatorioFinalCache.questoes_com_detalhes.length} itens.`);
-
-             relatorioFinalCache.questoes_com_detalhes.forEach(q => {
-                 const divQuestao = document.createElement('div'); divQuestao.className = 'revisao-item';
-                 const icon = q.acertou === true ? 'fa-check-circle text-success' : q.acertou === false ? 'fa-times-circle text-danger' : 'fa-minus-circle text-muted';
-                 divQuestao.innerHTML = `
-                    <div class="revisao-header">
-                        <span class="revisao-numero">Q.${q.numero} (${q.materia || 'N/A'})</span>
-                        <span><i class="fas ${icon} ms-2"></i></span>
-                    </div>
-                    <div class="revisao-enunciado">${q.enunciado ? q.enunciado.replace(/\n/g, '<br>') : '[Ausente]'}</div>
-                    <div class="revisao-alternativas-container mt-2"></div>
-                    ${q.justificativa ? `<div class="revisao-justificativa"><strong>Justificativa:</strong> ${q.justificativa}</div>` : ''}
-                 `;
-                 const altsDiv = divQuestao.querySelector('.revisao-alternativas-container');
-                 const alts = q.alternativas || {};
-                 Object.keys(alts).sort().forEach(letra => {
-                     const altSpan = document.createElement('span'); altSpan.className = 'revisao-alternativa d-block';
-                     altSpan.innerHTML = `<strong>${letra})</strong> `; altSpan.appendChild(document.createTextNode(alts[letra] || '[Ausente]'));
-                     if (letra === q.resposta_correta) altSpan.classList.add('bg-success-light', 'text-success-dark', 'fw-bold');
-                     if (letra === q.resposta_usuario && q.acertou === false) altSpan.classList.add('bg-danger-light', 'text-danger-dark');
-                     if (letra === q.resposta_usuario && q.acertou === true) altSpan.style.border = '2px solid #198754';
-                     altsDiv.appendChild(altSpan);
-                 });
-                 revisaoQuestoesContent.appendChild(divQuestao);
-             });
-         }
-
-
-        function reiniciarInterface() {
-            log('info',"[reiniciarInterface] Reiniciando...");
-            // Forma mais segura: Recarregar a página para garantir estado limpo
-            window.location.reload();
-        }
-
     </script>
 </body>
 </html>
