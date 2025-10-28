@@ -1,718 +1,375 @@
-﻿"""
-ESQUEMATIZA.AI - SISTEMA DE SIMULADOS PARA CONCURSOS
-Versão Robusta - Configuração Avançada e Tratamento de Erros Aprimorado
-"""
-
-from whitenoise import WhiteNoise
-from flask import Flask, render_template, jsonify, request, session, send_from_directory
+﻿import os
 import sqlite3
 import json
-import random
-import time
-import os
 import google.generativeai as genai
-from dotenv import load_dotenv
 from datetime import datetime
-import traceback
 import logging
-from logging.handlers import RotatingFileHandler
-import sys
+import random # Adicionado para simulado_id
+import glob   # Adicionado para debug route (se ainda existir)
+from whitenoise import WhiteNoise # Adicionado para arquivos estáticos
+from flask import Flask, render_template, jsonify, request, session, send_from_directory # Imports corretos
 
-# --- Configuração de Logging Robusta ---
-def setup_logging():
-    """Configura sistema de logging robusto com rotação de arquivos"""
-    log_dir = 'logs'
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    
-    logger = logging.getLogger('esquematiza')
-    logger.setLevel(logging.INFO)
-    
-    # Handler para arquivo com rotação
-    file_handler = RotatingFileHandler(
-        f'{log_dir}/app.log', 
-        maxBytes=1024 * 1024,  # 1MB
-        backupCount=5
-    )
-    file_handler.setLevel(logging.INFO)
-    
-    # Handler para console
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
-    
-    # Formato
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
-    
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-    
-    return logger
-
-# Inicializar logging
-logger = setup_logging()
-
-# --- Configuração Inicial ---
-load_dotenv()
+# ========== CONFIGURAÇÃO INICIAL ==========
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Definir o caminho absoluto para o banco de dados
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'concursos.db')
 logger.info(f'--- CAMINHO DO BANCO DE DADOS DEFINIDO: {DB_PATH} ---')
 
+# --- VERIFICAÇÃO DO BANCO DE DADOS (Início) ---
+# (Removido o bloco de verificação que causava erros, confiamos no tamanho agora)
+try:
+    if os.path.exists(DB_PATH):
+        db_size = os.path.getsize(DB_PATH)
+        logger.info(f'--- DB Check: {DB_PATH} encontrado (Tamanho: {db_size} bytes) ---')
+    else:
+        logger.error(f'--- DB Check: {DB_PATH} NÃO ENCONTRADO! ---')
+except Exception as e:
+    logger.error(f'--- DB Check: Erro ao verificar {DB_PATH}: {e} ---')
+# --- FIM DA VERIFICAÇÃO ---
+
 app = Flask(__name__)
+# Configurar Whitenoise para servir arquivos estáticos da pasta 'static/'
+# O prefixo '/static' é adicionado automaticamente por Whitenoise
 app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/')
+logger.info("✅ Whitenoise configurado para servir arquivos estáticos.")
 
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'chave_secreta_forte_esquematiza_2024')
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
-app.config['JSON_SORT_KEYS'] = False  # Manter ordem dos JSONs
 
-# --- Configuração da API Gemini com Fallback ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = "models/gemini-2.0-flash"
+# Configuração do Gemini (agora tenta configurar, mas não impede o boot se falhar)
+try:
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if api_key:
+        genai.configure(api_key=api_key)
+        logger.info("✅ Gemini configurado: models/gemini-2.0-flash") # Ajuste o modelo se necessário
+    else:
+        logger.warning("⚠️ GEMINI_API_KEY não encontrada nas variáveis de ambiente.")
+except Exception as e:
+    logger.error(f"❌ Erro inicial ao configurar Gemini: {e} - Aplicação continuará, mas correção de redação falhará.")
 
-def configure_gemini():
-    """Configura Gemini com fallback robusto"""
-    if not GEMINI_API_KEY:
-        logger.warning("❌ GEMINI_API_KEY não encontrada - Correção de redação desativada")
-        return False
-    
-    try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        # Teste de conexão
-        model = genai.GenerativeModel(MODEL_NAME)
-        model.generate_content("Teste de conexão")
-        logger.info(f"✅ Gemini configurado: {MODEL_NAME}")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Erro na configuração do Gemini: {e}")
-        return False
 
-gemini_configured = configure_gemini()
+# ========== ROTAS PRINCIPAIS (HTML) ==========
 
-# --- Dicionário de Áreas (Expansível) ---
-AREAS_CONHECIMENTO = {
-    "Atualidades": "Atualidades",
-    "Mercado Financeiro": "Conhecimentos Bancários", 
-    "Conhecimentos Bancários": "Conhecimentos Bancários",
-    "Direito Administrativo": "Direito (Admin. e Const.)",
-    "Direito Constitucional": "Direito (Admin. e Const.)",
-    "Informática": "Informática",
-    "Língua Portuguesa": "Língua Portuguesa",
-    "Literatura": "Língua Portuguesa",
-    "Matemática": "Matemática e Raciocínio Lógico",
-    "Raciocínio Lógico": "Matemática e Raciocínio Lógico",
-    "Psicologia": "Psicologia e Negociação",
-    "Vendas": "Psicologia e Negociação", 
-    "Negociação": "Psicologia e Negociação",
-    "Geografia": "Atualidades",
-    "História": "Atualidades",
-    "Economia": "Atualidades",
-    "Administração": "Conhecimentos Bancários",
-    "Contabilidade": "Conhecimentos Bancários"
-}
-
-# --- Cache para melhor performance ---
-class SimpleCache:
-    def __init__(self, ttl=300):  # 5 minutos default
-        self._cache = {}
-        self.ttl = ttl
-    
-    def get(self, key):
-        if key in self._cache:
-            data, timestamp = self._cache[key]
-            if time.time() - timestamp < self.ttl:
-                return data
-            else:
-                del self._cache[key]
-        return None
-    
-    def set(self, key, value):
-        self._cache[key] = (value, time.time())
-
-# Cache para matérias e temas
-materias_cache = SimpleCache(ttl=600)  # 10 minutos
-temas_cache = SimpleCache(ttl=600)
-
-def get_area(materia):
-    """Retorna a Área de Conhecimento para dada Matéria com fallback."""
-    if not materia:
-        return "Outras Matérias"
-    
-    materia_lower = materia.lower()
-    for mat, area in AREAS_CONHECIMENTO.items():
-        if mat.lower() in materia_lower:
-            return area
-    return "Outras Matérias"
-
-def corrigir_encoding(texto):
-    """Corrige problemas comuns de encoding de forma robusta."""
-    if texto is None:
-        return ""
-    
-    if not isinstance(texto, str):
-        try:
-            texto = str(texto)
-        except:
-            return "[Texto não decodificável]"
-    
-    correcoes = {
-        'Ã¡': 'á', 'Ã©': 'é', 'Ã­': 'í', 'Ã³': 'ó', 'Ãº': 'ú',
-        'Ã£': 'ã', 'Ãµ': 'õ', 'Ã¢': 'â', 'Ãª': 'ê', 'Ã§': 'ç',
-        'Âº': 'º', 'Ã‰': 'É', 'ÃŠ': 'Ê', 'Ã‘': 'Ñ',
-        'â‚¬': '€', 'â€š': '‚', 'â€ž': '„', 'â€¦': '…'
-    }
-    
-    for erro, correcao in correcoes.items():
-        texto = texto.replace(erro, correcao)
-        
-    return texto
-
-def get_db_connection(max_retries=3):
-    """Conexão com banco de dados com retry e timeout."""
-    for attempt in range(max_retries):
-        try:
-            conn = sqlite3.connect('concurso.db', check_same_thread=False, timeout=30)
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA busy_timeout = 5000")
-            return conn
-        except sqlite3.Error as e:
-            logger.warning(f"Tentativa {attempt + 1}/{max_retries} - Erro DB: {e}")
-            if attempt == max_retries - 1:
-                logger.error(f"Falha após {max_retries} tentativas: {e}")
-                raise
-            time.sleep(1)
-
-def safe_json_loads(text, default=None):
-    """Carrega JSON de forma segura com fallback."""
-    if default is None:
-        default = {}
-    
-    if not text:
-        return default
-    
-    try:
-        return json.loads(text)
-    except (json.JSONDecodeError, TypeError):
-        logger.warning(f"JSON inválido: {text[:100]}...")
-        return default
-
-# --- Rotas Principais com Error Handling ---
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/simulado')
-def simulado():
-    session.pop('simulado_atual', None)
-    return render_template('simulado.html')
+# Adicione outras rotas HTML se necessário (ex: /simulado, /redacao, /dashboard)
+# @app.route('/simulado')
+# def simulado_page():
+#    return render_template('simulado.html')
 
-@app.route('/redacao')
-def redacao():
-    return render_template('redacao.html')
+# @app.route('/redacao')
+# def redacao_page():
+#    return render_template('redacao.html')
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
+# @app.route('/dashboard')
+# def dashboard_page():
+#    return render_template('dashboard.html')
 
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    return send_from_directory('static', filename)
 
-@app.route('/health')
-def health_check():
-    """Endpoint de health check para monitoramento"""
-    try:
-        conn = get_db_connection()
-        conn.execute("SELECT 1")
-        conn.close()
-return jsonify({
-            'status': 'healthy',
-            'timestamp': datetime.now().isoformat(),
-            'gemini_configured': gemini_configured,
-            'project': 'ESQUEMATIZA.AI'
-        })
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+# ========== API - MATÉRIAS ==========
 
-# --- API: Matérias (Cacheada) ---
 @app.route('/api/materias')
 def api_materias():
-    cache_key = 'materias_all'
-    cached_data = materias_cache.get(cache_key)
-    if cached_data:
-        logger.info("Retornando matérias do cache")
-        return jsonify(cached_data)
-    
-    conn = None
+    logger.info(f'API /api/materias: Iniciando...')
     try:
-        conn = get_db_connection()
-        materias_db = conn.execute('''
-            SELECT materia, disciplina, COUNT(*) as total_questoes 
-            FROM questoes 
-            GROUP BY materia, disciplina 
-            ORDER BY disciplina, materia
-        ''').fetchall()
-        
-        materias_por_area = {}
-        
-        for row in materias_db:
-            materia_dict = dict(row)
-            materia_chave = materia_dict['materia'] 
-            
-            materia_nome_exibicao = corrigir_encoding(materia_chave)
-            disciplina = corrigir_encoding(materia_dict['disciplina'])
-            area = get_area(materia_nome_exibicao)
-            
-            if area not in materias_por_area:
-                materias_por_area[area] = []
-            
-            if not any(m['materia_chave'] == materia_chave for m in materias_por_area[area]):
-                materias_por_area[area].append({
-                    'materia_chave': materia_chave,
-                    'materia_nome': materia_nome_exibicao,
-                    'disciplina': disciplina,
-                    'total_questoes': materia_dict['total_questoes']
-                })
-        
-        areas_focadas = list(set(AREAS_CONHECIMENTO.values()))
-        materias_finais = {
-            area: dados for area, dados in materias_por_area.items() 
-            if area in areas_focadas
-        }
-
-        response_data = {'success': True, 'areas': materias_finais}
-        materias_cache.set(cache_key, response_data)
-        
-        return jsonify(response_data)
-        
+        logger.info(f'API /api/materias: Conectando ao DB em {DB_PATH}')
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        logger.info('API /api/materias: Executando query...')
+        cursor.execute("SELECT DISTINCT materia FROM questions")
+        materias = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        logger.info(f'API /api/materias: ENCONTRADO {len(materias)} matérias distintas. Conexão fechada.')
+        return jsonify(materias)
     except Exception as e:
-        logger.error(f"ERRO /api/materias: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
-    finally:
-        if conn:
-            conn.close()
-# --- API: Simulado ROBUSTA com Validação ---
+        logger.error(f'API /api/materias: ERRO CRÍTICO - {e}')
+        return jsonify({'error': 'Erro interno ao buscar matérias'}), 500
+
+
+# ========== API - SIMULADOS ==========
+
+simulados_ativos = {} # Atenção: Isso é perdido a cada reinício do servidor!
+
 @app.route('/api/simulado/iniciar', methods=['POST'])
-def iniciar_simulado():
-    conn = None
-    logger.info("🎯 Iniciando simulado...")
-    
+def api_simulado_iniciar():
+    logger.info(f'API /api/simulado/iniciar: Iniciando...')
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'Dados JSON inválidos'}), 400
-            
-        materias = data.get('materias', [])
+        data = request.json
+        materia = data.get('materia', 'todas')
         quantidade = int(data.get('quantidade', 10))
+        logger.info(f'API /simulado/iniciar: Buscando {quantidade} questões de {materia}')
 
-        # Validação robusta
-        if not materias or not isinstance(materias, list):
-            return jsonify({'success': False, 'error': 'Lista de matérias inválida'}), 400
-        
-        if quantidade < 1 or quantidade > 100:
-            return jsonify({'success': False, 'error': 'Quantidade deve ser entre 1 e 100'}), 400
+        logger.info(f'API /simulado/iniciar: Conectando ao DB em {DB_PATH}')
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-        conn = get_db_connection()
-        
-        placeholders = ','.join(['?'] * len(materias))
-        query = f'''
-            SELECT id, disciplina, materia, enunciado, alternativas, resposta_correta, 
-                   justificativa, dificuldade, peso, dica, formula 
-            FROM questoes 
-            WHERE materia IN ({placeholders}) 
-            ORDER BY RANDOM() 
-            LIMIT ?
-        '''
-        
-        params = materias + [quantidade]
-        logger.info(f"🔍 Buscando {quantidade} questões em {len(materias)} matérias")
-        
-        questoes_db = conn.execute(query, params).fetchall()
-        
-        if not questoes_db:
-            return jsonify({'success': False, 'error': 'Nenhuma questão encontrada para as matérias selecionadas'}), 404
+        if materia == 'todas' or not materia:
+            cursor.execute("SELECT id, materia, enunciado, alternativas, resposta_correta, explicacao FROM questions ORDER BY RANDOM() LIMIT ?", (quantidade,))
+        else:
+            cursor.execute("SELECT id, materia, enunciado, alternativas, resposta_correta, explicacao FROM questions WHERE materia = ? ORDER BY RANDOM() LIMIT ?", (materia, quantidade))
 
-        # Preparar simulado
-        simulado_id = f"sim_{int(time.time())}_{random.randint(1000, 9999)}"
-        
-        if 'user_id' not in session:
-            session['user_id'] = f"user_{random.randint(10000, 99999)}"
+        questions_raw = cursor.fetchall()
+        logger.info(f'API /simulado/iniciar: Query retornou {len(questions_raw)} linhas.')
 
-        simulado_data = {
+        questions = []
+        for row in questions_raw:
+            try:
+                alternativas_dict = json.loads(row[3]) # Índice 3 é 'alternativas'
+            except json.JSONDecodeError:
+                logger.warning(f"API /simulado/iniciar: JSON inválido para alternativas na questão ID {row[0]}. Pulando questão.")
+                continue # Pula esta questão se o JSON estiver ruim
+
+            questions.append({
+                'id': row[0],
+                'materia': row[1],
+                'questao': row[2],
+                'alternativas': alternativas_dict,
+                'resposta_correta': row[4],
+                'explicacao': row[5]
+            })
+
+        conn.close()
+        logger.info(f'API /simulado/iniciar: ENCONTRADO {len(questions)} questões válidas. Conexão fechada.')
+
+        if not questions:
+             logger.error(f'API /simulado/iniciar: Nenhuma questão encontrada para os critérios!')
+             return jsonify({'error': 'Nenhuma questão encontrada para esta matéria/quantidade'}), 404
+
+
+        # Criar simulado (simples, em memória)
+        simulado_id = f"sim_{int(datetime.now().timestamp())}_{random.randint(1000, 9999)}"
+        simulados_ativos[simulado_id] = {
+            'questoes': questions,
+            'respostas': {}, # Usar dict para fácil acesso por ID
+            'inicio': datetime.now().isoformat()
+        }
+
+        logger.info(f"🎯 Simulado {simulado_id} iniciado com {len(questions)} questões.")
+
+        # Retornar apenas os dados necessários para o frontend iniciar
+        questoes_frontend = [{
+            'id': q['id'],
+            'materia': q['materia'],
+            'questao': q['questao'],
+            'alternativas': q['alternativas'] # Frontend precisa das alternativas
+            # NÃO ENVIAR resposta_correta ou explicacao agora
+         } for q in questions]
+
+
+        return jsonify({
             'simulado_id': simulado_id,
-            'questoes': [],
-            'respostas': {},
-            'indice_atual': 0,
-            'data_inicio': datetime.now().isoformat(),
-            'materias_selecionadas': materias
-        }
-
-        # Processar questões
-        for questao_db in questoes_db:
-            questao_dict = dict(questao_db)
-            
-            # Aplicar encoding correction em todos os campos de texto
-            for key in ['disciplina', 'materia', 'enunciado', 'justificativa', 'dica', 'formula', 'resposta_correta']:
-                if questao_dict.get(key) is not None:
-                    questao_dict[key] = corrigir_encoding(questao_dict[key])
-            
-            # Processar alternativas
-            if isinstance(questao_dict.get('alternativas'), str):
-                questao_dict['alternativas'] = safe_json_loads(questao_dict['alternativas'])
-            
-            # Calcular peso se não existir
-            if questao_dict.get('peso') is None:
-                dificuldade = questao_dict.get('dificuldade', 'Baixa').lower()
-                peso = 1
-                if 'média' in dificuldade: peso = 2
-                elif 'alta' in dificuldade: peso = 3
-                questao_dict['peso'] = peso
-            
-            simulado_data['questoes'].append(questao_dict)
-
-        session['simulado_atual'] = simulado_data
-        session.modified = True
-
-        # Preparar primeira questão
-        primeira_questao = simulado_data['questoes'][0]
-        
-        questao_frontend = {
-            'id': primeira_questao.get('id'),
-            'disciplina': primeira_questao.get('disciplina'),
-            'materia': primeira_questao.get('materia'),
-            'enunciado': primeira_questao.get('enunciado'),
-            'alternativas': primeira_questao.get('alternativas'),
-            'dificuldade': primeira_questao.get('dificuldade'),
-            'peso': primeira_questao.get('peso'),
-            'dica': primeira_questao.get('dica'),
-            'formula': primeira_questao.get('formula')
-        }
-
-        logger.info(f"✅ Simulado {simulado_id} iniciado com {len(questoes_db)} questões")
-        
-        return jsonify({
-            'success': True, 
-            'total_questoes': len(questoes_db),
-            'questao': questao_frontend,
-            'indice_atual': 0
-        })
-
-    except ValueError as e:
-        logger.error(f"Erro de validação: {e}")
-        return jsonify({'success': False, 'error': 'Dados de entrada inválidos'}), 400
-    except Exception as e:
-        logger.error(f"ERRO CRÍTICO /simulado/iniciar: {e}")
-        logger.error(traceback.format_exc())
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
-    finally:
-        if conn:
-            conn.close()
-# ... (mantido o restante das rotas do simulado com a mesma robustez)
-
-@app.route('/api/simulado/questao/<int:indice>')
-def get_questao_simulado(indice):
-    try:
-        if 'simulado_atual' not in session:
-            return jsonify({'success': False, 'error': 'Nenhum simulado ativo'}), 400
-
-        simulado = session['simulado_atual']
-        questoes = simulado['questoes']
-        
-        if indice < 0 or indice >= len(questoes):
-            return jsonify({'success': False, 'error': 'Índice inválido'}), 400
-
-        simulado['indice_atual'] = indice
-        session.modified = True
-
-        questao = questoes[indice]
-        
-        resposta_anterior = simulado['respostas'].get(str(questao['id']))
-        
-        questao_frontend = {
-            'id': questao.get('id'),
-            'disciplina': questao.get('disciplina'),
-            'materia': questao.get('materia'),
-            'enunciado': questao.get('enunciado'),
-            'alternativas': questao.get('alternativas'),
-            'dificuldade': questao.get('dificuldade'),
-            'peso': questao.get('peso'),
-            'dica': questao.get('dica'),
-            'formula': questao.get('formula')
-        }
-
-        return jsonify({
-            'success': True,
-            'questao': questao_frontend,
-            'resposta_anterior': resposta_anterior,
-            'indice_atual': indice,
-            'total_questoes': len(questoes)
+            'questoes': questoes_frontend, # Envia versão limpa
+            'total': len(questoes_frontend)
         })
 
     except Exception as e:
-        logger.error(f"ERRO /simulado/questao: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
+        logger.error(f"API /api/simulado/iniciar: ERRO CRÍTICO - {e}", exc_info=True) # Log completo do erro
+        return jsonify({'error': 'Erro interno ao iniciar simulado'}), 500
 
 @app.route('/api/simulado/responder', methods=['POST'])
-def responder_questao():
+def api_simulado_responder():
+    # Simplesmente registra a resposta, sem validação imediata
     try:
-        if 'simulado_atual' not in session:
-            return jsonify({'success': False, 'error': 'Nenhum simulado ativo'}), 400
-
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'Dados inválidos'}), 400
-            
+        data = request.json
+        simulado_id = data.get('simulado_id')
         questao_id = data.get('questao_id')
-        alternativa = data.get('alternativa', '').strip().upper()
+        resposta_usuario = data.get('resposta')
 
-        if not questao_id:
-            return jsonify({'success': False, 'error': 'ID da questão não fornecido'}), 400
-            
-        if not alternativa or alternativa not in ['A', 'B', 'C', 'D', 'E']:
-            return jsonify({'success': False, 'error': 'Alternativa inválida'}), 400
+        if not simulado_id or questao_id is None or resposta_usuario is None:
+             return jsonify({'error': 'Dados incompletos'}), 400
 
-        simulado = session['simulado_atual']
-        
-        questao_atual = None
-        for q in simulado['questoes']:
-            if str(q['id']) == str(questao_id):
-                questao_atual = q
-                break
+        if simulado_id not in simulados_ativos:
+            return jsonify({'error': 'Simulado não encontrado ou expirado'}), 404
 
-        if not questao_atual:
-            return jsonify({'success': False, 'error': 'Questão não encontrada'}), 404
-
-        resposta_correta = questao_atual['resposta_correta'].strip().upper()
-        acertou = (alternativa == resposta_correta)
-        
-        peso_questao = questao_atual.get('peso', 1)
-        pontos = peso_questao if acertou else 0
-
-        simulado['respostas'][str(questao_id)] = {
-            'alternativa_escolhida': alternativa,
-            'acertou': acertou,
-            'timestamp': datetime.now().isoformat(),
-            'pontos': pontos, 
-            'peso': peso_questao
-        }
-        
-        session.modified = True
-        
-        # Lógica de Dicas de Interpretação
-        materia = questao_atual.get('materia', '').lower()
-        dicas_interpretacao = "Dica: Analise o enunciado e o comando (o que a questão realmente pede). Cuidado com generalizações como 'sempre' ou 'nunca'."
-        
-        if 'matemática' in materia or 'raciocínio' in materia:
-             dicas_interpretacao = "Dica: Estruture os dados. Se for Raciocínio, tente desenhar diagramas. Se for Matemática, identifique a fórmula chave antes de calcular."
-        elif 'direito' in materia:
-             dicas_interpretacao = "Dica: Identifique a base legal (artigo, lei). Questões de Direito costumam ter 'pegadinhas' em palavras como 'pode' vs 'deve'."
-        elif 'portuguesa' in materia:
-             dicas_interpretacao = "Dica: Volte ao texto para conferir a interpretação. Diferencie 'interpretar' (inferir) de 'compreender' (o que está escrito)."
-        
-        return jsonify({
-            'success': True,
-            'acertou': acertou,
-            'resposta_correta': resposta_correta,
-            'justificativa': questao_atual.get('justificativa', 'Sem justificativa disponível.'),
-            'dica': questao_atual.get('dica', ''),
-            'formula': questao_atual.get('formula', ''),
-            'dicas_interpretacao': dicas_interpretacao
-        })
+        simulados_ativos[simulado_id]['respostas'][questao_id] = resposta_usuario
+        #logger.info(f"Simulado {simulado_id}: Resposta registrada para questão {questao_id}")
+        return jsonify({'status': 'resposta registrada'})
 
     except Exception as e:
-        logger.error(f"ERRO /simulado/responder: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
+        logger.error(f"API /api/simulado/responder: ERRO CRÍTICO - {e}", exc_info=True)
+        return jsonify({'error': 'Erro interno ao registrar resposta'}), 500
+
 
 @app.route('/api/simulado/finalizar', methods=['POST'])
-def finalizar_simulado():
-    conn = None
+def api_simulado_finalizar():
+    logger.info(f'API /api/simulado/finalizar: Iniciando...')
     try:
-        if 'simulado_atual' not in session:
-            return jsonify({'success': False, 'error': 'Nenhum simulado ativo'}), 400
+        data = request.json
+        simulado_id = data.get('simulado_id')
 
-        simulado = session['simulado_atual']
-        
-        total_questoes = len(simulado['questoes'])
-        total_respondidas = len(simulado['respostas'])
-        total_acertos = sum(1 for r in simulado['respostas'].values() if r['acertou'])
-        
-        total_peso = sum(q.get('peso', 1) for q in simulado['questoes'])
-        pontos_obtidos = sum(r.get('pontos', 0) for r in simulado['respostas'].values())
-        
-        nota_final = (pontos_obtidos / total_peso) * 100 if total_peso > 0 else 0
-        percentual_acerto_simples = (total_acertos / total_questoes) * 100 if total_questoes > 0 else 0
+        if simulado_id not in simulados_ativos:
+            logger.warning(f"API /finalizar: Tentativa de finalizar simulado inexistente: {simulado_id}")
+            return jsonify({'error': 'Simulado não encontrado ou já finalizado'}), 404
 
-        relatorio = {
-            'simulado_id': simulado['simulado_id'],
-            'total_questoes': total_questoes,
-            'total_respondidas': total_respondidas,
-            'total_acertos': total_acertos,
-            'pontos_obtidos': round(pontos_obtidos, 2),
-            'total_peso': round(total_peso, 2),
-            'percentual_acerto_simples': round(percentual_acerto_simples, 2),
-            'nota_final': round(nota_final, 2), 
-            'data_fim': datetime.now().isoformat(),
-            'materias': simulado.get('materias_selecionadas', [])
+        simulado = simulados_ativos[simulado_id]
+        questoes_simulado = simulado['questoes']
+        respostas_usuario = simulado['respostas']
+        resultados_detalhados = []
+        acertos = 0
+
+        logger.info(f"API /finalizar: Corrigindo simulado {simulado_id}...")
+        for questao in questoes_simulado:
+            q_id = questao['id']
+            resposta_correta = questao['resposta_correta']
+            resposta_dada = respostas_usuario.get(q_id) # Pega a resposta do usuário para essa questão
+            acertou = (resposta_dada == resposta_correta)
+
+            if acertou:
+                acertos += 1
+
+            resultados_detalhados.append({
+                'id': q_id,
+                'materia': questao['materia'],
+                'questao': questao['questao'],
+                'alternativas': questao['alternativas'],
+                'resposta_correta': resposta_correta,
+                'resposta_dada': resposta_dada,
+                'acertou': acertou,
+                'explicacao': questao.get('explicacao', 'Explicação não disponível.') # Usa .get() por segurança
+            })
+
+        total_questoes = len(questoes_simulado)
+        percentual = round((acertos / total_questoes) * 100, 1) if total_questoes > 0 else 0
+
+        resultado_final = {
+            'simulado_id': simulado_id,
+            'acertos': acertos,
+            'total': total_questoes,
+            'percentual': percentual,
+            'resultados': resultados_detalhados # Envia detalhes para o frontend exibir
         }
 
-        # Salvar histórico
+        logger.info(f"✅ Simulado {simulado_id} finalizado: {acertos}/{total_questoes} acertos ({percentual}%)")
+
+        # Limpar da memória
+        del simulados_ativos[simulado_id]
+
+        return jsonify(resultado_final)
+
+    except Exception as e:
+        logger.error(f"API /api/simulado/finalizar: ERRO CRÍTICO - {e}", exc_info=True)
+        return jsonify({'error': 'Erro interno ao finalizar simulado'}), 500
+
+
+# ========== API - REDAÇÃO ==========
+
+@app.route('/api/redacao/temas')
+def api_redacao_temas():
+    logger.info(f'API /api/redacao/temas: Iniciando...')
+    try:
+        logger.info(f'API /redacao/temas: Conectando ao DB em {DB_PATH}')
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        # Ajuste: Selecionar colunas que existem na tabela 'temas_redacao'
+        # (Baseado no script importar_dados.py, a tabela tem: id, titulo, descricao, tipo, dificuldade, palavras_chave)
+        logger.info('API /redacao/temas: Executando query...')
+        cursor.execute("SELECT id, titulo, tipo, dificuldade FROM temas_redacao ORDER BY titulo") # Removido 'categoria' se não existir
+        temas = [{'id': row[0], 'tema': row[1], 'tipo': row[2], 'dificuldade': row[3]} for row in cursor.fetchall()]
+        conn.close()
+        logger.info(f'API /redacao/temas: ENCONTRADO {len(temas)} temas. Conexão fechada.')
+        return jsonify(temas)
+    except Exception as e:
+        logger.error(f'API /api/redacao/temas: ERRO CRÍTICO - {e}')
+        # Log específico para erro de coluna
+        if isinstance(e, sqlite3.OperationalError) and 'no such column' in str(e):
+             logger.error(f"VERIFIQUE A ESTRUTURA DA TABELA 'temas_redacao'! Coluna faltando.")
+        return jsonify({'error': 'Erro interno ao buscar temas de redação'}), 500
+
+
+@app.route('/api/redacao/corrigir-gemini', methods=['POST'])
+def api_redacao_corrigir_gemini():
+    logger.info(f"API /api/redacao/corrigir-gemini: Iniciando...")
+    try:
+        data = request.json
+        tema = data.get('tema')
+        texto = data.get('texto')
+
+        if not tema or not texto:
+            logger.warning("API /corrigir-gemini: Requisição inválida - tema ou texto faltando.")
+            return jsonify({'error': 'Tema e texto são obrigatórios'}), 400
+
+        logger.info(f"API /corrigir-gemini: Recebido - Tema: {tema}, Texto: {len(texto)} chars")
+
+        # Tenta configurar/usar Gemini AQUI
         try:
-            conn = get_db_connection()
-            if conn:
-                conn.execute('''
-                    INSERT INTO historico_simulados 
-                    (user_id, simulado_id, respostas, relatorio, data_fim)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (
-                    session.get('user_id', 'anon'),
-                    simulado['simulado_id'],
-                    json.dumps(simulado['respostas']),
-                    json.dumps(relatorio),
-                    relatorio['data_fim']
-                ))
-                conn.commit()
-        except Exception as db_error:
-            logger.error(f"Erro ao salvar histórico: {db_error}")
-        finally:
-            if conn:
-                conn.close()
-# Limpar simulado
-        session.pop('simulado_atual', None)
-        
-        logger.info(f"✅ Simulado finalizado. Nota: {nota_final:.2f}%")
-        
+            current_api_key = os.environ.get('GEMINI_API_KEY')
+            if not current_api_key:
+                 raise ValueError("Chave da API Gemini não configurada no ambiente.")
+            genai.configure(api_key=current_api_key) # Reconfigura a cada chamada para garantir
+            model = genai.GenerativeModel('gemini-pro') # Use o modelo desejado (gemini-pro, gemini-flash, etc.)
+            logger.info("API /corrigir-gemini: Modelo Gemini carregado.")
+        except Exception as e_gemini_config:
+            logger.error(f'API /corrigir-gemini: ERRO CRÍTICO ao configurar Gemini - {e_gemini_config}')
+            return jsonify({'error': f'Falha ao configurar API do Gemini: {e_gemini_config}'}), 503 # Service Unavailable
+
+
+        prompt = f"""
+        CORREÇÃO DE REDAÇÃO - MODELO ENEM
+
+        TEMA: {tema}
+
+        TEXTO DO ESTUDANTE:
+        {texto}
+
+        ANALISE ESTA REDAÇÃO SEGUINDO OS 5 CRITÉRIOS DO ENEM (0-200 pontos cada):
+        1. Domínio da norma culta.
+        2. Compreensão do tema e estrutura dissertativo-argumentativa.
+        3. Seleção, relação, organização e interpretação de informações, fatos, opiniões e argumentos em defesa de um ponto de vista.
+        4. Conhecimento dos mecanismos linguísticos necessários para a construção da argumentação (coesão).
+        5. Elaboração de proposta de intervenção para o problema abordado, respeitando os direitos humanos.
+
+        FORNEÇA O FEEDBACK EM MARKDOWN, INCLUINDO:
+        - Nota Final (SOMA DAS COMPETÊNCIAS, 0-1000) - Coloque no formato: **Nota Final:** XXXX/1000
+        - Análise detalhada por Competência (C1 a C5), com a pontuação de cada uma.
+        - Pontos Fortes gerais.
+        - Pontos a Melhorar gerais.
+        - Sugestões Específicas para aprimoramento.
+        """
+
+        logger.info("API /corrigir-gemini: Enviando prompt para Gemini...")
+        response = model.generate_content(prompt)
+        correcao_md = response.text
+        logger.info("API /corrigir-gemini: Resposta recebida do Gemini.")
+
+        # Extrair nota (Regex mais robusto)
+        nota = 0 # Default
+        try:
+            # Procura por "Nota Final:", seguido de espaços, seguido de 3 ou 4 dígitos
+            nota_match = re.search(r"Nota Final:\s*(\d{3,4})", correcao_md, re.IGNORECASE)
+            if nota_match:
+                nota = int(nota_match.group(1))
+                logger.info(f"API /corrigir-gemini: Nota extraída da resposta: {nota}")
+            else:
+                logger.warning("API /corrigir-gemini: Não foi possível extrair a nota do texto. Usando 0.")
+        except Exception as e_nota:
+             logger.error(f"API /corrigir-gemini: Erro ao extrair nota: {e_nota}")
+
+
+        logger.info(f"✅ Correção concluída - Nota: {nota}")
+
         return jsonify({
-            'success': True,
-            'relatorio': relatorio
+            'nota': nota,
+            'correcao': correcao_md, # Envia o markdown completo
+            'tema': tema,
+            'timestamp': datetime.now().isoformat()
         })
 
     except Exception as e:
-        logger.error(f"ERRO /simulado/finalizar: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
+        logger.error(f"API /api/redacao/corrigir-gemini: ERRO CRÍTICO - {e}", exc_info=True)
+        # Verifica se o erro foi da API do Google especificamente
+        if "API key not valid" in str(e):
+             return jsonify({'error': 'Chave da API Gemini inválida. Verifique as variáveis de ambiente.'}), 401 # Unauthorized
+        return jsonify({'error': 'Erro interno ao processar correção'}), 500
 
-# --- API: Redação com Melhor Tratamento de Erros ---
-@app.route('/api/redacao/temas')
-def get_temas_redacao():
-    cache_key = 'temas_redacao'
-    cached_data = temas_cache.get(cache_key)
-    if cached_data:
-        return jsonify(cached_data)
-    
-    conn = None
-    try:
-        conn = get_db_connection()
-        temas_db = conn.execute("SELECT * FROM temas_redacao ORDER BY titulo").fetchall()
-        temas = []
-        for row in temas_db:
-            tema_dict = dict(row)
-            tema_dict['titulo'] = corrigir_encoding(tema_dict['titulo'])
-            tema_dict['descricao'] = corrigir_encoding(tema_dict.get('descricao', ''))
-            temas.append(tema_dict)
 
-        response_data = {'success': True, 'temas': temas}
-        temas_cache.set(cache_key, response_data)
-        
-        return jsonify(response_data)
-    except Exception as e:
-        logger.error(f"ERRO /api/redacao/temas: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
-    finally:
-        if conn:
-            conn.close()
-@app.route('/api/redacao/corrigir-gemini', methods=['POST'])
-def corrigir_redacao_gemini():
-    logger.info("📝 Iniciando correção de redação...")
+# ========== API - DASHBOARD ==========
 
-    if not gemini_configured:
-        return jsonify({'success': False, 'error': 'API Gemini não configurada'}), 503
-
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'Dados inválidos'}), 400
-            
-        texto_redacao = data.get('texto', '').strip()
-        tema_titulo = data.get('tema', '').strip()
-
-        if not texto_redacao:
-            return jsonify({'success': False, 'error': 'Texto da redação não fornecido'}), 400
-        if not tema_titulo:
-            return jsonify({'success': False, 'error': 'Tema não fornecido'}), 400
-
-        if len(texto_redacao) < 100:
-            return jsonify({'success': False, 'error': 'Texto muito curto (mínimo 100 caracteres)'}), 400
-
-        logger.info(f"📋 Tema: {tema_titulo}")
-
-        model = genai.GenerativeModel(MODEL_NAME)
-
-        prompt = f"""
-        CORRIJA ESTA DISSERTAÇÃO PARA CONCURSOS PÚBLICOS COM BASE NO TEMA: "{tema_titulo}"
-        A nota máxima é 100 pontos (cada competência vale no máximo 20). Utilize métricas rigorosas de correção de concursos públicos.
-
-        TEXTO DO CANDIDATO:
-        {texto_redacao}
-
-        MÉTRICAS DE CORREÇÃO (0-20 PONTOS CADA):
-        1. Estrutura e Formato (Introdução, Dvl, Conclusão, Concisão).
-        2. Coerência e Coesão (Uso de Conectivos, Lógica Argumentativa).
-        3. Desenvolvimento do Tema e Fundamentação (Repertório e Profundidade).
-        4. Norma Culta (Gramática, Ortografia, Sintaxe, Vocabulário).
-        5. Proposta de Intervenção/Solução (Clareza e Pertinência, se cabível ao tema).
-
-        RETORNE APENAS JSON com esta estrutura EXATA, GARANTINDO QUE OS COMENTÁRIOS SEJAM DETALHADOS E CONSTRUTIVOS:
-        {{
-            "nota_final": 0-100,
-            "analise_competencias": [
-                {{"competencia": "1. Estrutura e Formato (Concisão)", "nota": 0-20, "comentario": "Análise detalhada..."}},
-                {{"competencia": "2. Coerência e Coesão", "nota": 0-20, "comentario": "Análise detalhada..."}},
-                {{"competencia": "3. Desenvolvimento do Tema e Fundamentação", "nota": 0-20, "comentario": "Análise detalhada..."}},
-                {{"competencia": "4. Norma Culta", "nota": 0-20, "comentario": "Análise detalhada..."}},
-                {{"competencia": "5. Proposta de Intervenção/Solução", "nota": 0-20, "comentario": "Análise detalhada..."}}
-            ],
-            "pontos_fortes": ["lista", "de", "pontos", "fortes"],
-            "pontos_fracos": ["lista", "de", "pontos", "a", "melhorar"],
-            "sugestoes_melhoria": ["sugestões", "concretas"],
-            "dicas_concursos": ["dicas", "específicas", "para", "concursos"]
-        }}
-        """
-
-        logger.info("🔄 Enviando para Gemini...")
-        response = model.generate_content(prompt)
-        logger.info("✅ Resposta recebida")
-
-        raw_text = response.text.strip()
-        
-        # Limpar JSON
-        if raw_text.startswith("```json"):
-            raw_text = raw_text[7:]
-        if raw_text.endswith("```"):
-            raw_text = raw_text[:-3]
-        raw_text = raw_text.strip()
-
-        correcao_data = json.loads(raw_text)
-        
-        # Recalcular nota
-        nota_calculada = sum(comp['nota'] for comp in correcao_data['analise_competencias'])
-        correcao_data['nota_final'] = min(100, max(0, nota_calculada))  # Garantir entre 0-100
-
-        logger.info(f"✅ Correção concluída - Nota: {nota_calculada}")
-        return jsonify({'success': True, 'correcao': correcao_data})
-
-    except Exception as e:
-        logger.error(f"❌ ERRO na correção: {e}")
-        return jsonify({'success': False, 'error': f'Erro na correção: {str(e)}'}), 500
-
-# --- API: Dashboard com Cache ---
 @app.route('/api/dashboard/estatisticas')
 def api_dashboard_estatisticas():
-    logger.info(f'API /dashboard/estatisticas: Iniciando...') # Log inicio
+    logger.info(f'API /api/dashboard/estatisticas: Iniciando...')
     try:
         logger.info(f'API /dashboard/estatisticas: Conectando ao DB em {DB_PATH}')
         conn = sqlite3.connect(DB_PATH)
@@ -722,12 +379,15 @@ def api_dashboard_estatisticas():
         logger.info('API /dashboard: Executando queries de contagem...')
         cursor.execute("SELECT COUNT(*) FROM questions")
         total_questoes = cursor.fetchone()[0]
+        logger.info(f'API /dashboard: Contagem Questoes = {total_questoes}')
 
-        cursor.execute("SELECT COUNT(*) FROM redacao_temas")
+        cursor.execute("SELECT COUNT(*) FROM temas_redacao")
         total_temas = cursor.fetchone()[0]
+        logger.info(f'API /dashboard: Contagem Temas = {total_temas}')
 
         cursor.execute("SELECT COUNT(DISTINCT materia) FROM questions")
         total_materias = cursor.fetchone()[0]
+        logger.info(f'API /dashboard: Contagem Materias = {total_materias}')
 
         conn.close()
         logger.info('API /dashboard: Conexão com DB fechada.')
@@ -742,83 +402,42 @@ def api_dashboard_estatisticas():
         return jsonify(resultado) # <--- Return DENTRO do try
 
     except Exception as e: # <--- Bloco EXCEPT CORRETO
-        logger.error(f'API /dashboard/estatisticas: ERRO CRÍTICO - {e}')
+        logger.error(f'API /dashboard/estatisticas: ERRO CRÍTICO - {e}', exc_info=True)
+        # Verifica se o erro foi de tabela/coluna inexistente
+        if isinstance(e, sqlite3.OperationalError) and ('no such table' in str(e) or 'no such column' in str(e)):
+             logger.error("VERIFIQUE A ESTRUTURA DO BANCO DE DADOS! Tabela ou coluna faltando.")
+             return jsonify({'error': f'Erro no banco de dados: {e}'}), 500
         return jsonify({'error': 'Erro interno ao buscar estatísticas'}), 500
 
-        historico = [safe_json_loads(row['relatorio']) for row in historico_db]
-        
-        total_simulados = len(historico)
-        total_questoes_respondidas = sum(h.get('total_respondidas', 0) for h in historico)
-        media_geral = sum(h.get('nota_final', 0) for h in historico) / total_simulados if total_simulados > 0 else 0
-        media_acertos = sum(h.get('percentual_acerto_simples', 0) for h in historico) / total_simulados if total_simulados > 0 else 0
 
-        return jsonify({
-            'success': True,
-            'total_simulados': total_simulados,
-            'total_questoes_respondidas': total_questoes_respondidas,
-            'media_geral': round(media_geral, 2),
-            'media_acertos': round(media_acertos, 2),
-            'historico_recente': historico[:5]
-        })
-
-    except Exception as e:
-        logger.error(f"ERRO /api/dashboard/estatisticas: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
-    finally:
-        if conn:
-            conn.close()
-# --- Error Handlers Globais ---
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'success': False, 'error': 'Endpoint não encontrado'}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    logger.error(f"Erro 500: {error}")
-    return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
-
-@app.errorhandler(413)
-def too_large(error):
-    return jsonify({'success': False, 'error': 'Arquivo muito grande'}), 413
-
-# --- Inicialização Robusta ---
-if __name__ == '__main__':
-    print("\n" + "="*60)
-    print("🎯 SISTEMA ESQUEMATIZA.AI - VERSÃO ROBUSTA")
-    print("="*60)
-    
+# ========== ROTA DE DEBUG (Opcional, manter se útil) ==========
+@app.route('/debug/list-files')
+def list_files():
+    # ...(código da função list_files)...
+    # Vamos mantê-la por enquanto para verificar o DB
+    logger.info("--- DEBUG: Listando arquivos no servidor ---")
+    path = '/app'
+    files_list = []
     try:
-        # Verificar banco de dados
-        conn = get_db_connection()
-        if conn:
-            count_questoes = conn.execute("SELECT COUNT(*) FROM questoes").fetchone()[0]
-            count_temas = conn.execute("SELECT COUNT(*) FROM temas_redacao").fetchone()[0]
-            print(f"📚 Questões no banco: {count_questoes}")
-            print(f"📝 Temas de redação: {count_temas}")
-            conn.close()
-except Exception as e:
-        print(f"⚠️  Aviso no banco: {e}")
-
-    port = int(os.environ.get('PORT', 5001))
-    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-    
-    print(f"🌐 Servidor: http://127.0.0.1:{port}")
-    print(f"🔧 Debug: {debug}")
-    print(f"🤖 Gemini: {'✅ Configurado' if gemini_configured else '❌ Não configurado'}")
-    print(f"📊 Logging: ✅ Ativo (logs/app.log)")
-    print("="*60)
-    
-    # Configurar para produção
-    if not debug:
-        from waitress import serve
-        print("🚀 Iniciando servidor Waitress para produção...")
-        serve(app, host='0.0.0.0', port=port)
-    else:
-        app.run(debug=debug, host='0.0.0.0', port=port)
+        for f in glob.glob(f'{path}/**', recursive=True):
+            try:
+                 if os.path.isfile(f):
+                     file_size = os.path.getsize(f)
+                     files_list.append(f'ARQUIVO: {f} (Tamanho: {file_size} bytes)')
+                 #elif os.path.isdir(f): # Evitar listar todas as subpastas do venv se houver
+                 #    files_list.append(f'PASTA: {f}')
+            except OSError:
+                 files_list.append(f'ARQUIVO/PASTA: {f} (Erro ao acessar)')
+        logger.info(f"DEBUG /list-files: {files_list}")
+        return jsonify(sorted(files_list)) # Ordena para facilitar a leitura
+    except Exception as e:
+        logger.error(f'DEBUG /list-files: Erro - {e}')
+        return jsonify({'error': str(e)}), 500
 
 
+# ========== NÃO ADICIONAR app.run() AQUI ==========
+# O Gunicorn vai importar e rodar o objeto 'app' diretamente.
+# O if __name__ == '__main__': é útil apenas para rodar localmente com 'python app.py'
 
-
-
-
+# logger.info("Script app.py carregado pelo Gunicorn.") # Log final para confirmar
 
