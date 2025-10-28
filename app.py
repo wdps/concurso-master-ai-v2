@@ -706,6 +706,12 @@ def corrigir_redacao_gemini():
         return jsonify({'success': False, 'error': f'Erro na correção: {str(e)}'}), 500
 
 # --- API: Dashboard com Cache ---
+
+# --- Rota Estática (CSS/JS) ---
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
 @app.route('/api/dashboard/estatisticas')
 def get_estatisticas():
     conn = None
@@ -799,4 +805,5 @@ if __name__ == '__main__':
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
 
