@@ -8,7 +8,7 @@ import sqlite3
 import json
 import random
 import time
-import os
+import os, glob
 import google.generativeai as genai
 from dotenv import load_dotenv
 from datetime import datetime
@@ -712,6 +712,27 @@ def corrigir_redacao_gemini():
 def send_static(path):
     return send_from_directory('static', path)
 
+
+# --- Rota de DEBUG (Temporária para listar arquivos) ---
+@app.route('/debug/list-files')
+def list_files():
+    logger.info("--- DEBUG: Listando arquivos no servidor ---")
+    path = '/app' # Diretório de trabalho no Docker
+    files_list = []
+    try:
+        # Lista todos os arquivos e pastas no diretório /app
+        for f in glob.glob(f'{path}/**', recursive=True):
+            if os.path.isfile(f):
+                file_size = os.path.getsize(f)
+                files_list.append(f'ARQUIVO: {f} (Tamanho: {file_size} bytes)')
+            else:
+                files_list.append(f'PASTA: {f}')
+        logger.info(files_list)
+        return jsonify(files_list)
+    except Exception as e:
+        logger.error(f'Erro ao listar arquivos: {e}')
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/dashboard/estatisticas')
 def get_estatisticas():
     conn = None
@@ -805,5 +826,6 @@ if __name__ == '__main__':
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
 
 
