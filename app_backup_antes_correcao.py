@@ -629,7 +629,6 @@ def get_estatisticas():
 
 # Execução apenas para desenvolvimento local
 if __name__ == '__main__':
-    # Configuração para produção
-    PORT = int(os.environ.get('PORT', 5001))
-    DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
-    app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
+    # Só roda o servidor de desenvolvimento se não estiver no Railway
+    if not os.environ.get('RAILWAY_ENV') and not os.environ.get('PORT'):
+        app.run(host='0.0.0.0', port=5001, debug=True)
