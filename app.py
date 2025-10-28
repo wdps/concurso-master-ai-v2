@@ -1,4 +1,5 @@
-﻿from flask import Flask, render_template, request, jsonify, session, send_from_directory
+﻿import os
+from flask import Flask, render_template, request, jsonify, session, send_from_directory
 import sqlite3
 import json
 import random
@@ -635,5 +636,6 @@ if __name__ == '__main__':
     print(f"🤖 Gemini: {'✅ Configurado' if gemini_configured else '❌ Não configurado'}")
     print("="*50)
     
-    app.run(debug=debug, host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
+
 
