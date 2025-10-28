@@ -34,7 +34,8 @@ except Exception as e:
     gemini_error = str(e)
     logger.error(f"❌ Erro ao carregar Gemini: {e}")
 
-# ========== ROTAS BÁSICAS ==========
+# ========== SUAS ROTAS ORIGINAIS ==========
+# [ADICIONE AQUI TODAS AS SUAS ROTAS ORIGINAIS]
 
 @app.route('/')
 def home():
@@ -42,7 +43,7 @@ def home():
     <p>Status: <strong>Operacional</strong></p>
     <p>Gemini: ''' + ('✅ Configurado' if gemini_configured else '❌ Não configurado') + '''</p>
     <p><a href="/health">Health Check</a> | <a href="/test">Teste Completo</a></p>
-    <p><a href="/api/materias">Matérias</a> | <a href="/api/redacao/temas">Temas Redação</a></p>'''
+    <p><strong>🚀 Sistema funcionando com Gunicorn em produção!</strong></p>'''
 
 @app.route('/health')
 def health():
@@ -50,21 +51,18 @@ def health():
         'status': 'healthy', 
         'service': 'ConcursoIA',
         'timestamp': time.time(),
-        'gemini_configured': gemini_configured
+        'gemini_configured': gemini_configured,
+        'server': 'gunicorn'
     })
 
 @app.route('/test')
 def test():
     return jsonify({
-        'message': 'ConcursoIA funcionando perfeitamente!',
+        'message': 'ConcursoIA funcionando perfeitamente com Gunicorn!',
         'status': 'operational',
         'gemini_configured': gemini_configured,
-        'gemini_error': gemini_error
+        'gemini_error': gemini_error,
+        'server': 'gunicorn-production'
     })
 
-# ========== CONFIGURAÇÃO DO SERVIDOR ==========
-# EM PRODUÇÃO NO RAILWAY, O SERVIDOR É INICIADO VIA GUNICORN
-# NÃO EXECUTAR app.run() - O RAILWAY FAZ ISSO AUTOMATICAMENTE
-
-# NOTA: O Railway está executando este arquivo diretamente, então
-# não devemos ter o bloco if __name__ == '__main__' em produção
+# ========== NÃO HÁ app.run() - O GUNICORN CUIDA DISSO ==========
