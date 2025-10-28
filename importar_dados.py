@@ -37,7 +37,7 @@ temas_redacao_lista = [
 ]
 
 def conectar_banco():
-    try: conn = sqlite3.connect('concurso.db'); conn.row_factory = sqlite3.Row; print("ConexÃ£o estabelecida."); return conn
+    try: conn = sqlite3.connect('concursos.db'); conn.row_factory = sqlite3.Row; print("ConexÃ£o estabelecida."); return conn
     except Exception as e: print(f"ERRO FATAL ao conectar: {e}"); return None
 
 def atualizar_estrutura_banco(conn):

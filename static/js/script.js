@@ -200,36 +200,27 @@ async function carregarMaterias() {
     }
 }
 
-function exibirDisciplinas(disciplinas) {
-    const container = document.getElementById('materias-container');
-    if (!container) return;
-
-    if (disciplinas.length === 0) {
-        mostrarErro('materias-container', 'Nenhuma Disciplina encontrada no banco de dados. Verifique a importação do CSV.');
+function exibirDisciplinas(data) {
+    const listaDisciplinas = document.getElementById('lista-disciplinas');
+    if (!listaDisciplinas) return;
+    listaDisciplinas.innerHTML = ''; 
+    if (!data || !data.materias || !Array.isArray(data.materias) || data.materias.length === 0) {
+        console.warn('Nenhuma matéria recebida da API ou formato inesperado.', data);
+        listaDisciplinas.innerHTML = '<li>Nenhuma disciplina encontrada.</li>';
         return;
     }
-
-    let html = '';
-    
-    html += `<div class="card" style="margin-top: 25px;">
-        <h3 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Disciplinas (Caixas de Conhecimento)</h3>
-        <p style="margin-bottom: 15px; color: #555;">Selecione uma ou mais disciplinas. Todas as matérias (subáreas) serão incluídas.</p>
-        <div class="materias-grid">`;
-    
-    disciplinas.forEach(disciplinaData => {
-        html += `<div class="materia-item" onclick="selecionarDisciplina(this)">
-            <div class="materia-checkbox">
-                <input type="checkbox" value="${disciplinaData.disciplina}">
-                <label>
-                    <strong>${disciplinaData.disciplina}</strong>
-                    <span>(${disciplinaData.total_questoes} questões totais)</span>
-                </label>
-            </div>
-        </div>`;
+    data.materias.forEach(materia => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        const disciplinaNome = materia.nome || 'Nome Indefinido';
+        const disciplinaTotal = materia.total || 0;
+        li.innerHTML = 
+            <span class="disciplina-nome"></span>
+            <span class="badge bg-primary rounded-pill"></span>
+        ;
+        li.onclick = () => carregarQuestoes(disciplinaNome);
+        listaDisciplinas.appendChild(li);
     });
-    
-    html += '</div></div>';
-    container.innerHTML = html;
 }
 
 function selecionarDisciplina(elemento) {
@@ -820,114 +811,23 @@ async function carregarDashboard() {
     }
 }
 
-function exibirDashboard(data) {
-    const container = document.getElementById('dashboard-content');
-    
-    let html = `
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number">${data.total_simulados}</div>
-                <div class="stat-label">Simulados Realizados</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${data.total_questoes_respondidas}</div>
-                <div class="stat-label">Questões Respondidas</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${data.total_acertos}</div>
-                <div class="stat-label">Total de Acertos</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">${data.media_geral}%</div>
-                <div class="stat-label">Média Geral</div>
-            </div>
-        </div>
-        
-        <div class="performance-grid">
-            <div class="card performance-card">
-                <h4>🎯 Desempenho</h4>
-                <div class="performance-stats">
-                    <div class="performance-item">
-                        <span class="performance-label">Melhor Desempenho:</span>
-                        <span class="performance-value success">${data.melhor_desempenho}%</span>
-                    </div>
-                    <div class="performance-item">
-                        <span class="performance-label">Pior Desempenho:</span>
-                        <span class="performance-value danger">${data.pior_desempenho}%</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card evolution-card">
-                <h4>📈 Evolução Recente</h4>
-                <div class="evolution-chart">
-                    ${data.evolucao.length > 0 ? data.evolucao.map((simulado, index) => `
-                        <div class="evolution-item">
-                            <span class="evolution-label">Simulado ${index + 1}</span>
-                            <div class="evolution-bar">
-                                <div class="evolution-fill" style="width: ${simulado.nota_final}%"></div>
-                            </div>
-                            <span class="evolution-value">${simulado.nota_final}%</span>
-                        </div>
-                    `).join('') : '<p class="no-data">Nenhum dado disponível</p>'}
-                </div>
-            </div>
-        </div>
-    `;
-    
-    if (data.historico_recente && data.historico_recente.length > 0) {
-        html += `
-            <div class="card historico-card">
-                <h4>📋 Histórico de Simulados</h4>
-                <div class="table-container">
-                    <table class="historico-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Questões</th>
-                                <th>Acertos</th>
-                                <th>Desempenho</th>
-                                <th>Nota</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.historico_recente.map((simulado, index) => {
-                                const dataFormatada = new Date(simulado.data_fim).toLocaleDateString('pt-BR');
-                                return `
-                                    <tr>
-                                        <td>${dataFormatada}</td>
-                                        <td>${simulado.total_questoes}</td>
-                                        <td>${simulado.total_acertos}</td>
-                                        <td>
-                                            <div class="progress-bar-small">
-                                                <div class="progress-fill" style="width: ${simulado.percentual_acerto}%"></div>
-                                            </div>
-                                        </td>
-                                        <td class="nota-cell ${simulado.nota_final >= 70 ? 'nota-boa' : 'nota-ruim'}">
-                                            ${simulado.nota_final}%
-                                        </td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    } else {
-        html += `
-            <div class="card">
-                <div class="empty-state">
-                    <div class="empty-icon">📊</div>
-                    <h4>Nenhum simulado realizado</h4>
-                    <p>Comece fazendo seu primeiro simulado para ver suas estatísticas aqui!</p>
-                    <button class="btn btn-primary" onclick="navegarPara('tela-simulado')">Iniciar Simulado</button>
-                </div>
-            </div>
-        `;
+function exibirDashboard(estatisticas) {
+    if (!estatisticas || typeof estatisticas !== 'object') {
+        console.error('Falha ao carregar estatísticas. Dados inválidos:', estatisticas);
+        return;
     }
-    
-    if (container) container.innerHTML = html;
+    const elTotalQuestoes = document.getElementById('total-questoes');
+    if (elTotalQuestoes) {
+        elTotalQuestoes.innerText = estatisticas.total_questoes || 0;
+    }
+    const elTotalMaterias = document.getElementById('total-materias');
+    if (elTotalMaterias) {
+        elTotalMaterias.innerText = estatisticas.total_materias || 0;
+    }
+    const elTotalTemas = document.getElementById('total-temas-redacao');
+    if (elTotalTemas) {
+        elTotalTemas.innerText = estatisticas.total_temas || 0;
+    }
 }
 
 function voltarInicio() {
@@ -943,3 +843,4 @@ function voltarInicio() {
     const navTab = document.querySelector('.nav-tab[onclick="navegarPara(\'tela-inicio\')"]');
     if (navTab) navTab.classList.add('active');
 }
+
