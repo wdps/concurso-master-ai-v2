@@ -1,13 +1,13 @@
 ﻿#!/bin/bash
 echo '🚀 INICIANDO CONCURSOIA NO RAILWAY...'
 echo '📊 Porta: 5001'
-echo '🔧 Iniciando servidor Python...'
+echo '🔧 Verificando banco de dados...'
 
-# Inicializar banco de dados se não existir
-if [ ! -f concursos.db ]; then
+# Verificar se o banco existe e tem dados
+if [ ! -f concursos.db ] || [  -eq 0 ]; then
     echo '🗄️ Inicializando banco de dados...'
     python init_db.py
 fi
 
-# Executar a aplicação Python
+echo '🎯 Iniciando servidor Flask...'
 exec python app.py

@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar aplicação
 COPY . .
 
-# Inicializar banco de dados
+# Inicializar banco de dados automaticamente
 RUN python init_db.py
 
 # Expor porta

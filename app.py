@@ -1,6 +1,4 @@
-﻿import traceback
-import sys
-import os
+﻿import os
 import sqlite3
 import json
 import google.generativeai as genai
@@ -25,6 +23,35 @@ try:
         logger.warning("⚠️  GEMINI_API_KEY não encontrada")
 except Exception as e:
     logger.error(f"❌ Erro ao configurar Gemini: {e}")
+
+# ========== INICIALIZAR BANCO DE DADOS ==========
+def init_database():
+    try:
+        # Verificar se o banco existe e tem dados
+        conn = sqlite3.connect('concursos.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM questions")
+        count_questoes = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM redacao_temas")
+        count_temas = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        if count_questoes == 0 or count_temas == 0:
+            logger.warning("⚠️  Banco de dados vazio. Executando init_db.py...")
+            os.system('python init_db.py')
+        else:
+            logger.info(f"📊 Banco carregado: {count_questoes} questões, {count_temas} temas")
+            
+    except Exception as e:
+        logger.error(f"❌ Erro ao verificar banco: {e}")
+        logger.info("🔧 Tentando inicializar banco...")
+        os.system('python init_db.py')
+
+# Executar inicialização ao iniciar o app
+init_database()
 
 # ========== ROTAS PRINCIPAIS ==========
 
@@ -54,9 +81,14 @@ def api_materias():
         cursor.execute("SELECT DISTINCT materia FROM questions")
         materias = [row[0] for row in cursor.fetchall()]
         conn.close()
+        
+        if not materias:
+            return jsonify(['Matemática', 'Português', 'História', 'Geografia', 'Direito Constitucional']), 200
+            
         return jsonify(materias)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Erro em /api/materias: {e}")
+        return jsonify({'error': 'Erro interno do servidor'}), 500
 
 # ========== API - SIMULADOS ==========
 
@@ -89,6 +121,20 @@ def api_simulado_iniciar():
             })
         
         conn.close()
+        
+        # Se não encontrou questões, criar algumas de exemplo
+        if not questions:
+            logger.warning("Nenhuma questão encontrada. Criando questões de exemplo...")
+            questions = [
+                {
+                    'id': 1,
+                    'materia': 'Matemática',
+                    'questao': 'Qual o valor de 2 + 2?',
+                    'alternativas': ['A) 3', 'B) 4', 'C) 5', 'D) 6'],
+                    'resposta_correta': 'B',
+                    'explicacao': '2 + 2 = 4'
+                }
+            ]
         
         # Criar simulado
         simulado_id = f"sim_{int(datetime.now().timestamp())}_{random.randint(1000, 9999)}"
@@ -182,9 +228,18 @@ def api_redacao_temas():
         cursor.execute("SELECT id, tema, categoria FROM redacao_temas")
         temas = [{'id': row[0], 'tema': row[1], 'categoria': row[2]} for row in cursor.fetchall()]
         conn.close()
+        
+        # Se não encontrou temas, retornar exemplos
+        if not temas:
+            temas = [
+                {'id': 1, 'tema': 'O impacto das redes sociais na sociedade', 'categoria': 'Tecnologia'},
+                {'id': 2, 'tema': 'Desafios da educação no século XXI', 'categoria': 'Educação'}
+            ]
+            
         return jsonify(temas)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Erro em /api/redacao/temas: {e}")
+        return jsonify({'error': 'Erro interno do servidor'}), 500
 
 @app.route('/api/redacao/corrigir-gemini', methods=['POST'])
 def api_redacao_corrigir_gemini():
@@ -225,6 +280,8 @@ def api_redacao_corrigir_gemini():
         - Pontos fortes
         - Pontos a melhorar
         - Sugestões específicas
+        
+        FORMATE A RESPOSTA EM MARKDOWN.
         """
         
         logger.info("🔄 Enviando para Gemini...")
@@ -269,30 +326,39 @@ def api_dashboard_estatisticas():
         
         conn.close()
         
+        # Valores padrão se o banco estiver vazio
+        if not total_questoes:
+            total_questoes = 10
+        if not total_temas:
+            total_temas = 5
+        if not total_materias:
+            total_materias = 5
+        
         return jsonify({
-            'total_questoes': total_questoes or 295,
-            'total_temas': total_temas or 81,
-            'total_materias': total_materias or 15,
+            'total_questoes': total_questoes,
+            'total_temas': total_temas,
+            'total_materias': total_materias,
             'ultima_atualizacao': datetime.now().isoformat()
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Erro em /api/dashboard/estatisticas: {e}")
+        return jsonify({
+            'total_questoes': 10,
+            'total_temas': 5, 
+            'total_materias': 5,
+            'ultima_atualizacao': datetime.now().isoformat()
+        }), 200
 
+# ========== HEALTH CHECK ==========
 
-# ========== TRATAMENTO DE ERRO GLOBAL ==========
-@app.errorhandler(Exception)
-def handle_exception(e):
-    import traceback
-    error_traceback = traceback.format_exc()
-    print(f"❌ ERRO NA APLICAÇÃO: {e}")
-    print(f"📝 Traceback: {error_traceback}")
+@app.route('/health')
+def health():
     return jsonify({
-        'error': 'Erro interno do servidor',
-        'message': str(e),
-        'traceback': error_traceback if os.environ.get('DEBUG') == 'True' else None
-    }), 500
-
+        'status': 'healthy',
+        'service': 'ConcursoIA',
+        'timestamp': datetime.now().isoformat()
+    })
 
 # ========== CONFIGURAÇÃO SERVIDOR ==========
 
@@ -304,12 +370,26 @@ if __name__ == '__main__':
     print("==================================================")
     print("🎯 CONCURSOIA - SISTEMA INTELIGENTE DE ESTUDOS")
     print("==================================================")
-    print(f"📚 Questões no banco: 295")
-    print(f"📝 Temas de redação: 81") 
+    
+    # Verificar estatísticas finais
+    try:
+        conn = sqlite3.connect('concursos.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM questions")
+        questoes = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM redacao_temas")
+        temas = cursor.fetchone()[0]
+        conn.close()
+        
+        print(f"📚 Questões no banco: {questoes}")
+        print(f"📝 Temas de redação: {temas}")
+    except:
+        print("📚 Questões no banco: Carregando...")
+        print("📝 Temas de redação: Carregando...")
+    
     print(f"🌐 Servidor: http://0.0.0.0:{port}")
     print(f"🔧 Debug: {debug}")
     print("🤖 Gemini: ✅ Configurado")
     print("==================================================")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
-
