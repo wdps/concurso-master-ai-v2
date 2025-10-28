@@ -1,4 +1,6 @@
-﻿from flask import Flask, jsonify
+﻿import traceback
+import sys
+from flask import Flask, jsonify
 import os
 import logging
 
@@ -63,3 +65,4 @@ def test():
 
 # ⚠️ CRÍTICO: NÃO HÁ app.run() - MAS O RAILWAY ESTÁ EXECUTANDO python app.py DIRETO!
 # O Railway está IGNORANDO nosso Dockerfile completamente!
+
