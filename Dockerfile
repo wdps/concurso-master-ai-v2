@@ -15,8 +15,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar aplicação
 COPY . .
 
+# Tornar start.sh executável
+RUN chmod +x start.sh
+
 # Expor porta
 EXPOSE 8080
 
 # Comando de inicialização
-CMD python app.py
+CMD ["./start.sh"]
