@@ -41,7 +41,8 @@ def home():
     return '''<h1>🎯 ConcursoIA - Sistema Online</h1>
     <p>Status: <strong>Operacional</strong></p>
     <p>Gemini: ''' + ('✅ Configurado' if gemini_configured else '❌ Não configurado') + '''</p>
-    <p><a href="/health">Health Check</a> | <a href="/test">Teste Completo</a></p>'''
+    <p><a href="/health">Health Check</a> | <a href="/test">Teste Completo</a></p>
+    <p><a href="/api/materias">Matérias</a> | <a href="/api/redacao/temas">Temas Redação</a></p>'''
 
 @app.route('/health')
 def health():
@@ -62,13 +63,8 @@ def test():
     })
 
 # ========== CONFIGURAÇÃO DO SERVIDOR ==========
-# EM PRODUÇÃO, O GUNICORN DEVE SER EXECUTADO VIA PROCFILE
-# NUNCA INICIAR app.run() EM PRODUÇÃO
+# EM PRODUÇÃO NO RAILWAY, O SERVIDOR É INICIADO VIA GUNICORN
+# NÃO EXECUTAR app.run() - O RAILWAY FAZ ISSO AUTOMATICAMENTE
 
-if __name__ == '__main__':
-    # APENAS PARA DESENVOLVIMENTO LOCAL
-    PORT = int(os.environ.get('PORT', 5001))
-    DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
-    
-    logger.info('🚀 MODO DESENVOLVIMENTO - Iniciando servidor Flask')
-    app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
+# NOTA: O Railway está executando este arquivo diretamente, então
+# não devemos ter o bloco if __name__ == '__main__' em produção
