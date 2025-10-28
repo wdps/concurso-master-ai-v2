@@ -2,24 +2,32 @@
 
 WORKDIR /app
 
-# Copiar requirements primeiro (para cache de dependências)
-COPY requirements.txt .
+# Instalar curl para health checks
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instalar dependências Python
+# Copiar requirements
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar aplicação
 COPY . .
 
-# Tornar start.sh executável (comando Unix)
-RUN chmod +x start.sh
-
 # Expor porta
 EXPOSE 8080
 
-# Comando de inicialização - duas opções:
-# Opção 1: Usar start.sh (vamos tentar primeiro)
-CMD ["./start.sh"]
+# Script de inicialização que DETECTA se está sendo usado
+RUN echo '#!/bin/bash' > /app/start.sh
+RUN echo 'echo "🚀 DOCKERFILE EXECUTADO - INICIANDO GUNICORN..."' >> /app/start.sh
+RUN echo 'echo "📊 Porta: \5001"' >> /app/start.sh
+RUN echo 'echo "🔧 Iniciando Gunicorn..."' >> /app/start.sh
+RUN echo 'exec gunicorn app:app --bind 0.0.0.0:8080 --workers 1 --threads 2 --timeout 120 --access-logfile - --error-logfile -' >> /app/start.sh
+RUN chmod +x /app/start.sh
 
-# Opção 2: Comando direto (descomente se a opção 1 falhar)
-# CMD ["python", "app.py"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Comando principal
+CMD ["/app/start.sh"]
