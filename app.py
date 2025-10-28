@@ -230,6 +230,7 @@ def health_check():
         conn = get_db_connection()
         conn.execute("SELECT 1")
         conn.close()
+        logger.info(f'API /dashboard: CONTAGENS DO DB - Questoes: {total_questoes}, Temas: {total_temas}, Materias: {total_materias}')
         
         return jsonify({
             'status': 'healthy',
@@ -298,6 +299,7 @@ def api_materias():
     finally:
         if conn:
             conn.close()
+        logger.info(f'API /dashboard: CONTAGENS DO DB - Questoes: {total_questoes}, Temas: {total_temas}, Materias: {total_materias}')
 
 # --- API: Simulado ROBUSTA com Validação ---
 @app.route('/api/simulado/iniciar', methods=['POST'])
@@ -415,6 +417,7 @@ def iniciar_simulado():
     finally:
         if conn:
             conn.close()
+        logger.info(f'API /dashboard: CONTAGENS DO DB - Questoes: {total_questoes}, Temas: {total_temas}, Materias: {total_materias}')
 
 # ... (mantido o restante das rotas do simulado com a mesma robustez)
 
@@ -585,6 +588,7 @@ def finalizar_simulado():
         finally:
             if conn:
                 conn.close()
+        logger.info(f'API /dashboard: CONTAGENS DO DB - Questoes: {total_questoes}, Temas: {total_temas}, Materias: {total_materias}')
 
         # Limpar simulado
         session.pop('simulado_atual', None)
@@ -629,6 +633,7 @@ def get_temas_redacao():
     finally:
         if conn:
             conn.close()
+        logger.info(f'API /dashboard: CONTAGENS DO DB - Questoes: {total_questoes}, Temas: {total_temas}, Materias: {total_materias}')
 
 @app.route('/api/redacao/corrigir-gemini', methods=['POST'])
 def corrigir_redacao_gemini():
@@ -759,6 +764,7 @@ def get_estatisticas():
     finally:
         if conn:
             conn.close()
+        logger.info(f'API /dashboard: CONTAGENS DO DB - Questoes: {total_questoes}, Temas: {total_temas}, Materias: {total_materias}')
 
 # --- Error Handlers Globais ---
 @app.errorhandler(404)
@@ -789,6 +795,7 @@ if __name__ == '__main__':
             print(f"📚 Questões no banco: {count_questoes}")
             print(f"📝 Temas de redação: {count_temas}")
             conn.close()
+        logger.info(f'API /dashboard: CONTAGENS DO DB - Questoes: {total_questoes}, Temas: {total_temas}, Materias: {total_materias}')
     except Exception as e:
         print(f"⚠️  Aviso no banco: {e}")
 
@@ -808,5 +815,6 @@ if __name__ == '__main__':
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
 
 
