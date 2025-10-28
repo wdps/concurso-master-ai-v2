@@ -4,7 +4,7 @@ Versão Robusta - Configuração Avançada e Tratamento de Erros Aprimorado
 """
 
 from whitenoise import WhiteNoise
-from flask import Flask, render_template, jsonify, request, send_from_directory Flask, render_template, request, jsonify, session, send_from_directory
+from flask import Flask, render_template, jsonify, request, session, send_from_directory
 import sqlite3
 import json
 import random
@@ -808,4 +808,5 @@ if __name__ == '__main__':
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
 
