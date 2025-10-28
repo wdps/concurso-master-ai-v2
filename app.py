@@ -13,6 +13,10 @@ import traceback
 # --- Configuração Inicial ---
 load_dotenv()
 app = Flask(__name__)
+
+# Configuração para produção
+PORT = int(os.environ.get('PORT', 5001))
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'chave_secreta_forte_123')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
@@ -637,5 +641,6 @@ if __name__ == '__main__':
     print("="*50)
     
     app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
+
 
 

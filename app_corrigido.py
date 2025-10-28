@@ -1,30 +1,26 @@
-﻿# ESQUEMATIZA.AI - VERSÃO CORRIGIDA TEMPORÁRIA
-import sys
-import os
+﻿import os
+import sqlite3
+from flask import Flask, render_template, jsonify, request, send_from_directory
+import google.generativeai as genai
+from datetime import datetime
+import logging
+import json
 
-# Correção imediata para encoding
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
+# Configuração do Flask
+app = Flask(__name__)
 
-# Importar o app original com correções
-from app import app
+# Configuração para produção
+PORT = int(os.environ.get('PORT', 5001))
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
+# ========== SUA CONFIGURAÇÃO DO GEMINI ==========
+# [MANTENHA TODO O SEU CÓDIGO ORIGINAL AQUI]
+# Não altere as rotas e funcionalidades existentes
+# ================================================
+
+# Suas rotas e lógica existentes aqui...
+# [TODO O SEU CÓDIGO ORIGINAL]
+
+# NO FINAL DO ARQUIVO, A LINHA DE EXECUÇÃO DEVE SER:
 if __name__ == '__main__':
-    print("🚀 ESQUEMATIZA.AI - VERSÃO CORRIGIDA")
-    print("========================================")
-    
-    port = int(os.environ.get('PORT', 5001))
-    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-    
-    if debug:
-        app.run(debug=True, host='0.0.0.0', port=port)
-    else:
-        try:
-            from waitress import serve
-            print(f"🌐 Servidor Waitress rodando na porta {port}")
-            serve(app, host='0.0.0.0', port=port)
-        except ImportError:
-            print("⚠️  Waitress não disponível, usando servidor de desenvolvimento")
-            app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
