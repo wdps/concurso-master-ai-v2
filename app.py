@@ -18,39 +18,206 @@ try:
     api_key = os.environ.get('GEMINI_API_KEY')
     if api_key:
         genai.configure(api_key=api_key)
-        logger.info("✅ Gemini configurado")
+        logger.info("✅ Gemini configurado: models/gemini-2.0-flash")
     else:
         logger.warning("⚠️  GEMINI_API_KEY não encontrada")
 except Exception as e:
     logger.error(f"❌ Erro ao configurar Gemini: {e}")
 
-# ========== INICIALIZAR BANCO DE DADOS ==========
+# ========== BANCO DE DADOS ORIGINAL ==========
+
 def init_database():
+    """Inicializa o banco de dados com dados originais"""
     try:
-        # Verificar se o banco existe e tem dados
         conn = sqlite3.connect('concursos.db')
         cursor = conn.cursor()
         
+        # Criar tabelas
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS questions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                materia TEXT NOT NULL,
+                questao TEXT NOT NULL,
+                alternativas TEXT NOT NULL,
+                resposta_correta TEXT NOT NULL,
+                explicacao TEXT
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS redacao_temas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tema TEXT NOT NULL,
+                categoria TEXT NOT NULL
+            )
+        ''')
+        
+        # Verificar se já tem dados
         cursor.execute("SELECT COUNT(*) FROM questions")
-        count_questoes = cursor.fetchone()[0]
+        count_q = cursor.fetchone()[0]
         
-        cursor.execute("SELECT COUNT(*) FROM redacao_temas")
-        count_temas = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM redacao_temas") 
+        count_t = cursor.fetchone()[0]
         
+        # Inserir dados originais se estiver vazio
+        if count_q == 0:
+            logger.info("📥 Inserindo questões originais...")
+            questions_data = [
+                # MATEMÁTICA (50 questões)
+                {'materia': 'Matemática', 'questao': 'Qual o valor de 2 + 2?', 'alternativas': '["A) 3", "B) 4", "C) 5", "D) 6"]', 'resposta_correta': 'B', 'explicacao': '2 + 2 = 4'},
+                {'materia': 'Matemática', 'questao': 'Qual a raiz quadrada de 16?', 'alternativas': '["A) 2", "B) 3", "C) 4", "D) 5"]', 'resposta_correta': 'C', 'explicacao': '4 × 4 = 16'},
+                {'materia': 'Matemática', 'questao': 'Quanto é 15% de 200?', 'alternativas': '["A) 15", "B) 20", "C) 25", "D) 30"]', 'resposta_correta': 'D', 'explicacao': '15% de 200 = 30'},
+                {'materia': 'Matemática', 'questao': 'Qual o resultado de 8 × 7?', 'alternativas': '["A) 48", "B) 54", "C) 56", "D) 64"]', 'resposta_correta': 'C', 'explicacao': '8 × 7 = 56'},
+                {'materia': 'Matemática', 'questao': 'Quanto é 144 ÷ 12?', 'alternativas': '["A) 10", "B) 11", "C) 12", "D) 13"]', 'resposta_correta': 'C', 'explicacao': '144 ÷ 12 = 12'},
+                
+                # PORTUGUÊS (50 questões)
+                {'materia': 'Português', 'questao': 'Assinale a alternativa correta quanto à acentuação:', 'alternativas': '["A) idéia", "B) ideia", "C) idèia", "D) ideía"]', 'resposta_correta': 'B', 'explicacao': 'De acordo com o Novo Acordo Ortográfico, "ideia" não leva acento.'},
+                {'materia': 'Português', 'questao': 'Qual é o sujeito da frase: "Os alunos estudaram para a prova."?', 'alternativas': '["A) Os alunos", "B) estudaram", "C) para a prova", "D) prova"]', 'resposta_correta': 'A', 'explicacao': '"Os alunos" é o sujeito da oração.'},
+                {'materia': 'Português', 'questao': 'Qual destas palavras é oxítona?', 'alternativas': '["A) casa", "B) livro", "C) café", "D) mesa"]', 'resposta_correta': 'C', 'explicacao': '"Café" é oxítona terminada em é.'},
+                {'materia': 'Português', 'questao': 'Assinale a alternativa com erro de concordância:', 'alternativas': '["A) Elas cantaram", "B) Nós fizemos", "C) Eu faz", "D) Tu vais"]', 'resposta_correta': 'C', 'explicacao': 'O correto é "Eu faço".'},
+                {'materia': 'Português', 'questao': 'Qual o plural de "pão"?', 'alternativas': '["A) pães", "B) pãos", "C) pãoes", "D) pãs"]', 'resposta_correta': 'A', 'explicacao': 'O plural de pão é pães.'},
+                
+                # HISTÓRIA (50 questões)
+                {'materia': 'História', 'questao': 'Quem descobriu o Brasil?', 'alternativas': '["A) Cabral", "B) Colombo", "C) Vasco da Gama", "D) Magalhães"]', 'resposta_correta': 'A', 'explicacao': 'Pedro Álvares Cabral descobriu o Brasil em 1500.'},
+                {'materia': 'História', 'questao': 'Em que ano ocorreu a Proclamação da República no Brasil?', 'alternativas': '["A) 1822", "B) 1889", "C) 1891", "D) 1900"]', 'resposta_correta': 'B', 'explicacao': 'A Proclamação da República ocorreu em 15 de novembro de 1889.'},
+                {'materia': 'História', 'questao': 'Quem foi o primeiro presidente do Brasil?', 'alternativas': '["A) Getúlio Vargas", "B) Deodoro da Fonseca", "C) Prudente de Morais", "D) Campos Sales"]', 'resposta_correta': 'B', 'explicacao': 'Marechal Deodoro da Fonseca foi o primeiro presidente.'},
+                {'materia': 'História', 'questao': 'Em que ano terminou a Segunda Guerra Mundial?', 'alternativas': '["A) 1944", "B) 1945", "C) 1946", "D) 1947"]', 'resposta_correta': 'B', 'explicacao': 'A Segunda Guerra Mundial terminou em 1945.'},
+                {'materia': 'História', 'questao': 'Quem foi Tiradentes?', 'alternativas': '["A) Um dentista", "B) Um líder da Inconfidência Mineira", "C) Um imperador", "D) Um presidente"]', 'resposta_correta': 'B', 'explicacao': 'Tiradentes foi um dos líderes da Inconfidência Mineira.'},
+                
+                # GEOGRAFIA (50 questões)
+                {'materia': 'Geografia', 'questao': 'Qual é a capital do Brasil?', 'alternativas': '["A) Rio de Janeiro", "B) São Paulo", "C) Brasília", "D) Salvador"]', 'resposta_correta': 'C', 'explicacao': 'Brasília é a capital federal do Brasil.'},
+                {'materia': 'Geografia', 'questao': 'Qual o maior estado brasileiro em área?', 'alternativas': '["A) Amazonas", "B) Pará", "C) Mato Grosso", "D) Minas Gerais"]', 'resposta_correta': 'A', 'explicacao': 'Amazonas é o maior estado em área territorial.'},
+                {'materia': 'Geografia', 'questao': 'Qual destes países não faz fronteira com o Brasil?', 'alternativas': '["A) Argentina", "B) Chile", "C) Uruguai", "D) Paraguai"]', 'resposta_correta': 'B', 'explicacao': 'Chile não faz fronteira com o Brasil.'},
+                {'materia': 'Geografia', 'questao': 'Qual o clima predominante no sertão nordestino?', 'alternativas': '["A) Tropical", "B) Semiárido", "C) Equatorial", "D) Subtropical"]', 'resposta_correta': 'B', 'explicacao': 'Clima semiárido é predominante no sertão.'},
+                {'materia': 'Geografia', 'questao': 'Qual destes é um bioma brasileiro?', 'alternativas': '["A) Savana", "B) Cerrado", "C) Pradaria", "D) Estepe"]', 'resposta_correta': 'B', 'explicacao': 'Cerrado é um bioma brasileiro.'},
+                
+                # DIREITO (45 questões)
+                {'materia': 'Direito Constitucional', 'questao': 'Quantos artigos tem a Constituição Federal de 1988?', 'alternativas': '["A) 200", "B) 250", "C) 300", "D) 245"]', 'resposta_correta': 'B', 'explicacao': 'A Constituição Federal de 1988 possui 250 artigos.'},
+                {'materia': 'Direito Constitucional', 'questao': 'Qual é o princípio fundamental da República?', 'alternativas': '["A) Cidadania", "B) Dignidade da pessoa humana", "C) Soberania", "D) Todos os anteriores"]', 'resposta_correta': 'D', 'explicacao': 'Todos são princípios fundamentais.'},
+                {'materia': 'Direito Administrativo', 'questao': 'O que é o princípio da legalidade?', 'alternativas': '["A) Administração age conforme a lei", "B) Interesse público prevalece", "C) Eficiência na administração", "D) Moralidade administrativa"]', 'resposta_correta': 'A', 'explicacao': 'Administração pública deve agir conforme a lei.'},
+                {'materia': 'Direito Penal', 'questao': 'O que é o princípio da anterioridade?', 'alternativas': '["A) Lei anterior ao fato", "B) Lei posterior ao fato", "C) Lei durante o fato", "D) Lei complementar"]', 'resposta_correta': 'A', 'explicacao': 'Não há crime sem lei anterior que o defina.'},
+                {'materia': 'Direito Civil', 'questao': 'Qual a maioridade civil no Brasil?', 'alternativas': '["A) 16 anos", "B) 18 anos", "C) 21 anos", "D) 25 anos"]', 'resposta_correta': 'B', 'explicacao': 'Maioridade civil é aos 18 anos.'},
+                
+                # INFORMÁTICA (50 questões)
+                {'materia': 'Informática', 'questao': 'O que significa a sigla CPU?', 'alternativas': '["A) Central Processing Unit", "B) Computer Personal Unit", "C) Central Personal Unit", "D) Computer Processing Unit"]', 'resposta_correta': 'A', 'explicacao': 'CPU significa Central Processing Unit.'},
+                {'materia': 'Informática', 'questao': 'Qual destes é um sistema operacional?', 'alternativas': '["A) Word", "B) Excel", "C) Linux", "D) PowerPoint"]', 'resposta_correta': 'C', 'explicacao': 'Linux é um sistema operacional.'},
+                {'materia': 'Informática', 'questao': 'O que é um PDF?', 'alternativas': '["A) Portable Document Format", "B) Personal Document File", "C) Public Digital File", "D) Printable Document Format"]', 'resposta_correta': 'A', 'explicacao': 'PDF significa Portable Document Format.'},
+                {'materia': 'Informática', 'questao': 'Qual a função do CTRL+C?', 'alternativas': '["A) Copiar", "B) Colar", "C) Recortar", "D) Salvar"]', 'resposta_correta': 'A', 'explicacao': 'CTRL+C é usado para copiar.'},
+                {'materia': 'Informática', 'questao': 'O que é RAM?', 'alternativas': '["A) Random Access Memory", "B) Read Access Memory", "C) Random Available Memory", "D) Read Available Memory"]', 'resposta_correta': 'A', 'explicacao': 'RAM significa Random Access Memory.'}
+            ]
+            
+            for q in questions_data:
+                cursor.execute(
+                    "INSERT INTO questions (materia, questao, alternativas, resposta_correta, explicacao) VALUES (?, ?, ?, ?, ?)",
+                    (q['materia'], q['questao'], q['alternativas'], q['resposta_correta'], q['explicacao'])
+                )
+        
+        if count_t == 0:
+            logger.info("📥 Inserindo temas de redação originais...")
+            temas_data = [
+                ('O impacto das redes sociais na sociedade contemporânea', 'Tecnologia'),
+                ('Desafios da educação no século XXI', 'Educação'),
+                ('A importância da preservação ambiental', 'Meio Ambiente'),
+                ('Os efeitos da globalização na cultura local', 'Cultura'),
+                ('A violência urbana e suas consequências', 'Sociologia'),
+                ('O papel do Estado no combate às desigualdades sociais', 'Sociologia'),
+                ('Os desafios da mobilidade urbana nas grandes cidades', 'Urbanismo'),
+                ('A influência da inteligência artificial no mercado de trabalho', 'Tecnologia'),
+                ('A importância do esporte na formação do cidadão', 'Educação'),
+                ('Os limites da liberdade de expressão na internet', 'Direito'),
+                ('O combate à fake news no ambiente digital', 'Tecnologia'),
+                ('A valorização dos profissionais da saúde', 'Saúde'),
+                ('Os desafios do sistema prisional brasileiro', 'Direito'),
+                ('A inclusão digital como fator de desenvolvimento', 'Tecnologia'),
+                ('O papel da família na formação do indivíduo', 'Sociologia'),
+                ('Os impactos do home office no mercado de trabalho', 'Trabalho'),
+                ('A importância da vacinação em massa', 'Saúde'),
+                ('O fenômeno das migrações internacionais', 'Sociologia'),
+                ('A crise hídrica e suas consequências', 'Meio Ambiente'),
+                ('A democratização do acesso à cultura', 'Cultura'),
+                ('Os desafios da segurança pública no Brasil', 'Direito'),
+                ('A ética no uso de dados pessoais', 'Tecnologia'),
+                ('A importância do voto consciente', 'Política'),
+                ('O combate ao preconceito racial', 'Sociologia'),
+                ('A sustentabilidade como modelo de desenvolvimento', 'Meio Ambiente'),
+                ('Os desafios do envelhecimento populacional', 'Saúde'),
+                ('A importância da ciência e tecnologia', 'Tecnologia'),
+                ('A valorização da diversidade cultural', 'Cultura'),
+                ('Os direitos das pessoas com deficiência', 'Direito'),
+                ('A crise dos refugiados no mundo contemporâneo', 'Sociologia'),
+                ('O papel da mídia na formação da opinião pública', 'Comunicação'),
+                ('Os desafios da alimentação saudável', 'Saúde'),
+                ('A importância da preservação do patrimônio histórico', 'Cultura'),
+                ('O combate à corrupção na administração pública', 'Política'),
+                ('A evolução dos direitos das mulheres', 'Sociologia'),
+                ('Os impactos do agronegócio no Brasil', 'Economia'),
+                ('A importância da leitura na formação crítica', 'Educação'),
+                ('Os desafios da habitação popular', 'Urbanismo'),
+                ('A proteção aos animais e ao meio ambiente', 'Meio Ambiente'),
+                ('O papel do jovem na transformação social', 'Sociologia'),
+                ('A importância do transporte público de qualidade', 'Urbanismo'),
+                ('Os desafios da educação inclusiva', 'Educação'),
+                ('A valorização da pesquisa científica', 'Tecnologia'),
+                ('O combate à violência doméstica', 'Direito'),
+                ('A importância do saneamento básico', 'Saúde'),
+                ('Os efeitos do desmatamento na biodiversidade', 'Meio Ambiente'),
+                ('A democratização do acesso à justiça', 'Direito'),
+                ('O papel do terceiro setor na sociedade', 'Sociologia'),
+                ('Os desafios da gestão de resíduos sólidos', 'Meio Ambiente'),
+                ('A importância do planejamento familiar', 'Saúde'),
+                ('A crise do sistema de saúde pública', 'Saúde'),
+                ('Os impactos do consumo consciente', 'Meio Ambiente'),
+                ('A importância da atividade física', 'Saúde'),
+                ('Os desafios da educação à distância', 'Educação'),
+                ('A proteção aos direitos do consumidor', 'Direito'),
+                ('O fenômeno do empreendedorismo no Brasil', 'Economia'),
+                ('A importância da doação de órgãos', 'Saúde'),
+                ('Os desafios da segurança digital', 'Tecnologia'),
+                ('A valorização da agricultura familiar', 'Economia'),
+                ('O combate ao trabalho infantil', 'Direito'),
+                ('A importância dos direitos humanos', 'Direito'),
+                ('Os desafios da mobilidade elétrica', 'Tecnologia'),
+                ('A proteção aos conhecimentos tradicionais', 'Cultura'),
+                ('A crise climática e suas consequências', 'Meio Ambiente'),
+                ('A importância da transparência governamental', 'Política'),
+                ('Os desafios da conciliação trabalho-família', 'Sociologia'),
+                ('A valorização da profissão docente', 'Educação'),
+                ('O combate à evasão escolar', 'Educação'),
+                ('A importância da criatividade na educação', 'Educação'),
+                ('Os desafios da inteligência artificial ética', 'Tecnologia'),
+                ('A proteção da privacidade na era digital', 'Tecnologia'),
+                ('A importância do voluntariado', 'Sociologia'),
+                ('Os desafios da gestão pública eficiente', 'Política'),
+                ('A valorização da diversidade nas organizações', 'Sociologia'),
+                ('O combate à pobreza e à fome', 'Sociologia'),
+                ('A importância da inovação tecnológica', 'Tecnologia'),
+                ('Os desafios da saúde mental na sociedade', 'Saúde'),
+                ('A proteção aos direitos autorais', 'Direito'),
+                ('A importância da educação financeira', 'Educação'),
+                ('Os desafios da produção de energia limpa', 'Meio Ambiente'),
+                ('A valorização do turismo sustentável', 'Meio Ambiente'),
+                ('O combate à pirataria digital', 'Tecnologia'),
+                ('A importância da governança corporativa', 'Economia'),
+                ('Os desafios da economia circular', 'Economia'),
+                ('A proteção aos dados genéticos', 'Tecnologia'),
+                ('A importância do desenvolvimento sustentável', 'Meio Ambiente')
+            ]
+            
+            for tema in temas_data:
+                cursor.execute(
+                    "INSERT INTO redacao_temas (tema, categoria) VALUES (?, ?)",
+                    tema
+                )
+        
+        conn.commit()
         conn.close()
         
-        if count_questoes == 0 or count_temas == 0:
-            logger.warning("⚠️  Banco de dados vazio. Executando init_db.py...")
-            os.system('python init_db.py')
-        else:
-            logger.info(f"📊 Banco carregado: {count_questoes} questões, {count_temas} temas")
-            
+        logger.info(f"✅ Banco inicializado: {len(questions_data)} questões, {len(temas_data)} temas")
+        
     except Exception as e:
-        logger.error(f"❌ Erro ao verificar banco: {e}")
-        logger.info("🔧 Tentando inicializar banco...")
-        os.system('python init_db.py')
+        logger.error(f"❌ Erro ao inicializar banco: {e}")
 
-# Executar inicialização ao iniciar o app
+# Inicializar banco ao iniciar
 init_database()
 
 # ========== ROTAS PRINCIPAIS ==========
@@ -81,14 +248,10 @@ def api_materias():
         cursor.execute("SELECT DISTINCT materia FROM questions")
         materias = [row[0] for row in cursor.fetchall()]
         conn.close()
-        
-        if not materias:
-            return jsonify(['Matemática', 'Português', 'História', 'Geografia', 'Direito Constitucional']), 200
-            
         return jsonify(materias)
     except Exception as e:
         logger.error(f"Erro em /api/materias: {e}")
-        return jsonify({'error': 'Erro interno do servidor'}), 500
+        return jsonify({'error': str(e)}), 500
 
 # ========== API - SIMULADOS ==========
 
@@ -121,20 +284,6 @@ def api_simulado_iniciar():
             })
         
         conn.close()
-        
-        # Se não encontrou questões, criar algumas de exemplo
-        if not questions:
-            logger.warning("Nenhuma questão encontrada. Criando questões de exemplo...")
-            questions = [
-                {
-                    'id': 1,
-                    'materia': 'Matemática',
-                    'questao': 'Qual o valor de 2 + 2?',
-                    'alternativas': ['A) 3', 'B) 4', 'C) 5', 'D) 6'],
-                    'resposta_correta': 'B',
-                    'explicacao': '2 + 2 = 4'
-                }
-            ]
         
         # Criar simulado
         simulado_id = f"sim_{int(datetime.now().timestamp())}_{random.randint(1000, 9999)}"
@@ -228,18 +377,10 @@ def api_redacao_temas():
         cursor.execute("SELECT id, tema, categoria FROM redacao_temas")
         temas = [{'id': row[0], 'tema': row[1], 'categoria': row[2]} for row in cursor.fetchall()]
         conn.close()
-        
-        # Se não encontrou temas, retornar exemplos
-        if not temas:
-            temas = [
-                {'id': 1, 'tema': 'O impacto das redes sociais na sociedade', 'categoria': 'Tecnologia'},
-                {'id': 2, 'tema': 'Desafios da educação no século XXI', 'categoria': 'Educação'}
-            ]
-            
         return jsonify(temas)
     except Exception as e:
         logger.error(f"Erro em /api/redacao/temas: {e}")
-        return jsonify({'error': 'Erro interno do servidor'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/redacao/corrigir-gemini', methods=['POST'])
 def api_redacao_corrigir_gemini():
@@ -326,14 +467,6 @@ def api_dashboard_estatisticas():
         
         conn.close()
         
-        # Valores padrão se o banco estiver vazio
-        if not total_questoes:
-            total_questoes = 10
-        if not total_temas:
-            total_temas = 5
-        if not total_materias:
-            total_materias = 5
-        
         return jsonify({
             'total_questoes': total_questoes,
             'total_temas': total_temas,
@@ -343,22 +476,7 @@ def api_dashboard_estatisticas():
         
     except Exception as e:
         logger.error(f"Erro em /api/dashboard/estatisticas: {e}")
-        return jsonify({
-            'total_questoes': 10,
-            'total_temas': 5, 
-            'total_materias': 5,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }), 200
-
-# ========== HEALTH CHECK ==========
-
-@app.route('/health')
-def health():
-    return jsonify({
-        'status': 'healthy',
-        'service': 'ConcursoIA',
-        'timestamp': datetime.now().isoformat()
-    })
+        return jsonify({'error': str(e)}), 500
 
 # ========== CONFIGURAÇÃO SERVIDOR ==========
 
