@@ -30,12 +30,9 @@ try:
         logger.warning("⚠️  GEMINI_API_KEY não encontrada. Gemini não configurado.")
         gemini_configured = False
         
-except ImportError as e:
-    gemini_error = str(e)
-    logger.error(f"❌ Erro ao carregar Google Generative AI: {e}")
 except Exception as e:
     gemini_error = str(e)
-    logger.error(f"❌ Erro inesperado ao carregar Gemini: {e}")
+    logger.error(f"❌ Erro ao carregar Gemini: {e}")
 
 # ========== ROTAS BÁSICAS ==========
 
@@ -61,30 +58,17 @@ def test():
         'message': 'ConcursoIA funcionando perfeitamente!',
         'status': 'operational',
         'gemini_configured': gemini_configured,
-        'gemini_error': gemini_error,
-        'python_version': os.environ.get('PYTHON_VERSION', 'unknown'),
-        'port': os.environ.get('PORT', '5001')
+        'gemini_error': gemini_error
     })
 
 # ========== CONFIGURAÇÃO DO SERVIDOR ==========
-# NÃO INICIAR SERVIDOR FLASK EM PRODUÇÃO - O GUNICORN CUIDA DISSO
+# EM PRODUÇÃO, O GUNICORN DEVE SER EXECUTADO VIA PROCFILE
+# NUNCA INICIAR app.run() EM PRODUÇÃO
 
-# Apenas para desenvolvimento local
 if __name__ == '__main__':
+    # APENAS PARA DESENVOLVIMENTO LOCAL
     PORT = int(os.environ.get('PORT', 5001))
     DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
     
-    logger.info(f'🚀 Iniciando ConcursoIA em modo desenvolvimento')
-    logger.info(f'📊 Gemini configurado: {gemini_configured}')
-    
-    if gemini_error:
-        logger.info(f'⚠️  Erro Gemini: {gemini_error}')
-    
-    # Apenas executar se não estiver no Railway
-    if not os.environ.get('RAILWAY_ENVIRONMENT'):
-        app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
-    else:
-        logger.info('🌐 Ambiente Railway detectado - Gunicorn cuidará do servidor')
-
-# Deploy: 2025-10-27 23:11:22
-
+    logger.info('🚀 MODO DESENVOLVIMENTO - Iniciando servidor Flask')
+    app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
