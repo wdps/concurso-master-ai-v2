@@ -85,3 +85,5 @@ if __name__ == '__main__':
         app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
     else:
         logger.info('🌐 Ambiente Railway detectado - Gunicorn cuidará do servidor')
+
+# Deploy: 2025-10-27 23:10:12
