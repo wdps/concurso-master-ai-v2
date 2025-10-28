@@ -1,7 +1,7 @@
-﻿#!/bin/bash
-echo '🚀 INICIANDO CONCURSOIA NO RAILWAY...'
-echo '📊 Porta: 5001'
-echo '🔧 Iniciando servidor...'
+#!/bin/bash
+echo '?? INICIANDO CONCURSOIA NO RAILWAY...'
+echo '?? Porta: 5001'
+echo '?? Iniciando servidor...'
 
-# Executar a aplicação Python
+# Executar a aplica??o Python
 python app.py
