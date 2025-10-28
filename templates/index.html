@@ -3,68 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConcursoMaster AI</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>ConcursoIA - Sistema Inteligente de Estudos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-dark text-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<body>
+    <div class="header">
         <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-brain me-2"></i>ConcursoMaster AI
-            </a>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="navegarPara('tela-inicio')">🏠 Início</button>
+                <button class="nav-tab" onclick="navegarPara('tela-simulado')">📚 Simulados</button>
+                <button class="nav-tab" onclick="navegarPara('tela-redacao')">✍️ Redação</button>
+                <button class="nav-tab" onclick="navegarPara('tela-dashboard')">📊 Dashboard</button>
+            </div>
         </div>
-    </nav>
+    </div>
 
-    <div class="container my-5">
-        <div class="row justify-content-center text-center">
-            <div class="col-lg-8">
-                <h1 class="display-4 mb-4">🚀 ConcursoMaster AI</h1>
-                <p class="lead mb-5">Sua plataforma inteligente para estudos de concursos públicos</p>
+    <div class="container">
+        <!-- TELA INICIAL PROFISSIONAL -->
+        <div id="tela-inicio" class="tela">
+            <div class="hero-section">
+                <h1 class="hero-title">🎯 ConcursoIA</h1>
+                <p class="hero-subtitle">Sua Plataforma Inteligente de Estudos para Concursos Públicos</p>
+                <p class="hero-tagline">Combine o poder da Inteligência Artificial com métodos de estudo comprovados para alcançar a aprovação dos seus sonhos</p>
                 
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="card bg-primary text-white h-100">
-                            <div class="card-body">
-                                <i class="fas fa-play-circle fa-3x mb-3"></i>
-                                <h5>Simulados</h5>
-                                <p>Teste seus conhecimentos com questões personalizadas</p>
-                                <a href="/simulado" class="btn btn-light">Começar</a>
-                            </div>
-                        </div>
+                <div class="features-grid">
+                    <div class="feature-card" onclick="navegarPara('tela-simulado')">
+                        <span class="feature-icon">📚</span>
+                        <h3>Simulados Inteligentes</h3>
+                        <p>Pratique com questões aleatórias de diversas disciplinas. Receba feedback instantâneo e acompanhe seu progresso em tempo real.</p>
                     </div>
                     
-                    <div class="col-md-4">
-                        <div class="card bg-success text-white h-100">
-                            <div class="card-body">
-                                <i class="fas fa-edit fa-3x mb-3"></i>
-                                <h5>Redação</h5>
-                                <p>Pratique e receba correções automáticas</p>
-                                <a href="/redacao" class="btn btn-light">Escrever</a>
-                            </div>
-                        </div>
+                    <div class="feature-card" onclick="navegarPara('tela-redacao')">
+                        <span class="feature-icon">✍️</span>
+                        <h3>Correção de Redação com IA</h3>
+                        <p>Escreva sua redação e receba correção detalhada com análise por competências, usando tecnologia Gemini AI do Google.</p>
                     </div>
                     
-                    <div class="col-md-4">
-                        <div class="card bg-info text-white h-100">
-                            <div class="card-body">
-                                <i class="fas fa-chart-line fa-3x mb-3"></i>
-                                <h5>Dashboard</h5>
-                                <p>Acompanhe seu progresso e evolução</p>
-                                <a href="/dashboard" class="btn btn-light">Ver Stats</a>
-                            </div>
-                        </div>
+                    <div class="feature-card" onclick="navegarPara('tela-dashboard')">
+                        <span class="feature-icon">📊</span>
+                        <h3>Dashboard de Performance</h3>
+                        <p>Acompanhe seu desempenho com estatísticas detalhadas, evolução temporal e identificação de pontos fracos.</p>
                     </div>
                 </div>
 
-                <div class="mt-5">
-                    <div class="alert alert-info">
-                        <h6>📊 Sistema Funcionando!</h6>
-                        <p class="mb-0">Banco de dados carregado com 3 questões e 2 temas de redação.</p>
+                <div class="how-it-works">
+                    <h2>Como o ConcursoIA Transforma Seus Estudos</h2>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <p>Escolha as disciplinas e personalize seu simulado conforme suas necessidades</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <p>Responda questões com suporte de dicas e fórmulas em tempo real</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <p>Pratique redação com correção profissional por Inteligência Artificial</p>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <p>Acompanhe sua evolução e foque nos pontos que realmente precisam de atenção</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- TELA SIMULADO (mantida) -->
+        <div id="tela-simulado" class="tela hidden">
+            <div class="card">
+                <h2>📚 Simulados Personalizados</h2>
+                <p>Selecione as disciplinas e configure seu simulado conforme suas necessidades de estudo.</p>
+                
+                <div id="selecao-simulado">
+                    <div class="form-group">
+                        <label for="quantidade-questoes">Quantidade de questões:</label>
+                        <select id="quantidade-questoes" class="form-control">
+                            <option value="10">10 questões</option>
+                            <option value="20">20 questões</option>
+                            <option value="50">50 questões</option>
+                            <option value="100">100 questões</option>
+                            <option value="295">Todas as questões</option>
+                        </select>
+                    </div>
+                    
+                    <div id="materias-container">
+                        <!-- Disciplinas carregadas via JavaScript -->
+                    </div>
+                    
+                    <button class="btn btn-primary btn-large" onclick="iniciarSimulado()">
+                        🚀 Iniciar Simulado
+                    </button>
+                </div>
+                
+                <div id="simulado-ativo" class="hidden">
+                    <!-- Conteúdo do simulado ativo -->
+                </div>
+            </div>
+            
+            <div id="tela-resultado" class="hidden">
+                <div class="card">
+                    <h2>🎉 Resultado do Simulado</h2>
+                    <div class="resultado-content">
+                        <div class="resultado-stats">
+                            <div class="stat-card">
+                                <div class="stat-number" id="resultado-acertos">0/0</div>
+                                <div class="stat-label">Acertos</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="resultado-percentual">0%</div>
+                                <div class="stat-label">Percentual</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="resultado-nota">0%</div>
+                                <div class="stat-label">Nota Final</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="navegarPara('tela-simulado')">
+                            📚 Fazer Novo Simulado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA REDAÇÃO APRIMORADA -->
+        <div id="tela-redacao" class="tela hidden">
+            <div class="card">
+                <h2>✍️ Corretor de Redação com Inteligência Artificial</h2>
+                <p>Desenvolva sua habilidade de escrita com correção profissional baseada nos critérios de concursos públicos.</p>
+                
+                <div class="redacao-container">
+                    <div class="redacao-input">
+                        <div class="form-group">
+                            <label for="temas-redacao">Selecione o tema da redação:</label>
+                            <select id="temas-redacao" class="form-control">
+                                <option value="">Carregando temas...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="texto-redacao">Sua redação:</label>
+                            <textarea id="texto-redacao" placeholder="Digite sua redação aqui... (Mínimo 20 linhas recomendado)" rows="20"></textarea>
+                        </div>
+                        
+                        <button id="btn-corrigir" class="btn btn-primary btn-large" onclick="corrigirRedacao()">
+                            🤖 Corrigir com IA
+                        </button>
+                    </div>
+                    
+                    <div class="redacao-dicas">
+                        <h3>🎯 Dicas para uma Redação Perfeita</h3>
+                        <div class="dicas-content">
+                            <div class="dica-item">
+                                <h4>Estrutura Ideal</h4>
+                                <p>Introdução (1 parágrafo), Desenvolvimento (2-3 parágrafos), Conclusão (1 parágrafo com proposta de intervenção)</p>
+                            </div>
+                            <div class="dica-item">
+                                <h4>Argumentação Sólida</h4>
+                                <p>Use dados, exemplos concretos e referências para fundamentar seus argumentos</p>
+                            </div>
+                            <div class="dica-item">
+                                <h4>Coesão Textual</h4>
+                                <p>Conectivos como "portanto", "além disso", "no entanto" melhoram a fluidez do texto</p>
+                            </div>
+                            <div class="dica-item">
+                                <h4>Norma Culta</h4>
+                                <p>Evite gírias, linguagem informal e preste atenção na concordância e pontuação</p>
+                            </div>
+                            <div class="dica-item">
+                                <h4>Proposta Concreta</h4>
+                                <p>Sua proposta de intervenção deve ser viável, detalhada e respeitar os direitos humanos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="resultado-correcao" class="hidden"></div>
+            </div>
+        </div>
+
+        <!-- TELA DASHBOARD APRIMORADA -->
+        <div id="tela-dashboard" class="tela hidden">
+            <div class="card">
+                <h2>📊 Dashboard de Performance</h2>
+                <p>Acompanhe seu progresso e identifique áreas para melhorar seu desempenho.</p>
+                
+                <div id="dashboard-content">
+                    <!-- Conteúdo dinâmico via JavaScript -->
+                </div>
+            </div>
+        </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

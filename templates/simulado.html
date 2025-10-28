@@ -1,313 +1,207 @@
 ﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulado - ConcursoMaster AI</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Simulados para Concursos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-brain me-2"></i>ConcursoMaster AI
-            </a>
-        </div>
-    </nav>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Sistema de Simulados para Concursos</h1>
+            <p>Prepare-se para concursos públicos com simulados inteligentes e correção de redação</p>
+        </div>
 
-    <div class="container my-4">
-        <div id="tela-configuracao">
-            <div class="text-center mb-4">
-                <h1>Configurar Simulado</h1>
-                <p class="text-muted">Selecione as matérias para começar</p>
-            </div>
+        <div class="nav-tabs">
+            <button class="nav-tab" onclick="navegarPara('tela-inicio')">🏠 Início</button>
+            <button class="nav-tab" onclick="navegarPara('tela-simulado')">📚 Simulado</button>
+            <button class="nav-tab" onclick="navegarPara('tela-redacao')">✍️ Redação</button>
+            <button class="nav-tab" onclick="navegarPara('tela-dashboard')">📊 Dashboard</button>
+        </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-book me-2"></i>Matérias Disponíveis</h5>
-                </div>
-                <div class="card-body">
-                    <div id="lista-materias">
-                        <div class="text-center p-4">
-                            <div class="spinner-border text-primary"></div>
-                            <p class="mt-2">Carregando matérias...</p>
+        <div id="tela-inicio" class="tela hidden">
+            <div class="card">
+                <h2>Bem-vindo ao Sistema de Concursos! 🎓</h2>
+                <p>Este sistema foi desenvolvido para ajudar na sua preparação para concursos públicos através de:</p>
+                
+                <div class="stats-grid" style="margin: 30px 0;">
+                    <div class="stat-card">
+                        <h3>📚 Simulados Personalizados</h3>
+                        <p>Questões organizadas por matéria e disciplina</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>✍️ Correção de Redação</h3>
+                        <p>Feedback detalhado com IA</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📊 Acompanhamento</h3>
+                        <p>Estatísticas do seu desempenho</p>
+                    </div>
+                </div>
+
+                <div class="dicas-redacao">
+                    <h4>💡 Dicas para Concursos:</h4>
+                    <ul>
+                        <li>🎯 Estude com foco nas matérias mais cobradas</li>
+                        <li>⏰ Pratique a gestão do tempo</li>
+                        <li>📝 Faça muitos exercícios e simulados</li>
+                        <li>🔍 Revise os conteúdos regularmente</li>
+                        <li>💪 Mantenha a consistência nos estudos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="tela-simulado" class="tela hidden">
+            <div id="selecao-simulado">
+                <div class="card">
+                    <h2>📚 Configurar Simulado</h2>
+                    <p>Selecione as disciplinas (Caixas) e a quantidade de questões:</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <label for="quantidade-questoes"><strong>Quantidade de questões:</strong></label>
+                        <select id="quantidade-questoes" class="select-tema">
+                            <option value="10">10 questões</option>
+                            <option value="20">20 questões</option>
+                            <option value="30">30 questões</option>
+                            <option value="50">50 questões</option>
+                            <option value="295">295 questões (Todas)</option>
+                        </select>
+                    </div>
+
+                    <div id="materias-container">
+                        <div class="text-center">
+                            <div class="loading"></div>
+                            <p>Carregando disciplinas...</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-20">
+                        <button class="btn btn-primary btn-large" onclick="iniciarSimulado()">
+                            🚀 Iniciar Simulado
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="simulado-ativo" class="hidden">
+                <div class="card questao-container">
+                    <div class="questao-header">
+                        <div>
+                            <h3 id="questao-numero">Questão 1 de 10</h3>
+                            <div class="questao-info">
+                                <span class="questao-tag" id="questao-disciplina">-</span>
+                                <span class="questao-tag" id="questao-materia">-</span>
+                                <span class="questao-tag" id="questao-dificuldade">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: #ecf0f1; border-radius: 10px; height: 10px; margin: 20px 0;">
+                        <div id="progresso-simulado" style="background: #3498db; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+
+                    <div class="questao-enunciado" id="questao-enunciado">
+                        Carregando questão...
+                    </div>
+
+                    <div class="alternativas-container" id="questao-alternativas">
+                        </div>
+
+                    <div id="feedback-questao" style="display: none;"></div>
+
+                    <div class="simulado-navigation">
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-anterior" class="btn" onclick="mudarQuestao(-1)" disabled>⬅️ Anterior</button>
+                            <button id="btn-proximo" class="btn" onclick="mudarQuestao(1)">Próxima ➡️</button>
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="text-center">
-                <button id="btn-iniciar-simulado" class="btn btn-primary btn-lg px-5" disabled>
-                    <i class="fas fa-play me-2"></i>Iniciar Simulado
-                </button>
-                <div id="error-message" class="alert alert-danger mt-3" style="display: none;"></div>
-            </div>
-        </div>
+                        
+                        <button class="btn btn-primary btn-large" onclick="responderQuestao()">✅ Responder</button>
+                        
+                        <button id="btn-finalizar-geral" class="btn btn-danger" onclick="finalizarSimulado()">🏁 Finalizar Agora</button> 
 
-        <div id="tela-simulado" style="display: none;">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-1">Questão <span id="numero-questao-atual">1</span></h5>
-                            <small id="materia-atual">Carregando...</small>
-                        </div>
-                        <div class="timer bg-white text-dark px-3 py-2 rounded">
-                            <i class="fas fa-clock me-2"></i>
-                            <span id="timer-display">60:00</span>
-                        </div>
-                    </div>
-                    <div class="progress mt-2" style="height: 5px;">
-                        <div id="progresso-bar" class="progress-bar bg-warning" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <div id="questao-enunciado" class="mb-4 p-3 bg-light rounded">
-                        <div class="text-center p-3">
-                            <div class="spinner-border text-primary"></div>
-                            <p class="mt-2">Carregando questão...</p>
-                        </div>
-                    </div>
+                        <button id="btn-finalizar" class="btn btn-danger" onclick="finalizarSimulado()" style="display: none;">🏁 Finalizar</button>                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <div id="alternativas-container" class="mb-4">
-                        <!-- Alternativas carregadas via JavaScript -->
-                    </div>
+        <div id="tela-redacao" class="tela hidden">
+            <div class="card">
+                <h2>✍️ Correção de Redação</h2>
+                <p>Escreva sua dissertação e receba uma correção detalhada focada em concursos públicos.</p>
+                
+                <div style="margin: 20px 0;">
+                    <label for="temas-redacao"><strong>Selecione o tema:</strong></label>
+                    <select id="temas-redacao" class="select-tema">
+                        <option value="">Carregando temas...</option>
+                    </select>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <label for="texto-redacao"><strong>Sua redação:</strong></label>
+                    <textarea id="texto-redacao" class="textarea-redacao" placeholder="Digite sua redação aqui...&#10;&#10;Dica: Estruture em introdução, desenvolvimento e conclusão.&#10;Use argumentos sólidos e fundamentados."></textarea>
+                </div>
 
-                    <div id="feedback-container" class="alert" style="display: none;">
-                        <h6 id="feedback-titulo" class="alert-heading"></h6>
-                        <p id="feedback-justificativa" class="mb-2"></p>
-                        <hr>
-                        <p id="texto-dica" class="mb-1 small"></p>
-                        <p id="texto-formula" class="mb-0 small font-monospace"></p>
-                    </div>
+                <div class="dicas-redacao">
+                    <h4>🎯 Estrutura Ideal para Concursos:</h4>
+                    <ul>
+                        <li><strong>Introdução:</strong> Apresente o tema e sua tese</li>
+            14:03:56                         <li><strong>Desenvolvimento:</strong> 2-3 parágrafos com argumentos</li>
+                        <li><strong>Conclusão:</strong> Retome a tese e proponha soluções</li>
+                        <li><strong>Dica:</strong> Use conectivos para garantir coesão</li>
+                    </ul>
+                </div>
+                
+                <div class="text-center">
+                    <button id="btn-corrigir" class="btn btn-primary btn-large" onclick="corrigirRedacao()">
+                        🤖 Corrigir Redação
+                    </button>
+                </div>
+            </div>
 
-                    <div class="d-flex justify-content-between">
-                        <button id="btn-voltar" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Anterior
-                        </button>
-                        <button id="btn-proxima" class="btn btn-primary" disabled>
-                            Próxima<i class="fas fa-arrow-right ms-2"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+            <div id="resultado-correcao" class="hidden">
+                </div>
+        </div>
 
-    <script>
-        let simuladoId = null;
-        let questaoAtualIndex = 0;
-        let totalQuestoes = 0;
-        let tempoRestanteSeg = 0;
-        let timerInterval = null;
+        <div id="tela-dashboard" class="tela hidden">
+            <div class="card">
+                <h2>📊 Seu Desempenho</h2>
+                <p>Acompanhe sua evolução nos estudos para concursos.</p>
+                
+                <div id="dashboard-content">
+                    <div class="text-center">
+                        <div class="loading"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        // Carregar matérias ao iniciar
-        async function carregarMaterias() {
-            try {
-                const response = await fetch('/api/materias');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const lista = document.getElementById('lista-materias');
-                    lista.innerHTML = '';
-                    
-                    data.materias.forEach(materia => {
-                        const total = data.estatisticas[materia]?.total || 0;
-                        const div = document.createElement('div');
-                        div.className = 'form-check mb-2';
-                        div.innerHTML = `
-                            <input class="form-check-input materia-checkbox" type="checkbox" 
-                                   value="${materia}" id="materia-${materia}">
-                            <label class="form-check-label" for="materia-${materia}">
-                                ${materia} <span class="badge bg-secondary">${total} questões</span>
-                            </label>
-                        `;
-                        lista.appendChild(div);
-                    });
-                    
-                    document.getElementById('btn-iniciar-simulado').disabled = false;
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                document.getElementById('error-message').textContent = 'Erro ao carregar matérias';
-                document.getElementById('error-message').style.display = 'block';
-            }
-        }
+        <div id="tela-resultado" class="tela hidden">
+            <div class="card resultado-container">
+                <h2>🏆 Resultado do Simulado</h2>
+                
+                <div class="nota-final" id="resultado-nota">0%</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="resultado-acertos">0/0</div>
+                        <div>Acertos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="resultado-percentual">0%</div>
+                        <div>Percentual</div>
+                    </div>
+                </div>
 
-        // Iniciar simulado
-        async function iniciarSimulado() {
-            const materiasSelecionadas = Array.from(document.querySelectorAll('.materia-checkbox:checked'))
-                .map(cb => cb.value);
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="voltarInicio()">🏠 Voltar ao Início</button>
+                    <button class="btn" onclick="navegarPara('tela-simulado')">📚 Novo Simulado</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            if (materiasSelecionadas.length === 0) {
-                document.getElementById('error-message').textContent = 'Selecione pelo menos uma matéria!';
-                document.getElementById('error-message').style.display = 'block';
-                return;
-            }
-
-            document.getElementById('error-message').style.display = 'none';
-            const btnIniciar = document.getElementById('btn-iniciar-simulado');
-            btnIniciar.disabled = true;
-            btnIniciar.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Iniciando...';
-
-            try {
-                const config = {
-                    materias: materiasSelecionadas,
-                    quantidade_total: 10,
-                    tempo_minutos: 60,
-                    aleatorio: true
-                };
-
-                const response = await fetch('/api/simulado/iniciar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    simuladoId = data.simulado_id;
-                    totalQuestoes = data.total_questoes;
-                    tempoRestanteSeg = data.tempo_limite_seg;
-                    
-                    document.getElementById('tela-configuracao').style.display = 'none';
-                    document.getElementById('tela-simulado').style.display = 'block';
-                    
-                    iniciarTimer();
-                    carregarQuestao(0);
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (error) {
-                document.getElementById('error-message').textContent = 'Erro: ' + error.message;
-                document.getElementById('error-message').style.display = 'block';
-                btnIniciar.disabled = false;
-                btnIniciar.innerHTML = '<i class="fas fa-play me-2"></i>Iniciar Simulado';
-            }
-        }
-
-        // Carregar questão
-        async function carregarQuestao(index) {
-            questaoAtualIndex = index;
-
-            document.getElementById('numero-questao-atual').textContent = index + 1;
-            document.getElementById('progresso-bar').style.width = `${((index + 1) / totalQuestoes) * 100}%`;
-            document.getElementById('btn-voltar').disabled = index === 0;
-            document.getElementById('btn-proxima').disabled = true;
-            document.getElementById('feedback-container').style.display = 'none';
-
-            try {
-                const response = await fetch(`/api/simulado/${simuladoId}/questao/${index}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const questao = data.questao;
-                    document.getElementById('questao-enunciado').innerHTML = `<p class="fs-5">${questao.enunciado}</p>`;
-                    document.getElementById('materia-atual').textContent = `${questao.materia} (${questao.dificuldade})`;
-
-                    const alternativasContainer = document.getElementById('alternativas-container');
-                    alternativasContainer.innerHTML = '';
-                    
-                    Object.entries(questao.alternativas).forEach(([letra, texto]) => {
-                        const button = document.createElement('button');
-                        button.className = 'btn btn-outline-primary w-100 text-start mb-2 alternativa';
-                        button.innerHTML = `<strong class="me-3">${letra})</strong> ${texto}`;
-                        button.onclick = () => selecionarAlternativa(letra, button);
-                        alternativasContainer.appendChild(button);
-                    });
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        // Selecionar alternativa
-        async function selecionarAlternativa(letra, botao) {
-            document.querySelectorAll('.alternativa').forEach(btn => btn.disabled = true);
-            botao.classList.remove('btn-outline-primary');
-            botao.classList.add('btn-primary');
-
-            try {
-                const response = await fetch(`/api/simulado/${simuladoId}/responder`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        questao_index: questaoAtualIndex,
-                        alternativa: letra
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    const feedback = document.getElementById('feedback-container');
-                    feedback.style.display = 'block';
-                    
-                    if (data.acertou) {
-                        feedback.className = 'alert alert-success';
-                        feedback.querySelector('#feedback-titulo').innerHTML = '<i class="fas fa-check-circle me-2"></i>Resposta Correta!';
-                    } else {
-                        feedback.className = 'alert alert-danger';
-                        feedback.querySelector('#feedback-titulo').innerHTML = `<i class="fas fa-times-circle me-2"></i>Resposta Incorreta! (Correta: ${data.resposta_correta})`;
-                    }
-                    
-                    feedback.querySelector('#feedback-justificativa').textContent = data.justificativa;
-                    feedback.querySelector('#texto-dica').innerHTML = data.dica ? `<strong>💡 Dica:</strong> ${data.dica}` : '';
-                    feedback.querySelector('#texto-formula').innerHTML = data.formula ? `<strong>📐 Fórmula:</strong> ${data.formula}` : '';
-                    
-                    document.getElementById('btn-proxima').disabled = false;
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        // Navegação
-        function questaoAnterior() {
-            if (questaoAtualIndex > 0) {
-                carregarQuestao(questaoAtualIndex - 1);
-            }
-        }
-
-        function proximaQuestao() {
-            if (questaoAtualIndex < totalQuestoes - 1) {
-                carregarQuestao(questaoAtualIndex + 1);
-            } else {
-                alert('Simulado finalizado!');
-                location.reload();
-            }
-        }
-
-        // Timer
-        function iniciarTimer() {
-            function atualizarTimer() {
-                const minutos = Math.floor(tempoRestanteSeg / 60);
-                const segundos = tempoRestanteSeg % 60;
-                document.getElementById('timer-display').textContent = 
-                    `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
-                
-                if (tempoRestanteSeg <= 0) {
-                    clearInterval(timerInterval);
-                    alert('Tempo esgotado!');
-                    location.reload();
-                }
-                tempoRestanteSeg--;
-            }
-
-            atualizarTimer();
-            timerInterval = setInterval(atualizarTimer, 1000);
-        }
-
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarMaterias();
-            document.getElementById('btn-iniciar-simulado').addEventListener('click', iniciarSimulado);
-            document.getElementById('btn-proxima').addEventListener('click', proximaQuestao);
-            document.getElementById('btn-voltar').addEventListener('click', questaoAnterior);
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

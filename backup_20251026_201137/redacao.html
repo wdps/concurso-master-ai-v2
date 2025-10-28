@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESQUEMATIZA.AI - Sistema de Simulados para Concursos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ESQUEMATIZA.AI 🧠</h1>
+            <p>Seu Guia Inteligente para a Aprovação em Concursos</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab" onclick="navegarPara('tela-inicio', this)">🏠 Início</button>
+            <button class="nav-tab" onclick="navegarPara('tela-simulado', this)">📚 Simulado</button>
+            <button class="nav-tab" onclick="navegarPara('tela-redacao', this)">✍️ Redação</button>
+            <button class="nav-tab" onclick="navegarPara('tela-dashboard', this)">📊 Dashboard</button>
+        </div>
+
+        <div id="tela-inicio" class="tela hidden">
+            <div class="card">
+                <p class="level-info" style="text-align: center; font-size: 1.1em;"></p>
+                <h2>Organização e Performance Otimizada por IA. 🤖</h2>
+                
+                <div class="hero-stats">
+                    <div class="stat-block">
+                        <div class="stat-number accent">AI</div>
+                        <div class="stat-label">Cria Esquemas de Estudo</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-number">📚</div>
+                        <div class="stat-label">Foco nos Livros e na Lei Seca</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-number">XP</div>
+                        <div class="stat-label">Progressão de Nível Gamificada</div>
+                    </div>
+                </div>
+
+                <div class="call-to-action">
+                    <button class="btn btn-primary btn-large" onclick="navegarPara('tela-simulado', document.querySelector('.nav-tab[onclick*=\'tela-simulado\']'))">
+                        🎯 Começar Simulado e Desbloquear Esquemas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tela-simulado" class="tela hidden">
+            <div id="selecao-simulado">
+                <div class="card">
+                    <h2>📚 Configuração Rápida de Simulado</h2>
+                    <p>Selecione as **Áreas de Conhecimento** para seu desafio. O sistema calculará sua nota com base no peso de cada questão.</p>
+                    
+                    <div style="display: flex; gap: 20px; align-items: center; margin: 20px 0;">
+                        <label for="quantidade-questoes" style="font-weight: bold;">Quantidade de Questões:</label>
+                        <select id="quantidade-questoes" class="select-tema" style="width: 150px;">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span class="questao-tag" style="background: var(--info);">Peso: Questões mais difíceis valem mais XP!</span>
+                    </div>
+
+                    <div id="materias-container" class="materias-config-grid">
+                        </div>
+
+                    <div class="text-center mt-20">
+                        <button class="btn btn-primary btn-large" onclick="iniciarSimulado()">
+                            🚀 Iniciar Desafio
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="simulado-ativo" class="hidden">
+                <div class="two-column-layout">
+                    <div class="questao-principal">
+                        <div class="card">
+                            <h3 id="questao-numero">Questão [Carregando]</h3>
+                            
+                            <div class="questao-header">
+                                <div class="questao-info">
+                                    <span class="questao-tag" id="questao-disciplina">Disciplina: -</span>
+                                    <span class="questao-tag" id="questao-materia">Matéria: -</span>
+                                    <span class="questao-tag" id="questao-dificuldade">Dificuldade: -</span>
+                                    <span class="questao-tag" id="questao-peso" style="background: var(--danger);">Peso: 1</span>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #ecf0f1; border-radius: 10px; height: 10px; margin: 20px 0;">
+                                <div id="progresso-simulado" style="background: var(--primary-light); height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
+                            </div>
+                            
+                            <div class="questao-enunciado" id="questao-enunciado">
+                                Carregando questão...
+                            </div>
+
+                            <div class="alternativas-container" id="questao-alternativas">
+                                </div>
+                            
+                            <div id="feedback-questao" style="display: none;"></div>
+                            
+                            <div class="simulado-navigation">
+                                <button id="btn-anterior" class="btn" onclick="navegarQuestao(-1)" disabled>⬅️ Anterior</button>
+                                
+                                <div>
+                                    <button id="btn-responder" class="btn btn-primary" onclick="responderQuestao()">✅ Responder</button>
+                                    <button id="btn-proximo" class="btn" onclick="navegarQuestao(1)" style="display: none;">Próxima ➡️</button>
+                                </div>
+                                
+                                <button id="btn-finalizar" class="btn btn-danger" onclick="finalizarSimulado()">🏁 Finalizar Agora</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="questao-lateral">
+                        <div id="lateral-dicas-box" class="dicas-interpretacao-box">
+                            <h4>Guia de Interpretação</h4>
+                            <ul class="dica-item-list">
+                                <li style="border-left-color: var(--primary);"><strong>1. Comando:</strong> Leia o que a questão realmente PEDE (certo/errado/exceção).</li>
+                                <li style="border-left-color: var(--primary);"><strong>2. Palavras-Chave:</strong> Sublinhe termos cruciais no enunciado.</li>
+                                <li style="border-left-color: var(--primary);"><strong>3. Atenção:</strong> Dicas e Fórmulas aparecerão aqui após responder.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tela-redacao" class="tela hidden">
+            <div class="two-column-layout">
+                <div class="redacao-principal">
+                    <div class="card">
+                        <h2>✍️ Desafio Dissertativo (IA Criteriosa)</h2>
+                        <p>Correção com métricas rigorosas de concursos públicos (Nota de 0 a 100).</p>
+                        
+                        <div id="temas-redacao-container">
+                            </div>
+                        
+                        <label for="temas-redacao"><strong>Selecione o tema:</strong></label>
+                        <select id="temas-redacao" class="select-tema" style="margin-bottom: 20px;">
+                            <option value="">Selecione um tema</option>
+                        </select>
+                        
+                        <label for="texto-redacao"><strong>Seu Artigo:</strong></label>
+                        <textarea id="texto-redacao" class="textarea-redacao" placeholder="Inicie sua Introdução..."></textarea>
+                        
+                        <div class="text-center mt-20">
+                            <button id="btn-corrigir" class="btn btn-primary btn-large" onclick="corrigirRedacao()">
+                                🤖 Corrigir Artigo (Ganhe XP)
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="resultado-correcao" class="hidden">
+                        </div>
+                </div>
+                
+                <div class="redacao-lateral">
+                    <div class="card redacao-dicas-box">
+                        <h4>Guia de Estrutura Ideal (Concursos)</h4>
+                        <ul class="dica-item-list">
+                            <li style="font-weight: bold; color: var(--primary);">1. Introdução (4-6 linhas):</li>
+                            <li style="border-left-color: var(--primary);">Contextualize o tema e apresente sua tese (ponto de vista).</li>
+                            
+                            <li style="font-weight: bold; color: var(--primary); margin-top: 15px;">2. Desenvolvimento (2x 6-8 linhas):</li>
+                            <li style="border-left-color: var(--primary);">Um argumento forte por parágrafo. Use conectivos de progressão (Além disso, Ademais).</li>
+                            
+                            <li style="font-weight: bold; color: var(--primary); margin-top: 15px;">3. Conclusão (4-6 linhas):</li>
+                            <li style="border-left-color: var(--primary);">Retome a tese e finalize a argumentação. Não introduza ideias novas.</li>
+                            
+                            <li style="font-weight: bold; color: var(--primary); margin-top: 15px;">🎯 Regras de Ouro:</li>
+                            <li style="border-left-color: var(--info);">Concisão: Seja direto e objetivo.</li>
+                            <li style="border-left-color: var(--info);">Repertório: Fundamente com leis ou dados relevantes.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tela-dashboard" class="tela hidden">
+            <div class="card">
+                <p class="level-info" style="text-align: center; font-size: 1.1em;"></p>
+                <h2>📊 Central de Desempenho Esquematizada</h2>
+                
+                <div id="dashboard-content">
+                    </div>
+            </div>
+        </div>
+
+        <div id="tela-resultado" class="tela hidden">
+            <div class="card text-center">
+                <h2>🏆 Missão Concluída!</h2>
+                
+                <div class="dashboard-metrics" style="max-width: 800px; margin: 30px auto;">
+                    <div class="metric-card">
+                        <div class="metric-number primary" id="resultado-nota-peso">0%</div>
+                        <div style="font-weight: bold;">NOTA PONDERADA</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-number" id="resultado-acertos">0/0</div>
+                        <div>Acertos Simples</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-number" id="resultado-pontuacao-total">0 XP</div>
+                        <div>XP Ganho na Missão</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="voltarInicio()">🏠 Início</button>
+                    <button class="btn" onclick="navegarPara('tela-simulado', document.querySelector('.nav-tab[onclick*=\'tela-simulado\']'))">📚 Novo Desafio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

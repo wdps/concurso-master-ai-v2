@@ -1,54 +1,207 @@
 ﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - ConcursoMaster AI</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Simulados para Concursos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">ConcursoMaster AI</a>
-        </div>
-    </nav>
-    
-    <div class="container mt-4">
-        <h2>Dashboard</h2>
-        <div class="row">
-            <div class="col-md-3">
-                <div class="card text-white bg-primary">
-                    <div class="card-body">
-                        <h5 class="card-title">Simulados Realizados</h5>
-                        <p class="card-text display-4">3</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-success">
-                    <div class="card-body">
-                        <h5 class="card-title">Questões Respondidas</h5>
-                        <p class="card-text display-4">150</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-warning">
-                    <div class="card-body">
-                        <h5 class="card-title">Taxa de Acerto</h5>
-                        <p class="card-text display-4">75%</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-info">
-                    <div class="card-body">
-                        <h5 class="card-title">Tempo de Estudo</h5>
-                        <p class="card-text display-4">12h</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Sistema de Simulados para Concursos</h1>
+            <p>Prepare-se para concursos públicos com simulados inteligentes e correção de redação</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab" onclick="navegarPara('tela-inicio')">🏠 Início</button>
+            <button class="nav-tab" onclick="navegarPara('tela-simulado')">📚 Simulado</button>
+            <button class="nav-tab" onclick="navegarPara('tela-redacao')">✍️ Redação</button>
+            <button class="nav-tab" onclick="navegarPara('tela-dashboard')">📊 Dashboard</button>
+        </div>
+
+        <div id="tela-inicio" class="tela hidden">
+            <div class="card">
+                <h2>Bem-vindo ao Sistema de Concursos! 🎓</h2>
+                <p>Este sistema foi desenvolvido para ajudar na sua preparação para concursos públicos através de:</p>
+                
+                <div class="stats-grid" style="margin: 30px 0;">
+                    <div class="stat-card">
+                        <h3>📚 Simulados Personalizados</h3>
+                        <p>Questões organizadas por matéria e disciplina</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>✍️ Correção de Redação</h3>
+                        <p>Feedback detalhado com IA</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📊 Acompanhamento</h3>
+                        <p>Estatísticas do seu desempenho</p>
+                    </div>
+                </div>
+
+                <div class="dicas-redacao">
+                    <h4>💡 Dicas para Concursos:</h4>
+                    <ul>
+                        <li>🎯 Estude com foco nas matérias mais cobradas</li>
+                        <li>⏰ Pratique a gestão do tempo</li>
+                        <li>📝 Faça muitos exercícios e simulados</li>
+                        <li>🔍 Revise os conteúdos regularmente</li>
+                        <li>💪 Mantenha a consistência nos estudos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="tela-simulado" class="tela hidden">
+            <div id="selecao-simulado">
+                <div class="card">
+                    <h2>📚 Configurar Simulado</h2>
+                    <p>Selecione as disciplinas (Caixas) e a quantidade de questões:</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <label for="quantidade-questoes"><strong>Quantidade de questões:</strong></label>
+                        <select id="quantidade-questoes" class="select-tema">
+                            <option value="10">10 questões</option>
+                            <option value="20">20 questões</option>
+                            <option value="30">30 questões</option>
+                            <option value="50">50 questões</option>
+                            <option value="295">295 questões (Todas)</option>
+                        </select>
+                    </div>
+
+                    <div id="materias-container">
+                        <div class="text-center">
+                            <div class="loading"></div>
+                            <p>Carregando disciplinas...</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-20">
+                        <button class="btn btn-primary btn-large" onclick="iniciarSimulado()">
+                            🚀 Iniciar Simulado
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="simulado-ativo" class="hidden">
+                <div class="card questao-container">
+                    <div class="questao-header">
+                        <div>
+                            <h3 id="questao-numero">Questão 1 de 10</h3>
+                            <div class="questao-info">
+                                <span class="questao-tag" id="questao-disciplina">-</span>
+                                <span class="questao-tag" id="questao-materia">-</span>
+                                <span class="questao-tag" id="questao-dificuldade">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: #ecf0f1; border-radius: 10px; height: 10px; margin: 20px 0;">
+                        <div id="progresso-simulado" style="background: #3498db; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+
+                    <div class="questao-enunciado" id="questao-enunciado">
+                        Carregando questão...
+                    </div>
+
+                    <div class="alternativas-container" id="questao-alternativas">
+                        </div>
+
+                    <div id="feedback-questao" style="display: none;"></div>
+
+                    <div class="simulado-navigation">
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-anterior" class="btn" onclick="mudarQuestao(-1)" disabled>⬅️ Anterior</button>
+                            <button id="btn-proximo" class="btn" onclick="mudarQuestao(1)">Próxima ➡️</button>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-large" onclick="responderQuestao()">✅ Responder</button>
+                        
+                        <button id="btn-finalizar-geral" class="btn btn-danger" onclick="finalizarSimulado()">🏁 Finalizar Agora</button> 
+
+                        <button id="btn-finalizar" class="btn btn-danger" onclick="finalizarSimulado()" style="display: none;">🏁 Finalizar</button>                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tela-redacao" class="tela hidden">
+            <div class="card">
+                <h2>✍️ Correção de Redação</h2>
+                <p>Escreva sua dissertação e receba uma correção detalhada focada em concursos públicos.</p>
+                
+                <div style="margin: 20px 0;">
+                    <label for="temas-redacao"><strong>Selecione o tema:</strong></label>
+                    <select id="temas-redacao" class="select-tema">
+                        <option value="">Carregando temas...</option>
+                    </select>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <label for="texto-redacao"><strong>Sua redação:</strong></label>
+                    <textarea id="texto-redacao" class="textarea-redacao" placeholder="Digite sua redação aqui...&#10;&#10;Dica: Estruture em introdução, desenvolvimento e conclusão.&#10;Use argumentos sólidos e fundamentados."></textarea>
+                </div>
+
+                <div class="dicas-redacao">
+                    <h4>🎯 Estrutura Ideal para Concursos:</h4>
+                    <ul>
+                        <li><strong>Introdução:</strong> Apresente o tema e sua tese</li>
+            14:03:56                         <li><strong>Desenvolvimento:</strong> 2-3 parágrafos com argumentos</li>
+                        <li><strong>Conclusão:</strong> Retome a tese e proponha soluções</li>
+                        <li><strong>Dica:</strong> Use conectivos para garantir coesão</li>
+                    </ul>
+                </div>
+                
+                <div class="text-center">
+                    <button id="btn-corrigir" class="btn btn-primary btn-large" onclick="corrigirRedacao()">
+                        🤖 Corrigir Redação
+                    </button>
+                </div>
+            </div>
+
+            <div id="resultado-correcao" class="hidden">
+                </div>
+        </div>
+
+        <div id="tela-dashboard" class="tela hidden">
+            <div class="card">
+                <h2>📊 Seu Desempenho</h2>
+                <p>Acompanhe sua evolução nos estudos para concursos.</p>
+                
+                <div id="dashboard-content">
+                    <div class="text-center">
+                        <div class="loading"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tela-resultado" class="tela hidden">
+            <div class="card resultado-container">
+                <h2>🏆 Resultado do Simulado</h2>
+                
+                <div class="nota-final" id="resultado-nota">0%</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="resultado-acertos">0/0</div>
+                        <div>Acertos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="resultado-percentual">0%</div>
+                        <div>Percentual</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="voltarInicio()">🏠 Voltar ao Início</button>
+                    <button class="btn" onclick="navegarPara('tela-simulado')">📚 Novo Simulado</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

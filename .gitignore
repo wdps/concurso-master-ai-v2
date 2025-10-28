@@ -1,23 +1,14 @@
-﻿__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
+﻿# Ignorar arquivos de ambiente
+.env
+
+# Ignorar bancos de dados
+*.db
 *.sqlite3
-.DS_Store
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git
-.mypy_cache/
-.pytest_cache/
-.ropeproject/
+
+# Ignorar arquivos Python compilados
+__pycache__/
+*.pyc
+
+# Ignorar arquivos de IDE
 .vscode/
 .idea/

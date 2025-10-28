@@ -1,92 +1,189 @@
-﻿/* ConcursoMaster AI - Estilos Básicos */
+﻿/* ConcursoMaster AI - Folha de Estilo Global
+   (static/style.css)
+*/
+
+/* --- Variáveis Globais de Cor --- */
+:root {
+    --cor-primaria: #4a148c; /* Roxo Escuro */
+    --cor-secundaria: #7b1fa2; /* Roxo Médio */
+    --cor-destaque: #6a11cb;  /* Gradiente 1 */
+    --cor-destaque-2: #2575fc; /* Gradiente 2 (Azul) */
+    
+    --cor-sucesso: #28a745;
+    --cor-erro: #dc3545;
+    --cor-aviso: #ffc107;
+    
+    --cor-fundo: #f8f9fa;
+    --cor-texto: #343a40;
+    --cor-texto-claro: #6c757d;
+}
+
+/* --- Estilos Gerais --- */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
-}
-
-.card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: none;
-    border-radius: 10px;
-}
-
-.card-header {
-    border-radius: 10px 10px 0 0 !important;
-}
-
-.btn {
-    border-radius: 8px;
-    font-weight: 500;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #4361ee, #3a0ca3);
-    border: none;
-}
-
-.btn-primary:hover {
-    background: linear-gradient(135deg, #3a0ca3, #4361ee);
-    transform: translateY(-2px);
-}
-
-.alternativa {
-    transition: all 0.3s ease;
-}
-
-.alternativa:hover {
-    transform: translateX(5px);
-}
-
-.timer {
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-}
-
-.progress {
-    height: 8px;
-    border-radius: 4px;
-}
-
-.alert {
-    border: none;
-    border-radius: 8px;
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
 }
 
 .navbar-brand {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--cor-primaria) !important;
+}
+
+.navbar-brand .fa-brain {
+    color: var(--cor-secundaria);
+}
+
+/* --- Estilos da Página Inicial (Hero) --- */
+.hero-section {
+    background: linear-gradient(135deg, var(--cor-destaque) 0%, var(--cor-destaque-2) 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+}
+
+.hero-section h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 3.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.hero-section .lead {
+    font-size: 1.3rem;
+    font-weight: 400;
+    max-width: 700px;
+    margin: 15px auto 30px auto;
+}
+
+.hero-section .btn-hero {
+    font-size: 1.1rem;
     font-weight: 700;
+    padding: 12px 30px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
-/* Animações */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+.btn-success-custom {
+    background-color: var(--cor-sucesso);
+    border-color: var(--cor-sucesso);
 }
 
-.card {
-    animation: fadeIn 0.5s ease;
+.btn-success-custom:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+    transform: translateY(-2px);
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    .container {
-        padding: 0 15px;
-    }
-    
-    .btn-lg {
-        padding: 0.75rem 1.5rem;
-        font-size: 1rem;
-    }
+/* --- Estilos de Seção e Cards --- */
+.features-section {
+    padding: 80px 0;
 }
 
-/* Utilitários */
-.text-gradient {
-    background: linear-gradient(135deg, #4361ee, #3a0ca3);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 2.5rem;
+    margin-bottom: 50px;
+    color: var(--cor-texto);
+    text-align: center;
 }
 
-.border-gradient {
-    border: 2px solid;
-    border-image: linear-gradient(135deg, #4361ee, #3a0ca3) 1;
+.feature-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    text-align: center;
+    padding: 2.5rem;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+}
+
+.feature-icon {
+    font-size: 4rem;
+    margin-bottom: 25px;
+}
+
+.icon-simulado { color: #007bff; }
+.icon-redacao { color: var(--cor-erro); }
+.icon-dashboard { color: var(--cor-aviso); }
+
+.feature-card h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--cor-texto);
+    margin-bottom: 15px;
+}
+
+.feature-card p {
+    font-size: 1.05rem;
+    color: var(--cor-texto-claro);
+}
+
+.feature-card .btn {
+    margin-top: 20px;
+    font-weight: 700;
+    border-radius: 50px;
+    padding: 10px 25px;
+}
+
+/* --- Rodapé --- */
+.footer {
+    background-color: var(--cor-texto);
+    color: #adb5bd;
+    padding: 40px 0;
+    text-align: center;
+    margin-top: 50px;
+}
+
+.footer p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* --- Estilos Específicos (Simulado e Redação) --- */
+.card-simulado, .card-redacao {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.btn-primary-custom {
+    background-color: var(--cor-primaria);
+    border-color: var(--cor-primaria);
+    color: white;
+    font-weight: 700;
+    padding: 12px 30px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+    background-color: var(--cor-secundaria);
+    border-color: var(--cor-secundaria);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--cor-fundo);
+    border-top-color: var(--cor-primaria);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }

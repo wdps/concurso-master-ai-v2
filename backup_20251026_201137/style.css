@@ -1,0 +1,390 @@
+﻿/* CSS PROFISSIONAL E MODERNO PARA CONCURSOS (ESQUEMATIZA.AI) */
+:root {
+    --primary: #153f66; /* Azul Escuro Seriedade */
+    --primary-light: #2a5a8a;
+    --accent: #00FFC0; /* Verde Ciano Neon - IA/Neurônio */
+    --accent-dark: #00b386;
+    --secondary: #6c757d; /* Cinza suave */
+    --success: #28a745; /* Verde aprovação */
+    --danger: #dc3545; /* Vermelho erro */
+    --info: #17a2b8; /* Ciano dica */
+    --background: #f4f7f9; /* Fundo levemente azulado */
+    --card-bg: #ffffff; /* Fundo do card */
+    --text: #343a40; /* Texto principal */
+    --border-light: #e9ecef;
+    --border-dark: #ced4da;
+    --shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    --radius: 10px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header Profissional (Capa) - Dinâmico e Tecnológico */
+.header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    padding: 60px 0;
+    text-align: center;
+    border-radius: var(--radius);
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.header h1 {
+    font-size: 4rem;
+    margin-bottom: 10px;
+    font-weight: 900;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+    position: relative;
+    z-index: 10;
+}
+
+.header p {
+    font-size: 1.4rem;
+    opacity: 0.95;
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 10;
+}
+
+/* Efeito Neônio (Neurônio/IA) */
+.header:before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    right: -50px;
+    bottom: -50px;
+    background: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.1), transparent 50%),
+                radial-gradient(circle at 80% 90%, var(--accent), transparent 70%);
+    opacity: 0.2;
+    z-index: 5;
+    animation: rotate 15s linear infinite;
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+/* Navegação */
+.nav-tabs {
+    display: flex;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 5px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-light);
+}
+
+.nav-tab {
+    flex: 1;
+    padding: 15px;
+    text-align: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-radius: var(--radius);
+    color: var(--secondary);
+}
+
+.nav-tab:hover {
+    background: var(--border-light);
+    color: var(--primary);
+}
+
+.nav-tab.active {
+    background: var(--primary);
+    color: var(--accent); /* Destaque com o Ciano/Neon */
+    box-shadow: 0 2px 10px rgba(0, 255, 192, 0.5);
+}
+
+/* Cards e Elementos Comuns */
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-light);
+}
+
+.card h2 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-light);
+    padding-bottom: 10px;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+/* Botões */
+.btn {
+    padding: 14px 30px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background: var(--primary-light);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+/* --- TELA INICIAL (INDEX) --- */
+.hero-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.stat-block {
+    text-align: center;
+    padding: 35px 25px;
+    border-radius: var(--radius);
+    background: #e9f5ff; 
+    border-left: 5px solid var(--accent); /* Destaque IA */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.stat-block:hover {
+    transform: translateY(-5px);
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+.stat-number.accent {
+    color: var(--accent-dark);
+}
+
+.stat-label {
+    color: var(--secondary);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.call-to-action {
+    margin-top: 50px;
+    text-align: center;
+    border-top: 2px dashed var(--border-light);
+    padding-top: 40px;
+}
+
+/* --- SIMULADO CONFIGURAÇÃO OTIMIZADA --- */
+.materias-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.area-agrupamento {
+    padding: 15px;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius);
+    background: #ffffff;
+    transition: all 0.2s;
+}
+
+.area-agrupamento:hover {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+}
+
+.area-agrupamento h3 {
+    color: var(--primary);
+    border-bottom: 1px dashed var(--border-light);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.materia-item {
+    /* Mantido o item por baixo, mas a exibição principal é por área */
+    display: none; 
+}
+
+.area-agrupamento.selected {
+    background: #e9f5ff; /* Fundo selecionado */
+    color: var(--primary-dark);
+    border: 2px solid var(--primary);
+}
+
+/* --- SIMULADO ATIVO --- */
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 3fr 1fr; 
+    gap: 30px;
+    align-items: flex-start;
+}
+
+/* Questão */
+.questao-enunciado {
+    font-size: 1.2rem;
+    line-height: 1.7;
+    margin-bottom: 25px;
+    padding: 25px;
+    border-left: 5px solid var(--accent); /* Destaque da Questão IA */
+    background: #f4f7f9;
+    border-radius: var(--radius);
+    font-weight: 500;
+}
+
+.alternativa.selected {
+    background: #e9f5ff; 
+    border-color: var(--primary);
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+}
+
+
+/* Coluna Lateral - Dicas */
+.dicas-interpretacao-box {
+    background: var(--card-bg);
+    border: 2px solid var(--accent); /* Destaque Dicas IA */
+    border-radius: var(--radius);
+    padding: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 20px;
+}
+
+.dicas-interpretacao-box h4 {
+    color: var(--primary-dark);
+    border-bottom: 1px solid var(--border-dark);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.dica-item-list li {
+    border-left: 4px solid var(--accent); /* Ciano para as dicas */
+}
+
+.formula-box {
+    background: #fff8e1; /* Amarelo muito claro */
+    border: 1px solid var(--accent);
+}
+
+/* --- REDAÇÃO (Corrigindo Bug de Textarea) --- */
+
+.textarea-redacao {
+    width: 100%;
+    min-height: 450px; /* Aumentado o min-height para mais espaço */
+    padding: 25px;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--radius);
+    font-family: 'Times New Roman', serif; /* Fonte mais profissional para redação */
+    font-size: 1.1rem;
+    resize: vertical;
+    line-height: 1.7; /* Mais espaçamento entre linhas */
+    color: var(--text);
+    background: var(--card-bg);
+}
+
+.redacao-dicas-box h4 {
+    color: var(--primary-dark);
+    border-bottom: 2px solid var(--border-light);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* Resultado Redação */
+.correcao-header {
+    background: var(--primary);
+    color: var(--accent);
+}
+
+.competencia-item {
+    border-left: 5px solid var(--accent);
+}
+
+/* --- DASHBOARD (Gamificado) --- */
+.level-badge {
+    background: var(--accent);
+    color: var(--primary-dark);
+    font-weight: 900;
+    padding: 6px 18px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--accent-dark);
+}
+
+.historico-tabela th {
+    background: var(--primary-light);
+    color: white;
+}
+
+/* --- UTILS --- */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-20 { margin-top: 20px; }
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .two-column-layout {
+        grid-template-columns: 1fr;
+    }
+    .questao-lateral {
+        order: 1; 
+        position: static;
+    }
+    .questao-principal {
+        order: 2;
+    }
+    .header h1 {
+        font-size: 2.5rem;
+    }
+}
