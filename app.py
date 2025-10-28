@@ -86,4 +86,5 @@ if __name__ == '__main__':
     else:
         logger.info('🌐 Ambiente Railway detectado - Gunicorn cuidará do servidor')
 
-# Deploy: 2025-10-27 23:10:12
+# Deploy: 2025-10-27 23:11:22
+
