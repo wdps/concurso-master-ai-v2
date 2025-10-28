@@ -73,7 +73,7 @@ def configure_gemini():
         return False
     
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
         # Teste de conexão
         model = genai.GenerativeModel(MODEL_NAME)
         model.generate_content("Teste de conexão")
@@ -799,3 +799,4 @@ if __name__ == '__main__':
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
