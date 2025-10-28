@@ -616,32 +616,17 @@ def get_estatisticas():
             conn.close()
 
 # --- Inicialização ---
+
+
+
+
+
+
+# Execução condicional - apenas para desenvolvimento local
 if __name__ == '__main__':
-    print("\n" + "="*50)
-    print("🎯 CONCURSOIA - SISTEMA INTELIGENTE DE ESTUDOS")
-    print("="*50)
-    
-    try:
-        conn = get_db_connection()
-        if conn:
-            count_questoes = conn.execute("SELECT COUNT(*) FROM questoes").fetchone()[0]
-            count_temas = conn.execute("SELECT COUNT(*) FROM temas_redacao").fetchone()[0]
-            print(f"📚 Questões no banco: {count_questoes}")
-            print(f"📝 Temas de redação: {count_temas}")
-            conn.close()
-    except Exception as e:
-        print(f"⚠️ Erro no banco: {e}")
-
-    port = int(os.environ.get('PORT', 5001))
-    debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
-    
-    print(f"🌐 Servidor: http://localhost:{port}")
-    print(f"🔧 Debug: {debug}")
-    print(f"🤖 Gemini: {'✅ Configurado' if gemini_configured else '❌ Não configurado'}")
-    print("="*50)
-    
-    app.run(host='0.0.0.0', port=PORT, debug=DEBUG)
-
-
-
-
+    # Verifica se está rodando em produção (Railway)
+    if os.environ.get('RAILWAY_ENV') is None and os.environ.get('PORT') is None:
+        print('🚀 Iniciando servidor de desenvolvimento...')
+        app.run(host='0.0.0.0', port=5001, debug=True)
+    else:
+        print('🌐 Ambiente de produção detectado - usando Gunicorn')
