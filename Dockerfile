@@ -16,11 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar aplicação
 COPY . .
 
-# Tornar start.sh executável
-RUN chmod +x start.sh
-
 # Expor porta
 EXPOSE 8080
 
-# Usar start.sh como entrypoint
-CMD ["./start.sh"]
+# Comando DIRETO para Gunicorn - sem scripts intermediários
+CMD gunicorn --bind 0.0.0.0:8080 --workers 1 --threads 2 --timeout 120 --access-logfile - --error-logfile - app:app

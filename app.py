@@ -59,12 +59,4 @@ def test():
         'endpoints': ['/', '/health', '/test', '/api/materias', '/api/redacao/temas']
     })
 
-# Importante: Não usar app.run() em produção
-# O Railway usa Gunicorn automaticamente
-
-if __name__ == '__main__':
-    # Apenas para desenvolvimento local
-    port = int(os.environ.get('PORT', 5001))
-    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
-    logger.info(f'🚀 Iniciando em modo desenvolvimento na porta {port}')
-    app.run(host='0.0.0.0', port=port, debug=debug)
+# NÃO HÁ app.run() - O Gunicorn será iniciado via comando
