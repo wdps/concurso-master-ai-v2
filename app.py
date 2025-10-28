@@ -56,6 +56,31 @@ logger = setup_logging()
 
 # --- Configuração Inicial ---
 load_dotenv()
+
+# --- VERIFICAÇÃO DO BANCO DE DADOS (Execução Antecipada) ---
+import logging
+logger_db_check = logging.getLogger('db_check') # Logger separado
+db_path = 'concursos.db'
+try:
+    if os.path.exists(db_path):
+        db_size = os.path.getsize(db_path)
+        log_message = f'--- DIAGNÓSTICO DB: Arquivo {db_path} ENCONTRADO (Tamanho: {db_size} bytes) ---'
+        print(log_message) # Força a saída no console
+        logger_db_check.info(log_message)
+        if db_size < 10000:
+             warning_message = f'--- DIAGNÓSTICO DB: ATENÇÃO! Arquivo {db_path} parece VAZIO ou inválido! ---'
+             print(warning_message)
+             logger_db_check.warning(warning_message)
+    else:
+        error_message = f'--- DIAGNÓSTICO DB: ERRO CRÍTICO! Arquivo {db_path} NÃO ENCONTRADO! ---'
+        print(error_message)
+        logger_db_check.error(error_message)
+except Exception as e:
+    error_message_exc = f'--- DIAGNÓSTICO DB: Erro ao verificar {db_path}: {e} ---'
+    print(error_message_exc)
+    logger_db_check.error(error_message_exc)
+# --- FIM DA VERIFICAÇÃO ---
+
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'chave_secreta_forte_esquematiza_2024')
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -826,6 +851,7 @@ if __name__ == '__main__':
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
 
 
 
