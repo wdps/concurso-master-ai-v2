@@ -3,12 +3,13 @@ ESQUEMATIZA.AI - SISTEMA DE SIMULADOS PARA CONCURSOS
 Versão Robusta - Configuração Avançada e Tratamento de Erros Aprimorado
 """
 
-from flask import Flask, render_template, request, jsonify, session, send_from_directory
+from whitenoise import WhiteNoise
+from flask import Flask, render_template, jsonify, request, send_from_directory Flask, render_template, request, jsonify, session, send_from_directory
 import sqlite3
 import json
 import random
 import time
-import os, glob
+import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 from datetime import datetime
@@ -57,14 +58,14 @@ logger = setup_logging()
 # --- Configuração Inicial ---
 load_dotenv()
 
-
-
 # Definir o caminho absoluto para o banco de dados
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'concursos.db')
 logger.info(f'--- CAMINHO DO BANCO DE DADOS DEFINIDO: {DB_PATH} ---')
 
 app = Flask(__name__)
+app.wsgi_app = WhiteNoise(app.wsgi_app, root='static/')
+
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'chave_secreta_forte_esquematiza_2024')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
@@ -81,14 +82,13 @@ def configure_gemini():
         return False
     
     try:
-        genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+        genai.configure(api_key=GEMINI_API_KEY)
         # Teste de conexão
         model = genai.GenerativeModel(MODEL_NAME)
         model.generate_content("Teste de conexão")
         logger.info(f"✅ Gemini configurado: {MODEL_NAME}")
         return True
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"❌ Erro na configuração do Gemini: {e}")
         return False
 
@@ -231,30 +231,15 @@ def health_check():
         conn.execute("SELECT 1")
         conn.close()
         
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)
+        return jsonify({
             'status': 'healthy',
             'timestamp': datetime.now().isoformat(),
             'gemini_configured': gemini_configured,
             'project': 'ESQUEMATIZA.AI'
         })
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"Health check failed: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'status': 'unhealthy', 'error': str(e)}), 500
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
 
 # --- API: Matérias (Cacheada) ---
 @app.route('/api/materias')
@@ -308,16 +293,8 @@ def api_materias():
         return jsonify(response_data)
         
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"ERRO /api/materias: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
     finally:
         if conn:
             conn.close()
@@ -331,38 +308,17 @@ def iniciar_simulado():
     try:
         data = request.get_json()
         if not data:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Dados JSON inválidos'}), 400
+            return jsonify({'success': False, 'error': 'Dados JSON inválidos'}), 400
             
         materias = data.get('materias', [])
         quantidade = int(data.get('quantidade', 10))
 
         # Validação robusta
         if not materias or not isinstance(materias, list):
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Lista de matérias inválida'}), 400
+            return jsonify({'success': False, 'error': 'Lista de matérias inválida'}), 400
         
         if quantidade < 1 or quantidade > 100:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Quantidade deve ser entre 1 e 100'}), 400
+            return jsonify({'success': False, 'error': 'Quantidade deve ser entre 1 e 100'}), 400
 
         conn = get_db_connection()
         
@@ -382,14 +338,7 @@ def iniciar_simulado():
         questoes_db = conn.execute(query, params).fetchall()
         
         if not questoes_db:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Nenhuma questão encontrada para as matérias selecionadas'}), 404
+            return jsonify({'success': False, 'error': 'Nenhuma questão encontrada para as matérias selecionadas'}), 404
 
         # Preparar simulado
         simulado_id = f"sim_{int(time.time())}_{random.randint(1000, 9999)}"
@@ -449,14 +398,7 @@ def iniciar_simulado():
 
         logger.info(f"✅ Simulado {simulado_id} iniciado com {len(questoes_db)} questões")
         
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)
+        return jsonify({
             'success': True, 
             'total_questoes': len(questoes_db),
             'questao': questao_frontend,
@@ -465,26 +407,11 @@ def iniciar_simulado():
 
     except ValueError as e:
         logger.error(f"Erro de validação: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Dados de entrada inválidos'}), 400
+        return jsonify({'success': False, 'error': 'Dados de entrada inválidos'}), 400
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"ERRO CRÍTICO /simulado/iniciar: {e}")
         logger.error(traceback.format_exc())
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
     finally:
         if conn:
             conn.close()
@@ -495,27 +422,13 @@ def iniciar_simulado():
 def get_questao_simulado(indice):
     try:
         if 'simulado_atual' not in session:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Nenhum simulado ativo'}), 400
+            return jsonify({'success': False, 'error': 'Nenhum simulado ativo'}), 400
 
         simulado = session['simulado_atual']
         questoes = simulado['questoes']
         
         if indice < 0 or indice >= len(questoes):
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Índice inválido'}), 400
+            return jsonify({'success': False, 'error': 'Índice inválido'}), 400
 
         simulado['indice_atual'] = indice
         session.modified = True
@@ -536,14 +449,7 @@ def get_questao_simulado(indice):
             'formula': questao.get('formula')
         }
 
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)
+        return jsonify({
             'success': True,
             'questao': questao_frontend,
             'resposta_anterior': resposta_anterior,
@@ -552,63 +458,27 @@ def get_questao_simulado(indice):
         })
 
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"ERRO /simulado/questao: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
 @app.route('/api/simulado/responder', methods=['POST'])
 def responder_questao():
     try:
         if 'simulado_atual' not in session:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Nenhum simulado ativo'}), 400
+            return jsonify({'success': False, 'error': 'Nenhum simulado ativo'}), 400
 
         data = request.get_json()
         if not data:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Dados inválidos'}), 400
+            return jsonify({'success': False, 'error': 'Dados inválidos'}), 400
             
         questao_id = data.get('questao_id')
         alternativa = data.get('alternativa', '').strip().upper()
 
         if not questao_id:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'ID da questão não fornecido'}), 400
+            return jsonify({'success': False, 'error': 'ID da questão não fornecido'}), 400
             
         if not alternativa or alternativa not in ['A', 'B', 'C', 'D', 'E']:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Alternativa inválida'}), 400
+            return jsonify({'success': False, 'error': 'Alternativa inválida'}), 400
 
         simulado = session['simulado_atual']
         
@@ -619,14 +489,7 @@ def responder_questao():
                 break
 
         if not questao_atual:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Questão não encontrada'}), 404
+            return jsonify({'success': False, 'error': 'Questão não encontrada'}), 404
 
         resposta_correta = questao_atual['resposta_correta'].strip().upper()
         acertou = (alternativa == resposta_correta)
@@ -655,14 +518,7 @@ def responder_questao():
         elif 'portuguesa' in materia:
              dicas_interpretacao = "Dica: Volte ao texto para conferir a interpretação. Diferencie 'interpretar' (inferir) de 'compreender' (o que está escrito)."
         
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)
+        return jsonify({
             'success': True,
             'acertou': acertou,
             'resposta_correta': resposta_correta,
@@ -673,30 +529,15 @@ def responder_questao():
         })
 
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"ERRO /simulado/responder: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
 @app.route('/api/simulado/finalizar', methods=['POST'])
 def finalizar_simulado():
     conn = None
     try:
         if 'simulado_atual' not in session:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Nenhum simulado ativo'}), 400
+            return jsonify({'success': False, 'error': 'Nenhum simulado ativo'}), 400
 
         simulado = session['simulado_atual']
         
@@ -750,29 +591,14 @@ def finalizar_simulado():
         
         logger.info(f"✅ Simulado finalizado. Nota: {nota_final:.2f}%")
         
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)
+        return jsonify({
             'success': True,
             'relatorio': relatorio
         })
 
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"ERRO /simulado/finalizar: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
 # --- API: Redação com Melhor Tratamento de Erros ---
 @app.route('/api/redacao/temas')
@@ -798,16 +624,8 @@ def get_temas_redacao():
         
         return jsonify(response_data)
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"ERRO /api/redacao/temas: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
     finally:
         if conn:
             conn.close()
@@ -817,58 +635,23 @@ def corrigir_redacao_gemini():
     logger.info("📝 Iniciando correção de redação...")
 
     if not gemini_configured:
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'API Gemini não configurada'}), 503
+        return jsonify({'success': False, 'error': 'API Gemini não configurada'}), 503
 
     try:
         data = request.get_json()
         if not data:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Dados inválidos'}), 400
+            return jsonify({'success': False, 'error': 'Dados inválidos'}), 400
             
         texto_redacao = data.get('texto', '').strip()
         tema_titulo = data.get('tema', '').strip()
 
         if not texto_redacao:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Texto da redação não fornecido'}), 400
+            return jsonify({'success': False, 'error': 'Texto da redação não fornecido'}), 400
         if not tema_titulo:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Tema não fornecido'}), 400
+            return jsonify({'success': False, 'error': 'Tema não fornecido'}), 400
 
         if len(texto_redacao) < 100:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Texto muito curto (mínimo 100 caracteres)'}), 400
+            return jsonify({'success': False, 'error': 'Texto muito curto (mínimo 100 caracteres)'}), 400
 
         logger.info(f"📋 Tema: {tema_titulo}")
 
@@ -925,63 +708,13 @@ def corrigir_redacao_gemini():
         correcao_data['nota_final'] = min(100, max(0, nota_calculada))  # Garantir entre 0-100
 
         logger.info(f"✅ Correção concluída - Nota: {nota_calculada}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': True, 'correcao': correcao_data})
+        return jsonify({'success': True, 'correcao': correcao_data})
 
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"❌ ERRO na correção: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': f'Erro na correção: {str(e)}'}), 500
+        return jsonify({'success': False, 'error': f'Erro na correção: {str(e)}'}), 500
 
 # --- API: Dashboard com Cache ---
-
-# --- Rota Estática (CSS/JS) ---
-@app.route('/static/<path:path>')
-def send_static(path):
-    return send_from_directory('static', path)
-
-
-# --- Rota de DEBUG (Temporária para listar arquivos) ---
-@app.route('/debug/list-files')
-def list_files():
-    logger.info("--- DEBUG: Listando arquivos no servidor ---")
-    path = '/app' # Diretório de trabalho no Docker
-    files_list = []
-    try:
-        # Lista todos os arquivos e pastas no diretório /app
-        for f in glob.glob(f'{path}/**', recursive=True):
-            if os.path.isfile(f):
-                file_size = os.path.getsize(f)
-                files_list.append(f'ARQUIVO: {f} (Tamanho: {file_size} bytes)')
-            else:
-                files_list.append(f'PASTA: {f}')
-        logger.info(files_list)
-        return jsonify(files_list)
-    except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
-        logger.error(f'Erro ao listar arquivos: {e}')
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'error': str(e)}), 500
-
 @app.route('/api/dashboard/estatisticas')
 def get_estatisticas():
     conn = None
@@ -995,14 +728,7 @@ def get_estatisticas():
         ).fetchall()
 
         if not historico_db:
-                    resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)
+            return jsonify({
                 'success': True,
                 'total_simulados': 0,
                 'total_questoes_respondidas': 0,
@@ -1018,14 +744,7 @@ def get_estatisticas():
         media_geral = sum(h.get('nota_final', 0) for h in historico) / total_simulados if total_simulados > 0 else 0
         media_acertos = sum(h.get('percentual_acerto_simples', 0) for h in historico) / total_simulados if total_simulados > 0 else 0
 
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)
+        return jsonify({
             'success': True,
             'total_simulados': total_simulados,
             'total_questoes_respondidas': total_questoes_respondidas,
@@ -1035,16 +754,8 @@ def get_estatisticas():
         })
 
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         logger.error(f"ERRO /api/dashboard/estatisticas: {e}")
-                resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
     finally:
         if conn:
             conn.close()
@@ -1052,37 +763,16 @@ def get_estatisticas():
 # --- Error Handlers Globais ---
 @app.errorhandler(404)
 def not_found(error):
-            resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Endpoint não encontrado'}), 404
+    return jsonify({'success': False, 'error': 'Endpoint não encontrado'}), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"Erro 500: {error}")
-            resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Erro interno do servidor'}), 500
+    return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
 @app.errorhandler(413)
 def too_large(error):
-            resultado = {
-            'total_questoes': total_questoes,
-            'total_temas': total_temas,
-            'total_materias': total_materias,
-            'ultima_atualizacao': datetime.now().isoformat()
-        }
-        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
-        return jsonify(resultado)'success': False, 'error': 'Arquivo muito grande'}), 413
+    return jsonify({'success': False, 'error': 'Arquivo muito grande'}), 413
 
 # --- Inicialização Robusta ---
 if __name__ == '__main__':
@@ -1100,7 +790,6 @@ if __name__ == '__main__':
             print(f"📝 Temas de redação: {count_temas}")
             conn.close()
     except Exception as e:
-        logger.error(f'API /materias: ERRO - {e}')
         print(f"⚠️  Aviso no banco: {e}")
 
     port = int(os.environ.get('PORT', 5001))
@@ -1119,11 +808,4 @@ if __name__ == '__main__':
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
-
-
-
-
-
-
-
 
