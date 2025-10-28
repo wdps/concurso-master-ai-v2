@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+# Último deploy: 2025-10-27 23:35:44
+
 @app.route('/')
 def home():
     logger.info('Rota / acessada')
@@ -60,3 +62,4 @@ def test():
     })
 
 # NÃO HÁ app.run() - O Gunicorn será iniciado via comando
+
