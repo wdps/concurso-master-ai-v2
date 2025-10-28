@@ -1,4 +1,6 @@
-﻿import os
+﻿import traceback
+import sys
+import os
 import sqlite3
 import json
 import google.generativeai as genai
@@ -277,6 +279,21 @@ def api_dashboard_estatisticas():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# ========== TRATAMENTO DE ERRO GLOBAL ==========
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    error_traceback = traceback.format_exc()
+    print(f"❌ ERRO NA APLICAÇÃO: {e}")
+    print(f"📝 Traceback: {error_traceback}")
+    return jsonify({
+        'error': 'Erro interno do servidor',
+        'message': str(e),
+        'traceback': error_traceback if os.environ.get('DEBUG') == 'True' else None
+    }), 500
+
+
 # ========== CONFIGURAÇÃO SERVIDOR ==========
 
 if __name__ == '__main__':
@@ -295,3 +312,4 @@ if __name__ == '__main__':
     print("==================================================")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
+
