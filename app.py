@@ -743,7 +743,7 @@ def api_dashboard_estatisticas():
 
     except Exception as e: # <--- Bloco EXCEPT CORRETO
         logger.error(f'API /dashboard/estatisticas: ERRO CRÍTICO - {e}')
-        return jsonify({'error': 'Erro interno ao buscar estatísticas'}), 500)
+        return jsonify({'error': 'Erro interno ao buscar estatísticas'}), 500
 
         historico = [safe_json_loads(row['relatorio']) for row in historico_db]
         
@@ -815,6 +815,7 @@ except Exception as e:
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
 
 
 
