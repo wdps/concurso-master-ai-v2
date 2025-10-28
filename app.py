@@ -711,26 +711,39 @@ def corrigir_redacao_gemini():
 
 # --- API: Dashboard com Cache ---
 @app.route('/api/dashboard/estatisticas')
-def get_estatisticas():
-    conn = None
+def api_dashboard_estatisticas():
+    logger.info(f'API /dashboard/estatisticas: Iniciando...') # Log inicio
     try:
-        user_id = session.get('user_id', 'anon')
-        
-        conn = get_db_connection()
-        historico_db = conn.execute(
-            "SELECT relatorio FROM historico_simulados WHERE user_id = ? ORDER BY data_fim DESC",
-            (user_id,)
-        ).fetchall()
+        logger.info(f'API /dashboard/estatisticas: Conectando ao DB em {DB_PATH}')
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
 
-        if not historico_db:
-            return jsonify({
-                'success': True,
-                'total_simulados': 0,
-                'total_questoes_respondidas': 0,
-                'media_geral': 0,
-                'media_acertos': 0,
-                'historico_recente': []
-            })
+        # Estatísticas do banco
+        logger.info('API /dashboard: Executando queries de contagem...')
+        cursor.execute("SELECT COUNT(*) FROM questions")
+        total_questoes = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM redacao_temas")
+        total_temas = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(DISTINCT materia) FROM questions")
+        total_materias = cursor.fetchone()[0]
+
+        conn.close()
+        logger.info('API /dashboard: Conexão com DB fechada.')
+
+        resultado = {
+            'total_questoes': total_questoes,
+            'total_temas': total_temas,
+            'total_materias': total_materias,
+            'ultima_atualizacao': datetime.now().isoformat()
+        }
+        logger.info(f'API /dashboard: Estatísticas calculadas: {resultado}')
+        return jsonify(resultado) # <--- Return DENTRO do try
+
+    except Exception as e: # <--- Bloco EXCEPT CORRETO
+        logger.error(f'API /dashboard/estatisticas: ERRO CRÍTICO - {e}')
+        return jsonify({'error': 'Erro interno ao buscar estatísticas'}), 500)
 
         historico = [safe_json_loads(row['relatorio']) for row in historico_db]
         
@@ -802,6 +815,7 @@ except Exception as e:
         serve(app, host='0.0.0.0', port=port)
     else:
         app.run(debug=debug, host='0.0.0.0', port=port)
+
 
 
 
