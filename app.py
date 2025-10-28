@@ -623,10 +623,12 @@ def get_estatisticas():
 
 
 # Execução condicional - apenas para desenvolvimento local
-if __name__ == '__main__':
-    # Verifica se está rodando em produção (Railway)
-    if os.environ.get('RAILWAY_ENV') is None and os.environ.get('PORT') is None:
-        print('🚀 Iniciando servidor de desenvolvimento...')
-        app.run(host='0.0.0.0', port=5001, debug=True)
+
     else:
         print('🌐 Ambiente de produção detectado - usando Gunicorn')
+
+# Execução apenas para desenvolvimento local
+if __name__ == '__main__':
+    # Só roda o servidor de desenvolvimento se não estiver no Railway
+    if not os.environ.get('RAILWAY_ENV') and not os.environ.get('PORT'):
+        app.run(host='0.0.0.0', port=5001, debug=True)
