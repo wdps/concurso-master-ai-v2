@@ -2,7 +2,6 @@
 .env
 
 # Ignorar bancos de dados
-*.db
 *.sqlite3
 
 # Ignorar arquivos Python compilados
