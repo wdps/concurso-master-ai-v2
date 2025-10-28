@@ -2,11 +2,25 @@
 
 WORKDIR /app
 
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements
 COPY requirements.txt .
+
+# Instalar dependências Python
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copiar aplicação
 COPY . .
 
+# Tornar start.sh executável
+RUN chmod +x start.sh
+
+# Expor porta
 EXPOSE 8080
 
-CMD gunicorn --bind 0.0.0.0:8080 --access-logfile - --error-logfile - app:app
+# Usar start.sh como entrypoint
+CMD ["./start.sh"]
